@@ -13,7 +13,7 @@ catalog:
   "@types/node": 24.12.2
   "@types/sinon": 21.0.0
   "@vitejs/plugin-vue": 6.0.4
-  "@vue/test-utils": 2.4.10
+  "@vue/test-utils": 2.4.11
   "@xwiki/platform-model-api": 18.3.0
   "@xwiki/platform-tool-apiextractorconfig": 18.3.0
   "@xwiki/platform-tool-eslintconfig": 18.3.0
