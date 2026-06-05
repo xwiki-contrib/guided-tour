@@ -33,7 +33,7 @@ catalog:
   publint: 0.3.21
   sinon: 21.1.2
   tippy.js: 6.3.7
-  typescript: 5.9.3
+  typescript: 6.0.3
   u-node: 0.0.8
   vite: 7.3.2
   vite-plugin-css-injected-by-js: 4.0.1
