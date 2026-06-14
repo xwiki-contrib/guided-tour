@@ -10,8 +10,8 @@ catalogs:
       specifier: 2.3.5
       version: 2.3.5
     '@microsoft/api-extractor':
-      specifier: 7.58.7
-      version: 7.58.7
+      specifier: 7.58.9
+      version: 7.58.9
     '@types/jquery':
       specifier: 4.0.0
       version: 4.0.0
@@ -119,9 +119,7 @@ catalogs:
       version: 4.1.0
 
 patchedDependencies:
-  '@xwiki/platform-tool-eslintconfig@18.3.0':
-    hash: c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
-    path: patches/@xwiki__platform-tool-eslintconfig@18.3.0.patch
+  '@xwiki/platform-tool-eslintconfig@18.3.0': c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
 
 importers:
 
@@ -151,7 +149,7 @@ importers:
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
-        version: 7.58.7(@types/node@24.12.2)
+        version: 7.58.9(@types/node@24.12.2)
       '@xwiki/contrib-guidedtour-dev-config':
         specifier: workspace:*
         version: link:../../../dev/config
@@ -218,7 +216,7 @@ importers:
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
-        version: 7.58.7(@types/node@24.12.2)
+        version: 7.58.9(@types/node@24.12.2)
       '@types/jquery':
         specifier: 'catalog:'
         version: 4.0.0
@@ -291,7 +289,7 @@ importers:
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
-        version: 7.58.7(@types/node@24.12.2)
+        version: 7.58.9(@types/node@24.12.2)
       '@types/jquery':
         specifier: 'catalog:'
         version: 4.0.0
@@ -358,7 +356,7 @@ importers:
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
-        version: 7.58.7(@types/node@24.12.2)
+        version: 7.58.9(@types/node@24.12.2)
       '@types/node':
         specifier: 'catalog:'
         version: 24.12.2
@@ -736,6 +734,10 @@ packages:
     resolution: {integrity: sha512-yK6OycD46gIzLRpj6ueVUWPk1ACSpkN1LBo05gY1qPTylbWyUCanXfH7+VgkI5LJrJoRSQR5F04XuCffCXLOBw==}
     hasBin: true
 
+  '@microsoft/api-extractor@7.58.9':
+    resolution: {integrity: sha512-S2UF4yza5GoxCmf7hJQNxJNZN9ltOVuOQv8Dy+Z21aol5ERoBNMdWcQHm4MJMPPItW4H/4rZD906iaf4mUojJA==}
+    hasBin: true
+
   '@microsoft/tsdoc-config@0.18.1':
     resolution: {integrity: sha512-9brPoVdfN9k9g0dcWkFeA7IH9bbcttzDJlXvkf8b2OBzd5MueR1V2wkKBL0abn0otvmkHJC6aapBOTJDDeMCZg==}
 
@@ -945,6 +947,9 @@ packages:
     peerDependenciesMeta:
       '@types/node':
         optional: true
+
+  '@rushstack/ts-command-line@5.3.10':
+    resolution: {integrity: sha512-fwI076HYknC0IrMXdY6UmjDv+PH7NHhNJX3/pY2UblSE5XrXgndXZPiOe/6ZtuFpn6DvVDVNhtkIzQ+Qu/MhVQ==}
 
   '@rushstack/ts-command-line@5.3.9':
     resolution: {integrity: sha512-GIHqU+sRGQ3LGWAZu1O+9Yh++qwtyNIIGuNbcWHJjBTm2qRez0cwINUHZ+pQLR8UuzZDcMajrDaNbUYoaL/XtQ==}
@@ -3076,6 +3081,24 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
+  '@microsoft/api-extractor@7.58.9(@types/node@24.12.2)':
+    dependencies:
+      '@microsoft/api-extractor-model': 7.33.8(@types/node@24.12.2)
+      '@microsoft/tsdoc': 0.16.0
+      '@microsoft/tsdoc-config': 0.18.1
+      '@rushstack/node-core-library': 5.23.1(@types/node@24.12.2)
+      '@rushstack/rig-package': 0.7.3
+      '@rushstack/terminal': 0.24.0(@types/node@24.12.2)
+      '@rushstack/ts-command-line': 5.3.10(@types/node@24.12.2)
+      diff: 8.0.4
+      minimatch: 10.2.3
+      resolve: 1.22.12
+      semver: 7.7.4
+      source-map: 0.6.1
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - '@types/node'
+
   '@microsoft/tsdoc-config@0.18.1':
     dependencies:
       '@microsoft/tsdoc': 0.16.0
@@ -3219,6 +3242,15 @@ snapshots:
       supports-color: 8.1.1
     optionalDependencies:
       '@types/node': 24.12.2
+
+  '@rushstack/ts-command-line@5.3.10(@types/node@24.12.2)':
+    dependencies:
+      '@rushstack/terminal': 0.24.0(@types/node@24.12.2)
+      '@types/argparse': 1.0.38
+      argparse: 1.0.10
+      string-argv: 0.3.2
+    transitivePeerDependencies:
+      - '@types/node'
 
   '@rushstack/ts-command-line@5.3.9(@types/node@24.12.2)':
     dependencies:

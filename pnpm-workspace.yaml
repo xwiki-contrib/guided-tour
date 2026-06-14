@@ -8,7 +8,7 @@ packages:
   - guidedtour-webjar/src/main/node
 catalog:
   "@jridgewell/remapping": 2.3.5
-  "@microsoft/api-extractor": 7.58.7
+  "@microsoft/api-extractor": 7.58.9
   "@types/jquery": 4.0.0
   "@types/node": 24.12.2
   "@types/sinon": 21.0.0
