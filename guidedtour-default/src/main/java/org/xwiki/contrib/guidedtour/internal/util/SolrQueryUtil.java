@@ -59,10 +59,11 @@ public class SolrQueryUtil
      * @param qs the query string to execute
      * @param fq the filter query to apply to the results
      * @param fl the list of fields to return in the results
+     * @param sort the sorting criteria to apply to the results, can be null or empty if no sorting is needed
      * @return the results of the query as a {@link SolrDocumentList}
      * @throws QueryException if there is an error executing the query
      */
-    public SolrDocumentList executeQuery(String qs, String fq, List<String> fl) throws QueryException
+    public SolrDocumentList executeQuery(String qs, String fq, List<String> fl, String sort) throws QueryException
     {
         List<String> filteredLines = new ArrayList<>(fl);
         filteredLines.add(REFERENCE_KEY);
@@ -73,7 +74,9 @@ public class SolrQueryUtil
         query.bindValue("fq", fq);
         query.bindValue("fl", filteredLines);
         query.bindValue("group", true).bindValue("group.field", "fullname").bindValue("group.main", true);
-
+        if (sort != null && !sort.isEmpty()) {
+            query.bindValue("sort", sort);
+        }
         return ((QueryResponse) query.execute().get(0)).getResults();
     }
 }

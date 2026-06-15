@@ -19,10 +19,9 @@
  */
 package org.xwiki.contrib.guidedtour.internal.util;
 
-import java.util.List;
-
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.xwiki.query.Query;
@@ -31,12 +30,21 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
+/**
+ * Test class for {@link SolrQueryUtil}.
+ */
 @ComponentTest
-public class SolrQueryUtilTest
+class SolrQueryUtilTest
 {
+    private static final String QUERY_STRING = "queryString";
+
+    private static final String FILTER_QUERY = "filterQuery";
+
     private final SolrDocumentList result = new SolrDocumentList();
 
     @InjectMockComponents
@@ -51,23 +59,35 @@ public class SolrQueryUtilTest
     @Mock
     private QueryResponse queryResponse;
 
+    @BeforeEach
+    void setup() throws Exception
+    {
+        List<String> FILTERED_LINES = List.of("test", "reference", "wiki", "spaces", "name");
+        when(this.queryManager.createQuery(QUERY_STRING, "solr")).thenReturn(this.query);
+        when(this.query.bindValue("fq", FILTER_QUERY)).thenReturn(this.query);
+        when(this.query.bindValue("fl", FILTERED_LINES)).thenReturn(this.query);
+        when(this.query.bindValue("group", true)).thenReturn(this.query);
+        when(this.query.bindValue("group.field", "fullname")).thenReturn(this.query);
+        when(this.query.bindValue("group.main", true)).thenReturn(this.query);
+        when(this.query.execute()).thenReturn(List.of(this.queryResponse));
+        when(this.queryResponse.getResults()).thenReturn(this.result);
+    }
+
     @Test
     void executeQuery() throws Exception
     {
-        String queryString = "queryString";
-        String filterQuery = "filterQuery";
-        List<String> filteredLines = List.of("test", "reference", "wiki", "spaces", "name");
+        SolrDocumentList solrDocumentList =
+            this.solrQueryUtil.executeQuery(QUERY_STRING, FILTER_QUERY, List.of("test"), "");
+        assertEquals(this.result, solrDocumentList);
+    }
 
-        when(queryManager.createQuery(queryString, "solr")).thenReturn(query);
-        when(query.bindValue("fq", filterQuery)).thenReturn(query);
-        when(query.bindValue("fl", filteredLines)).thenReturn(query);
-        when(query.bindValue("group", true)).thenReturn(query);
-        when(query.bindValue("group.field", "fullname")).thenReturn(query);
-        when(query.bindValue("group.main", true)).thenReturn(query);
-        when(query.execute()).thenReturn(List.of(queryResponse));
-        when(queryResponse.getResults()).thenReturn(result);
-
-        SolrDocumentList solrDocumentList = solrQueryUtil.executeQuery(queryString, filterQuery, List.of("test"));
-        assertEquals(result, solrDocumentList);
+    @Test
+    void executeQueryWithSort() throws Exception
+    {
+        String sortValue = "sorted value";
+        when(this.query.bindValue("sort", sortValue)).thenReturn(this.query);
+        SolrDocumentList solrDocumentList =
+            this.solrQueryUtil.executeQuery(QUERY_STRING, FILTER_QUERY, List.of("test"), sortValue);
+        assertEquals(this.result, solrDocumentList);
     }
 }

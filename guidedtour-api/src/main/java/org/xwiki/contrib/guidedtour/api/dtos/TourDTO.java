@@ -40,6 +40,8 @@ public class TourDTO
 
     private String title;
 
+    private String description;
+
     private boolean isActive;
 
     private List<TaskDTO> tasks;
@@ -66,6 +68,26 @@ public class TourDTO
         this.id = id;
         this.isActive = isActive;
         this.tasks = new ArrayList<>();
+    }
+
+    /**
+     * Gets the description of the tour.
+     *
+     * @return the description of the tour
+     */
+    public String getDescription()
+    {
+        return description;
+    }
+
+    /**
+     * Sets the description of the tour.
+     *
+     * @param description the description to set for the tour
+     */
+    public void setDescription(String description)
+    {
+        this.description = description;
     }
 
     /**

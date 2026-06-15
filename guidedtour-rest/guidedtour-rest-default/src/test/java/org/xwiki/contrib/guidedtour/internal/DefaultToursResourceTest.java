@@ -19,15 +19,8 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Provider;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-
+import com.xpn.xwiki.XWikiException;
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -49,7 +42,11 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import com.xpn.xwiki.XWikiException;
+import javax.inject.Provider;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -99,12 +96,12 @@ class DefaultToursResourceTest
     @BeforeEach
     void setup()
     {
-        when(containerProvider.get()).thenReturn(container);
-        when(container.getRequest()).thenReturn(request);
-        when(request.getParameter("csrf")).thenReturn(CSRF_VALUE);
-        when(csrf.isTokenValid(CSRF_VALUE)).thenReturn(true);
-        when(request.getRequest()).thenReturn(httpServletRequest);
-        when(httpServletRequest.getHeader("xwiki-form-token")).thenReturn(CSRF_VALUE);
+        when(this.containerProvider.get()).thenReturn(this.container);
+        when(this.container.getRequest()).thenReturn(this.request);
+        when(this.request.getParameter("csrf")).thenReturn(CSRF_VALUE);
+        when(this.csrf.isTokenValid(CSRF_VALUE)).thenReturn(true);
+        when(this.request.getRequest()).thenReturn(this.httpServletRequest);
+        when(this.httpServletRequest.getHeader("xwiki-form-token")).thenReturn(CSRF_VALUE);
     }
 
     @Test
@@ -113,106 +110,106 @@ class DefaultToursResourceTest
         List<TourDTO> tours = new ArrayList<>(2);
         tours.add(new TourDTO("id", "name", true));
         tours.add(new TourDTO("id2", "name2", false));
-        when(toursManager.getAllTours()).thenReturn(tours);
+        when(this.toursManager.getAllTours()).thenReturn(tours);
 
-        Response response = defaultToursResource.getAvailableTours();
+        Response response = this.defaultToursResource.getAvailableTours();
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(tours, response.getEntity());
-        assertEquals("Executing: Tour API: retrieving all tours.", logCapture.getMessage(0));
+        assertEquals("Executing: Tour API: retrieving all tours.", this.logCapture.getMessage(0));
     }
 
     @Test
     void getAvailableToursInvalidCSRF()
     {
-        when(csrf.isTokenValid(CSRF_VALUE)).thenReturn(false);
+        when(this.csrf.isTokenValid(CSRF_VALUE)).thenReturn(false);
 
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
-            defaultToursResource.getAvailableTours();
+            this.defaultToursResource.getAvailableTours();
         });
-        assertEquals("Executing: Tour API: retrieving all tours.", logCapture.getMessage(0));
-        assertEquals("Authorization error: Tour API: retrieving all tours.", logCapture.getMessage(1));
+        assertEquals("Executing: Tour API: retrieving all tours.", this.logCapture.getMessage(0));
+        assertEquals("Authorization error: Tour API: retrieving all tours.", this.logCapture.getMessage(1));
         assertEquals(401, exception.getResponse().getStatus());
     }
 
     @Test
     void getAvailableToursNoViewRights() throws AccessDeniedException
     {
-        doThrow(new AccessDeniedException(Right.VIEW, null, null)).when(contextualAuthorizationManager)
+        doThrow(new AccessDeniedException(Right.VIEW, null, null)).when(this.contextualAuthorizationManager)
             .checkAccess(Right.VIEW);
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
-            defaultToursResource.getAvailableTours();
+            this.defaultToursResource.getAvailableTours();
         });
-        assertEquals("Executing: Tour API: retrieving all tours.", logCapture.getMessage(0));
-        assertEquals("Authorization error: Tour API: retrieving all tours.", logCapture.getMessage(1));
+        assertEquals("Executing: Tour API: retrieving all tours.", this.logCapture.getMessage(0));
+        assertEquals("Authorization error: Tour API: retrieving all tours.", this.logCapture.getMessage(1));
         assertEquals(401, exception.getResponse().getStatus());
     }
 
     @Test
     void createTour()
     {
-        Response response = defaultToursResource.createTour(tourDTO);
+        Response response = this.defaultToursResource.createTour(this.tourDTO);
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-        assertEquals("Executing: Tour API: creating new tour.", logCapture.getMessage(0));
+        assertEquals("Executing: Tour API: creating new tour.", this.logCapture.getMessage(0));
     }
 
     @Test
     void createTourDuplicated() throws XWikiException, DuplicatedIdException
     {
-        doThrow(new DuplicatedIdException("duplicate id")).when(toursManager).createTour(tourDTO);
+        doThrow(new DuplicatedIdException("duplicate id")).when(this.toursManager).createTour(this.tourDTO);
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
-            defaultToursResource.createTour(tourDTO);
+            this.defaultToursResource.createTour(this.tourDTO);
         });
         assertEquals(Response.Status.CONFLICT.getStatusCode(), exception.getResponse().getStatus());
-        assertEquals("Executing: Tour API: creating new tour.", logCapture.getMessage(0));
-        assertEquals("Conflict: Tour API: creating new tour.", logCapture.getMessage(1));
+        assertEquals("Executing: Tour API: creating new tour.", this.logCapture.getMessage(0));
+        assertEquals("Conflict: Tour API: creating new tour.", this.logCapture.getMessage(1));
     }
 
     @Test
     void updateTour()
     {
-        Response response = defaultToursResource.updateTour("tourId", tourDTO);
+        Response response = this.defaultToursResource.updateTour("tourId", this.tourDTO);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("Executing: Tour API: updating tour with id [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tour API: updating tour with id [tourId].", this.logCapture.getMessage(0));
     }
 
     @Test
     void updateTourDifferentIds()
     {
-        Response response = defaultToursResource.updateTour("tourIdDif", tourDTO);
+        Response response = this.defaultToursResource.updateTour("tourIdDif", this.tourDTO);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         assertEquals("Path ID and Body ID mismatch", response.getEntity());
-        assertEquals("Executing: Tour API: updating tour with id [tourIdDif].", logCapture.getMessage(0));
+        assertEquals("Executing: Tour API: updating tour with id [tourIdDif].", this.logCapture.getMessage(0));
     }
 
     @Test
     void updateTourInvalidId() throws XWikiException, InvalidIdException
     {
-        doThrow(new InvalidIdException("invalid id")).when(toursManager).updateTour(tourDTO);
+        doThrow(new InvalidIdException("invalid id")).when(this.toursManager).updateTour(this.tourDTO);
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
-            defaultToursResource.updateTour("tourId", tourDTO);
+            this.defaultToursResource.updateTour("tourId", this.tourDTO);
         });
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getResponse().getStatus());
-        assertEquals("Executing: Tour API: updating tour with id [tourId].", logCapture.getMessage(0));
-        assertEquals("Resource not found: Tour API: updating tour with id [tourId].", logCapture.getMessage(1));
+        assertEquals("Executing: Tour API: updating tour with id [tourId].", this.logCapture.getMessage(0));
+        assertEquals("Resource not found: Tour API: updating tour with id [tourId].", this.logCapture.getMessage(1));
     }
 
     @Test
     void deleteTour()
     {
-        Response response = defaultToursResource.deleteTour("tourId");
+        Response response = this.defaultToursResource.deleteTour("tourId");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("Executing: Tour API: removing tour with id [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tour API: removing tour with id [tourId].", this.logCapture.getMessage(0));
     }
 
     @Test
     void deleteTourError() throws XWikiException, InvalidIdException, JobException
     {
-        doThrow(new RuntimeException("invalid id")).when(toursManager).deleteTour("tourId");
+        doThrow(new RuntimeException("invalid id")).when(this.toursManager).deleteTour("tourId");
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
-            defaultToursResource.deleteTour("tourId");
+            this.defaultToursResource.deleteTour("tourId");
         });
         assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), exception.getResponse().getStatus());
-        assertEquals("Executing: Tour API: removing tour with id [tourId].", logCapture.getMessage(0));
-        assertEquals("Internal error: Tour API: removing tour with id [tourId].", logCapture.getMessage(1));
+        assertEquals("Executing: Tour API: removing tour with id [tourId].", this.logCapture.getMessage(0));
+        assertEquals("Internal error: Tour API: removing tour with id [tourId].", this.logCapture.getMessage(1));
     }
 }

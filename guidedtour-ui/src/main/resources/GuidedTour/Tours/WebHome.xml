@@ -36,33 +36,35 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{liveData
-  id="tourClassList1"
-  properties="doc.title,isActive,_actions"
-  source="liveTable"
-  sourceParameters="className=XWiki.GuidedTour.TourClass&amp;translationPrefix=guidedtour.livetable."
-  meta='{"propertyDescriptors":[{"id":"isActive","filterable":true,"sortable":true},{"id":"_actions","displayer":{"id":"actions","actions":["edit","delete","consoleLog"]}}]}'
-  layouts="table"}}
-{
-  "actions": {
-    "edit": {
-      "icon": "pencil",
-      "label": "Edit",
-      "action": "edit"
-    },
-    "delete": {
-      "icon": "trash",
-      "label": "Delete Space",
-      "action": "delete",
-      "confirm": "Are you sure you want to delete this entire space?"
-    },
-    "consoleLog": {
-      "icon": "console",
-      "label": "Log Tour",
-      "action": "custom",
-      "onclick": "console.log('Tour clicked:', this.row.data); return false;"
+  <content>
+{{velocity}}
+#set ($discard = $xwiki.jsx.use('GuidedTour.Tours.WebHome'))
+{{html wiki='true'}}
+  #set ($sourceParameters = $escapetool.url({
+    'className': 'XWiki.GuidedTour.TourClass',
+    'translationPrefix': 'guidedtour.livetable.'
+  }))
+  #set ($liveDataConfig = {
+    "meta": {
+      "propertyDescriptors": [
+        { "id": "title", "displayer": "text" },
+        { "id": "isActive", "displayer": "text" },
+        { 'id': '_actions', 'displayer': {'id': 'actions', 'actions': ['edit', 'delete', 'view']} }
+      ],
+      "actions": [
+        { 'id': 'edit', "description": "Edit tour" },
+        { 'id': 'delete', "description": "Delete tour" },
+        { 'id': 'view', "description": "View tour" }
+      ]
     }
-  }
-}
-{{/liveData}}</content>
+  })
+  {{liveData
+    id='guided-tours-overview'
+    properties="title,isActive,_actions"
+    source='liveTable'
+    sourceParameters="$sourceParameters"
+    layouts='table'
+  }}$jsontool.serialize($liveDataConfig){{/liveData}}
+{{/html}}
+{{/velocity}}</content>
 </xwikidoc>

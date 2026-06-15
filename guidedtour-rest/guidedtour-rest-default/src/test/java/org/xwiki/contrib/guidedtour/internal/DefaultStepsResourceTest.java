@@ -19,15 +19,8 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Provider;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-
+import com.xpn.xwiki.XWikiException;
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -46,7 +39,11 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import com.xpn.xwiki.XWikiException;
+import javax.inject.Provider;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -94,12 +91,12 @@ class DefaultStepsResourceTest
     @BeforeEach
     void setup()
     {
-        when(containerProvider.get()).thenReturn(container);
-        when(container.getRequest()).thenReturn(request);
-        when(request.getParameter("csrf")).thenReturn(CSRF_VALUE);
-        when(csrf.isTokenValid(CSRF_VALUE)).thenReturn(true);
-        when(request.getRequest()).thenReturn(httpServletRequest);
-        when(httpServletRequest.getHeader("xwiki-form-token")).thenReturn(CSRF_VALUE);
+        when(this.containerProvider.get()).thenReturn(this.container);
+        when(this.container.getRequest()).thenReturn(this.request);
+        when(this.request.getParameter("csrf")).thenReturn(CSRF_VALUE);
+        when(this.csrf.isTokenValid(CSRF_VALUE)).thenReturn(true);
+        when(this.request.getRequest()).thenReturn(this.httpServletRequest);
+        when(this.httpServletRequest.getHeader("xwiki-form-token")).thenReturn(CSRF_VALUE);
     }
 
     @Test
@@ -108,55 +105,55 @@ class DefaultStepsResourceTest
         List<StepDTO> steps = new ArrayList<>(2);
         steps.add(new StepDTO());
         steps.add(new StepDTO());
-        when(stepsManager.getAllSteps(TOUR_ID, TASK_ID)).thenReturn(steps);
+        when(this.stepsManager.getAllSteps(TOUR_ID, TASK_ID)).thenReturn(steps);
 
-        Response response = defaultStepsResource.getTaskSteps(TOUR_ID, TASK_ID);
+        Response response = this.defaultStepsResource.getTaskSteps(TOUR_ID, TASK_ID);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(steps, response.getEntity());
         assertEquals("Executing: Steps API: retrieving the steps for task [taskId] from tour [tourId].",
-            logCapture.getMessage(0));
+            this.logCapture.getMessage(0));
     }
 
     @Test
     void createStep()
     {
-        Response response = defaultStepsResource.createStep(TOUR_ID, TASK_ID, stepDTO);
+        Response response = this.defaultStepsResource.createStep(TOUR_ID, TASK_ID, this.stepDTO);
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         assertEquals("Executing: Steps API: creating step for task [taskId] from tour [tourId].",
-            logCapture.getMessage(0));
+            this.logCapture.getMessage(0));
     }
 
     @Test
     void updateTask()
     {
-        Response response = defaultStepsResource.updateStep(TOUR_ID, TASK_ID, 2, stepDTO);
+        Response response = this.defaultStepsResource.updateStep(TOUR_ID, TASK_ID, 2, this.stepDTO);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertEquals("Executing: Steps API: updating step on position [2] for task [taskId] from tour [tourId].",
-            logCapture.getMessage(0));
+            this.logCapture.getMessage(0));
     }
 
     @Test
     void deleteTask()
     {
-        Response response = defaultStepsResource.deleteStep(TOUR_ID, TASK_ID, 2);
+        Response response = this.defaultStepsResource.deleteStep(TOUR_ID, TASK_ID, 2);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertEquals("Executing: Steps API: removing step on position [2] for task [taskId] from tour [tourId].",
-            logCapture.getMessage(0));
+            this.logCapture.getMessage(0));
     }
 
     @Test
     void deleteTaskError() throws AccessDeniedException
     {
-        doThrow(new AccessDeniedException(Right.DELETE, null, null)).when(contextualAuthorizationManager)
+        doThrow(new AccessDeniedException(Right.DELETE, null, null)).when(this.contextualAuthorizationManager)
             .checkAccess(Right.DELETE);
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
-            defaultStepsResource.deleteStep(TOUR_ID, TASK_ID, 2);
+            this.defaultStepsResource.deleteStep(TOUR_ID, TASK_ID, 2);
         });
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exception.getResponse().getStatus());
         assertEquals("Executing: Steps API: removing step on position [2] for task [taskId] from tour [tourId].",
-            logCapture.getMessage(0));
+            this.logCapture.getMessage(0));
         assertEquals(
             "Authorization error: Steps API: removing step on position [2] for task [taskId] from tour [tourId].",
-            logCapture.getMessage(1));
+            this.logCapture.getMessage(1));
     }
 }

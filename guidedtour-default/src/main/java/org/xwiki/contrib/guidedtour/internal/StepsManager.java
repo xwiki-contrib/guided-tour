@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -99,11 +102,11 @@ public class StepsManager
     public List<StepDTO> getAllSteps(String tourId, String taskId) throws XWikiException, InvalidIdException
     {
         List<BaseObject> stepObjects = getStepObjects(tourId, taskId);
-        List<StepDTO> steps = new ArrayList<>(stepObjects.size());
+        Set<StepDTO> sortedSet = new TreeSet<>(Comparator.comparingInt(StepDTO::getOrder));
         for (BaseObject stepObject : stepObjects) {
-            steps.add(getStepDTO(stepObject));
+            sortedSet.add(getStepDTO(stepObject));
         }
-        return steps;
+        return new ArrayList<>(sortedSet);
     }
 
     /**
@@ -202,7 +205,7 @@ public class StepsManager
                 return taskDoc.getXObjects(STEP_CLASS).stream()
                     .filter(Objects::nonNull)
                     .sorted(Comparator.comparingInt(step -> step.getIntValue(TourProperty.ORDER.getBaseKey())))
-                    .toList();
+                    .collect(Collectors.toList());
             } else {
                 throw new InvalidIdException("Task with the given id [%s] does not exists.", taskId);
             }

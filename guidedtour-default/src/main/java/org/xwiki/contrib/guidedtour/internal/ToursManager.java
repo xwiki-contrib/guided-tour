@@ -129,13 +129,15 @@ public class ToursManager
         List<String> filteredLines = new ArrayList<>();
         filteredLines.add(TourProperty.TITLE.formKey(CLASS_PREFIX));
         filteredLines.add(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
-        SolrDocumentList solrDocuments = this.queryUtil.executeQuery(QS, "type:DOCUMENT", filteredLines);
+        SolrDocumentList solrDocuments =
+            this.queryUtil.executeQuery(QS, "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate", filteredLines, "");
         List<TourDTO> tours = new ArrayList<>(solrDocuments.size());
         for (SolrDocument document : solrDocuments) {
             EntityReference documentReference =
                 this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
             String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
-            boolean isActive = (Boolean) document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
+            Object activeObj = document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
+            boolean isActive = (activeObj != null) && (Boolean) activeObj;
             TourDTO dto = new TourDTO(documentReference.toString(), title, isActive);
             dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
             tours.add(dto);
@@ -158,7 +160,9 @@ public class ToursManager
         XWiki wiki = wikiContext.getWiki();
         tourClassObject.set("title", tourDTO.getTitle(), wikiContext);
         tourClassObject.set("isActive", tourDTO.isActive() ? 1 : 0, wikiContext);
-        wiki.saveDocument(tourClassObject.getOwnerDocument(), "Updated tour object.", wikiContext);
+        XWikiDocument tourDoc = tourClassObject.getOwnerDocument();
+        tourDoc.setTitle(tourDTO.getTitle());
+        wiki.saveDocument(tourDoc, "Updated tour object.", wikiContext);
     }
 
     /**

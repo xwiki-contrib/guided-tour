@@ -19,11 +19,11 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Named;
-
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.objects.BaseObject;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,21 +45,17 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.objects.BaseObject;
+import javax.inject.Named;
+import java.util.ArrayList;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TASK_CLASS;
 
+/**
+ * Test class for {@link TasksManager}.
+ */
 @ComponentTest
 class TasksManagerTest
 {
@@ -78,6 +74,8 @@ class TasksManagerTest
     private static final List<String> FL =
         List.of(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX), TourProperty.TITLE.formKey(CLASS_PREFIX),
             TourProperty.ORDER.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
+
+    private static final String SORT_KEY = TourProperty.ORDER.formKey(CLASS_PREFIX) + " asc";
 
     private final SolrDocumentList solrDocumentList = new SolrDocumentList();
 
@@ -148,65 +146,73 @@ class TasksManagerTest
     @BeforeEach
     void setup() throws XWikiException, QueryException
     {
-        when(wikiContext.getWiki()).thenReturn(xwiki);
-        when(xwiki.getDocument(tourReference, wikiContext)).thenReturn(tourDocument);
-        when(xwiki.getDocument(taskReference1, wikiContext)).thenReturn(taskDocument1);
-        when(xwiki.getDocument(taskReference2, wikiContext)).thenReturn(taskDocument2);
-        when(xwiki.exists(tourReference, wikiContext)).thenReturn(true);
-        when(xwiki.exists(taskReference1, wikiContext)).thenReturn(true);
-        when(xwiki.exists(taskReference2, wikiContext)).thenReturn(true);
+        when(this.wikiContext.getWiki()).thenReturn(this.xwiki);
+        when(this.xwiki.getDocument(this.tourReference, this.wikiContext)).thenReturn(this.tourDocument);
+        when(this.xwiki.getDocument(this.taskReference1, this.wikiContext)).thenReturn(this.taskDocument1);
+        when(this.xwiki.getDocument(this.taskReference2, this.wikiContext)).thenReturn(this.taskDocument2);
+        when(this.xwiki.exists(this.tourReference, this.wikiContext)).thenReturn(true);
+        when(this.xwiki.exists(this.taskReference1, this.wikiContext)).thenReturn(true);
+        when(this.xwiki.exists(this.taskReference2, this.wikiContext)).thenReturn(true);
 
-        when(nameValidator.transform(TASK_ID1)).thenReturn(VALIDATED_TASK_ID1);
-        when(nameValidator.transform(TASK_ID2)).thenReturn(VALIDATED_TASK_ID2);
+        when(this.nameValidator.transform(TASK_ID1)).thenReturn(VALIDATED_TASK_ID1);
+        when(this.nameValidator.transform(TASK_ID2)).thenReturn(VALIDATED_TASK_ID2);
 
-        when(documentReferenceResolver.resolve(TOUR_ID)).thenReturn(tourReference);
-        when(documentReferenceResolver.resolve(VALIDATED_TASK_ID1, tourReference)).thenReturn(taskReference1);
-        when(documentReferenceResolver.resolve(VALIDATED_TASK_ID2, tourReference)).thenReturn(taskReference2);
-        when(solrDocumentReferenceResolver.resolve(solrDocument1, EntityType.DOCUMENT)).thenReturn(taskReference1);
-        when(solrDocumentReferenceResolver.resolve(solrDocument2, EntityType.DOCUMENT)).thenReturn(taskReference2);
+        when(this.documentReferenceResolver.resolve(TOUR_ID)).thenReturn(this.tourReference);
+        when(this.documentReferenceResolver.resolve(VALIDATED_TASK_ID1, this.tourReference)).thenReturn(
+            this.taskReference1);
+        when(this.documentReferenceResolver.resolve(VALIDATED_TASK_ID2, this.tourReference)).thenReturn(
+            this.taskReference2);
+        when(this.solrDocumentReferenceResolver.resolve(this.solrDocument1, EntityType.DOCUMENT)).thenReturn(
+            this.taskReference1);
+        when(this.solrDocumentReferenceResolver.resolve(this.solrDocument2, EntityType.DOCUMENT)).thenReturn(
+            this.taskReference2);
 
-        when(tourReference.getLastSpaceReference()).thenReturn(spaceReference);
-        when(localSerializer.serialize(spaceReference)).thenReturn("tourSpace");
-        solrDocumentList.add(solrDocument1);
-        solrDocumentList.add(solrDocument2);
+        when(this.tourReference.getLastSpaceReference()).thenReturn(this.spaceReference);
+        when(this.localSerializer.serialize(this.spaceReference)).thenReturn("tourSpace");
+        this.solrDocumentList.add(this.solrDocument1);
+        this.solrDocumentList.add(this.solrDocument2);
 
-        when(taskReference1.getName()).thenReturn(VALIDATED_TASK_ID1);
-        when(taskReference2.getName()).thenReturn(VALIDATED_TASK_ID2);
-        when(queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ",
-            "{!q.op=AND} type:DOCUMENT AND space:tourSpace", FL)).thenReturn(solrDocumentList);
+        when(this.taskReference1.getName()).thenReturn(VALIDATED_TASK_ID1);
+        when(this.taskReference2.getName()).thenReturn(VALIDATED_TASK_ID2);
+        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ",
+            "{!q.op=AND} type:DOCUMENT AND space:\"tourSpace\"", FL, SORT_KEY)).thenReturn(this.solrDocumentList);
 
-        when(solrDocument1.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn("");
-        when(solrDocument1.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(taskDTO1.getTitle());
-        when(solrDocument1.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(1L);
-        when(solrDocument1.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(true);
+        when(this.solrDocument1.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn("");
+        when(this.solrDocument1.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(
+            this.taskDTO1.getTitle());
+        when(this.solrDocument1.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(1L);
+        when(this.solrDocument1.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(true);
 
-        when(solrDocument2.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn(VALIDATED_TASK_ID1);
-        when(solrDocument2.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(taskDTO2.getTitle());
-        when(solrDocument2.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(2L);
-        when(solrDocument2.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(false);
+        when(this.solrDocument2.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn(
+            VALIDATED_TASK_ID1);
+        when(this.solrDocument2.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(
+            this.taskDTO2.getTitle());
+        when(this.solrDocument2.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(2L);
+        when(this.solrDocument2.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX))).thenReturn(false);
     }
 
     @Test
     void createTask() throws XWikiException, DuplicatedIdException, InvalidIdException, QueryException
     {
-        when(xwiki.exists(taskReference1, wikiContext)).thenReturn(false);
-        when(taskDocument1.newXObject(TASK_CLASS, wikiContext)).thenReturn(taskObject1);
-        taskDTO1.setOrder(0);
-        tasksManager.createTask(TOUR_ID, taskDTO1);
+        when(this.xwiki.exists(this.taskReference1, this.wikiContext)).thenReturn(false);
+        when(this.taskDocument1.newXObject(TASK_CLASS, this.wikiContext)).thenReturn(this.taskObject1);
+        this.taskDTO1.setOrder(0);
+        this.tasksManager.createTask(TOUR_ID, this.taskDTO1);
 
-        verify(taskDocument1, times(1)).setTitle(taskDTO1.getTitle());
-        verify(taskObject1, times(1)).set("order", 3, wikiContext);
-        verify(taskObject1, times(1)).set("dependsOn", taskDTO1.getDependsOn(), wikiContext);
-        verify(xwiki, times(1)).saveDocument(taskDocument1, "Task created.", wikiContext);
+        verify(this.taskDocument1, times(1)).setTitle(this.taskDTO1.getTitle());
+        verify(this.taskObject1, times(1)).set("order", 3, this.wikiContext);
+        verify(this.taskObject1, times(1)).set("dependsOn", this.taskDTO1.getDependsOn(), this.wikiContext);
+        verify(this.xwiki, times(1)).saveDocument(this.taskDocument1, "Task created.", this.wikiContext);
     }
 
     @Test
     void createTaskSameOrder() throws XWikiException
     {
-        when(xwiki.exists(taskReference1, wikiContext)).thenReturn(false);
-        taskDTO1.setOrder(2);
+        this.taskDTO1.setId("");
+        when(this.xwiki.exists(this.taskReference1, this.wikiContext)).thenReturn(false);
+        this.taskDTO1.setOrder(2);
         DuplicatedIdException exception = assertThrows(DuplicatedIdException.class, () -> {
-            tasksManager.createTask(TOUR_ID, taskDTO1);
+            this.tasksManager.createTask(TOUR_ID, this.taskDTO1);
         });
 
         assertEquals("A task with the given order already exists.", exception.getMessage());
@@ -217,36 +223,38 @@ class TasksManagerTest
     {
 
         DuplicatedIdException exception = assertThrows(DuplicatedIdException.class, () -> {
-            tasksManager.createTask(TOUR_ID, taskDTO1);
+            this.tasksManager.createTask(TOUR_ID, this.taskDTO1);
         });
 
-        assertEquals(String.format("Task page [%s] already exists.", taskReference1), exception.getMessage());
+        assertEquals(String.format("Task page [%s] already exists.", this.taskReference1), exception.getMessage());
     }
 
     @Test
     void getTask() throws Exception
     {
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:tourSpace AND name:%s", TASK_ID2);
-        solrDocumentList.clear();
-        solrDocumentList.add(solrDocument2);
-        when(queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ", fq, FL)).thenReturn(solrDocumentList);
+        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:\"tourSpace\" AND name:\"%s\"", TASK_ID2);
+        this.solrDocumentList.clear();
+        this.solrDocumentList.add(this.solrDocument2);
+        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ", fq, FL, "")).thenReturn(
+            this.solrDocumentList);
 
-        TaskDTO result = tasksManager.getTask(TOUR_ID, TASK_ID2);
+        TaskDTO result = this.tasksManager.getTask(TOUR_ID, TASK_ID2);
 
         assertEquals(VALIDATED_TASK_ID2, result.getId());
-        assertEquals(taskDTO2.getTitle(), result.getTitle());
-        assertFalse(taskDTO2.isActive());
+        assertEquals(this.taskDTO2.getTitle(), result.getTitle());
+        assertFalse(this.taskDTO2.isActive());
     }
 
     @Test
     void getTaskInvalidId() throws Exception
     {
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:tourSpace AND name:%s", TASK_ID2);
-        solrDocumentList.clear();
-        when(queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ", fq, FL)).thenReturn(solrDocumentList);
+        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:\"tourSpace\" AND name:\"%s\"", TASK_ID2);
+        this.solrDocumentList.clear();
+        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ", fq, FL, "")).thenReturn(
+            this.solrDocumentList);
 
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            tasksManager.getTask(TOUR_ID, TASK_ID2);
+            this.tasksManager.getTask(TOUR_ID, TASK_ID2);
         });
 
         assertEquals(String.format("Task with the given id [%s] does not exists.", TASK_ID2), exception.getMessage());
@@ -255,17 +263,17 @@ class TasksManagerTest
     @Test
     void getAllTasks() throws Exception
     {
-        List<TaskDTO> tasks = tasksManager.getAllTasks(TOUR_ID);
+        List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID);
 
         assertEquals(2, tasks.size());
         assertEquals(VALIDATED_TASK_ID1, tasks.get(0).getId());
-        assertEquals(taskDTO1.getTitle(), tasks.get(0).getTitle());
+        assertEquals(this.taskDTO1.getTitle(), tasks.get(0).getTitle());
         assertEquals(1, tasks.get(0).getOrder());
         assertTrue(tasks.get(0).isActive());
         assertTrue(tasks.get(0).getDependsOn().isEmpty());
 
         assertEquals(VALIDATED_TASK_ID2, tasks.get(1).getId());
-        assertEquals(taskDTO2.getTitle(), tasks.get(1).getTitle());
+        assertEquals(this.taskDTO2.getTitle(), tasks.get(1).getTitle());
         assertEquals(2, tasks.get(1).getOrder());
         assertFalse(tasks.get(1).isActive());
         assertEquals(VALIDATED_TASK_ID1, tasks.get(1).getDependsOn().get(0));
@@ -275,29 +283,29 @@ class TasksManagerTest
     void updateTaskSameOrder() throws Exception
     {
         TaskDTO taskDtoUpdate = new TaskDTO(VALIDATED_TASK_ID2, "updated title", 2, true, new ArrayList<>());
-        when(taskDocument2.getXObject(TASK_CLASS)).thenReturn(taskObject2);
+        when(this.taskDocument2.getXObject(TASK_CLASS)).thenReturn(this.taskObject2);
 
-        tasksManager.updateTask(TOUR_ID, taskDtoUpdate);
+        this.tasksManager.updateTask(TOUR_ID, taskDtoUpdate);
 
-        verify(taskDocument2, times(1)).setTitle(taskDtoUpdate.getTitle());
-        verify(taskObject2, times(1)).set("order", 2, wikiContext);
-        verify(taskObject2, times(1)).set("dependsOn", taskDtoUpdate.getDependsOn(), wikiContext);
-        verify(xwiki, times(1)).saveDocument(taskDocument2, "Updated task.", wikiContext);
+        verify(this.taskDocument2, times(1)).setTitle(taskDtoUpdate.getTitle());
+        verify(this.taskObject2, times(1)).set("order", 2, this.wikiContext);
+        verify(this.taskObject2, times(1)).set("dependsOn", taskDtoUpdate.getDependsOn(), this.wikiContext);
+        verify(this.xwiki, times(1)).saveDocument(this.taskDocument2, "Updated task.", this.wikiContext);
     }
 
     @Test
     void updateTaskDifferentOrder() throws Exception
     {
-        when(taskDocument1.getXObject(TASK_CLASS)).thenReturn(taskObject1);
-        when(taskDocument2.getXObject(TASK_CLASS)).thenReturn(taskObject2);
+        when(this.taskDocument1.getXObject(TASK_CLASS)).thenReturn(this.taskObject1);
+        when(this.taskDocument2.getXObject(TASK_CLASS)).thenReturn(this.taskObject2);
         TaskDTO taskDtoUpdate = new TaskDTO(VALIDATED_TASK_ID2, "updated title", 1, true, new ArrayList<>());
 
-        tasksManager.updateTask(TOUR_ID, taskDtoUpdate);
+        this.tasksManager.updateTask(TOUR_ID, taskDtoUpdate);
 
-        verify(taskDocument2, times(1)).setTitle(taskDtoUpdate.getTitle());
-        verify(taskObject2, times(1)).set("order", 1, wikiContext);
-        verify(taskObject2, times(1)).set("dependsOn", taskDtoUpdate.getDependsOn(), wikiContext);
-        verify(xwiki, times(1)).saveDocument(taskDocument2, "Updated task.", wikiContext);
+        verify(this.taskDocument2, times(1)).setTitle(taskDtoUpdate.getTitle());
+        verify(this.taskObject2, times(1)).set("order", 1, this.wikiContext);
+        verify(this.taskObject2, times(1)).set("dependsOn", taskDtoUpdate.getDependsOn(), this.wikiContext);
+        verify(this.xwiki, times(1)).saveDocument(this.taskDocument2, "Updated task.", this.wikiContext);
     }
 
     @Test
@@ -305,7 +313,7 @@ class TasksManagerTest
     {
         String invalidStringId = "TOUR_ID";
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            tasksManager.updateTask(invalidStringId, new TaskDTO());
+            this.tasksManager.updateTask(invalidStringId, new TaskDTO());
         });
 
         assertEquals(String.format("Tour with the given id [%s] does not exists.", invalidStringId),
@@ -315,9 +323,22 @@ class TasksManagerTest
     @Test
     void deleteTask() throws Exception
     {
-        when(taskDocument2.getXObject(TASK_CLASS)).thenReturn(taskObject2);
-        tasksManager.deleteTask(TOUR_ID, VALIDATED_TASK_ID1);
+        when(this.taskDocument2.getXObject(TASK_CLASS)).thenReturn(this.taskObject2);
+        this.tasksManager.deleteTask(TOUR_ID, VALIDATED_TASK_ID1);
 
-        verify(xwiki, times(1)).deleteAllDocuments(taskDocument1, wikiContext);
+        verify(this.xwiki, times(1)).deleteAllDocuments(this.taskDocument1, this.wikiContext);
+    }
+
+    @Test
+    void deleteTaskNotFound() throws Exception
+    {
+        when(this.taskDocument2.getXObject(TASK_CLASS)).thenReturn(this.taskObject2);
+
+        InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
+            this.tasksManager.deleteTask(TOUR_ID, "randomId");
+        });
+
+        verify(this.xwiki, times(0)).deleteAllDocuments(this.taskDocument1, this.wikiContext);
+        assertEquals("Task with the given id [randomId] does not exists.", exception.getMessage());
     }
 }
