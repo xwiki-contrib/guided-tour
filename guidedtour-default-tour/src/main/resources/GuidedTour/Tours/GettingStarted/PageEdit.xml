@@ -967,8 +967,8 @@
     <property type="String">
       <dependsOn/>
     </property>
-    <property type="Integer">
-      <isActive>1</isActive>
+    <property type="Boolean">
+      <isActive>true</isActive>
     </property>
     <property type="Long">
       <order>0</order>
