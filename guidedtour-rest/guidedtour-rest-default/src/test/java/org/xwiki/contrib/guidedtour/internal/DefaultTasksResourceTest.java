@@ -19,15 +19,8 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Provider;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-
+import com.xpn.xwiki.XWikiException;
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -35,6 +28,7 @@ import org.mockito.Mock;
 import org.xwiki.container.Container;
 import org.xwiki.container.servlet.ServletRequest;
 import org.xwiki.contrib.guidedtour.api.dtos.TaskDTO;
+import org.xwiki.contrib.guidedtour.api.exceptions.DuplicatedIdException;
 import org.xwiki.contrib.guidedtour.api.exceptions.InvalidIdException;
 import org.xwiki.csrf.CSRFToken;
 import org.xwiki.query.QueryException;
@@ -47,7 +41,11 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import com.xpn.xwiki.XWikiException;
+import javax.inject.Provider;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -91,14 +89,15 @@ class DefaultTasksResourceTest
     private HttpServletRequest httpServletRequest;
 
     @BeforeEach
-    void setup()
+    void setup() throws QueryException, XWikiException, DuplicatedIdException, InvalidIdException
     {
-        when(containerProvider.get()).thenReturn(container);
-        when(container.getRequest()).thenReturn(request);
-        when(request.getParameter("csrf")).thenReturn(CSRF_VALUE);
-        when(csrf.isTokenValid(CSRF_VALUE)).thenReturn(true);
-        when(request.getRequest()).thenReturn(httpServletRequest);
-        when(httpServletRequest.getHeader("xwiki-form-token")).thenReturn(CSRF_VALUE);
+        when(this.containerProvider.get()).thenReturn(this.container);
+        when(this.container.getRequest()).thenReturn(this.request);
+        when(this.request.getParameter("csrf")).thenReturn(CSRF_VALUE);
+        when(this.csrf.isTokenValid(CSRF_VALUE)).thenReturn(true);
+        when(this.request.getRequest()).thenReturn(this.httpServletRequest);
+        when(this.httpServletRequest.getHeader("xwiki-form-token")).thenReturn(CSRF_VALUE);
+        when(this.tasksManager.createTask(TOUR_ID, this.taskDTO)).thenReturn(this.taskDTO.getId());
     }
 
     @Test
@@ -107,70 +106,71 @@ class DefaultTasksResourceTest
         List<TaskDTO> tasks = new ArrayList<>(2);
         tasks.add(new TaskDTO("id1", "title", 1, true, new ArrayList<>()));
         tasks.add(new TaskDTO("id2", "title", 1, true, List.of("id1")));
-        when(tasksManager.getAllTasks(TOUR_ID)).thenReturn(tasks);
+        when(this.tasksManager.getAllTasks(TOUR_ID)).thenReturn(tasks);
 
-        Response response = defaultTasksResource.getTourTasks(TOUR_ID);
+        Response response = this.defaultTasksResource.getTourTasks(TOUR_ID);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(tasks, response.getEntity());
-        assertEquals("Executing: Tasks API: retrieving the tasks for tour [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tasks API: retrieving the tasks for tour [tourId].", this.logCapture.getMessage(0));
     }
 
     @Test
     void getTourTask() throws QueryException, XWikiException, InvalidIdException
     {
-        when(tasksManager.getTask(TOUR_ID, taskDTO.getId())).thenReturn(taskDTO);
+        when(this.tasksManager.getTask(TOUR_ID, this.taskDTO.getId())).thenReturn(this.taskDTO);
 
-        Response response = defaultTasksResource.getTourTask(TOUR_ID, taskDTO.getId());
+        Response response = this.defaultTasksResource.getTourTask(TOUR_ID, this.taskDTO.getId());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals(taskDTO, response.getEntity());
+        assertEquals(this.taskDTO, response.getEntity());
         assertEquals("Executing: Tasks API: retrieving the task [taskId] from tour [tourId].",
-            logCapture.getMessage(0));
+            this.logCapture.getMessage(0));
     }
 
     @Test
     void createTask()
     {
-        Response response = defaultTasksResource.createTask(TOUR_ID, taskDTO);
+        Response response = this.defaultTasksResource.createTask(TOUR_ID, this.taskDTO);
+        assertEquals(response.getEntity(), this.taskDTO.getId());
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-        assertEquals("Executing: Tasks API: creating task [taskId] for tour [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tasks API: creating task [taskId] for tour [tourId].", this.logCapture.getMessage(0));
     }
 
     @Test
     void updateTask()
     {
-        Response response = defaultTasksResource.updateTask(TOUR_ID, taskDTO.getId(), taskDTO);
+        Response response = this.defaultTasksResource.updateTask(TOUR_ID, this.taskDTO.getId(), this.taskDTO);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("Executing: Tasks API: updating task [taskId] from tour [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tasks API: updating task [taskId] from tour [tourId].", this.logCapture.getMessage(0));
     }
 
     @Test
     void updateTaskDifferentIds()
     {
-        Response response = defaultTasksResource.updateTask(TOUR_ID, "taskIdDif", taskDTO);
+        Response response = this.defaultTasksResource.updateTask(TOUR_ID, "taskIdDif", this.taskDTO);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         assertEquals("Path and Body ID mismatch for given task.", response.getEntity());
-        assertEquals("Executing: Tasks API: updating task [taskId] from tour [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tasks API: updating task [taskId] from tour [tourId].", this.logCapture.getMessage(0));
     }
 
     @Test
     void deleteTask()
     {
-        Response response = defaultTasksResource.deleteTask(TOUR_ID, taskDTO.getId());
+        Response response = this.defaultTasksResource.deleteTask(TOUR_ID, this.taskDTO.getId());
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals("Executing: Tasks API: removing task [taskId] from tour [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tasks API: removing task [taskId] from tour [tourId].", this.logCapture.getMessage(0));
     }
 
     @Test
     void deleteTaskError() throws AccessDeniedException
     {
-        doThrow(new AccessDeniedException(Right.DELETE, null, null)).when(contextualAuthorizationManager)
+        doThrow(new AccessDeniedException(Right.DELETE, null, null)).when(this.contextualAuthorizationManager)
             .checkAccess(Right.DELETE);
-        String taskId = taskDTO.getId();
-        WebApplicationException exception =
-            assertThrows(WebApplicationException.class, () -> defaultTasksResource.deleteTask(TOUR_ID, taskId));
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
+            this.defaultTasksResource.deleteTask(TOUR_ID, this.taskDTO.getId());
+        });
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exception.getResponse().getStatus());
-        assertEquals("Executing: Tasks API: removing task [taskId] from tour [tourId].", logCapture.getMessage(0));
+        assertEquals("Executing: Tasks API: removing task [taskId] from tour [tourId].", this.logCapture.getMessage(0));
         assertEquals("Authorization error: Tasks API: removing task [taskId] from tour [tourId].",
-            logCapture.getMessage(1));
+            this.logCapture.getMessage(1));
     }
 }

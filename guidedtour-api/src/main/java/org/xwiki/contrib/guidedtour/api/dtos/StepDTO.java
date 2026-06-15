@@ -54,6 +54,13 @@ public class StepDTO
     private String queryParameters;
 
     /**
+     * Default constructor.
+     */
+    public StepDTO()
+    {
+    }
+
+    /**
      * Gets the CSS selector of the element to highlight for this step.
      *
      * @return the CSS selector of the element to highlight for this step

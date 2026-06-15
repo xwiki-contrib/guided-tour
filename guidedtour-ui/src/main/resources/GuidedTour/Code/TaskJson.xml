@@ -1,0 +1,93 @@
+<?xml version="1.1" encoding="UTF-8"?>
+
+<!--
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+-->
+
+<xwikidoc version="1.7" reference="GuidedTour.Code.TaskJson" locale="">
+  <web>GuidedTour.Code</web>
+  <name>TaskJson</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <creator>xwiki:XWiki.Admin</creator>
+  <parent>GuidedTour.Code.Macros</parent>
+  <author>xwiki:XWiki.Admin</author>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <version>1.1</version>
+  <title>TaskJson</title>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>true</hidden>
+  <content>{{velocity}}
+  #if ($xcontext.action == 'get')
+    #set ($offset = $numbertool.toNumber($request.offset).intValue())
+    ## The offset sent by the live table starts at 1.
+    #set ($offset = $offset - 1)
+    #if (!$offset || $offset &lt; 0)
+      #set ($offset = 0)
+    #end
+    #set ($limit = $numbertool.toNumber($request.limit).intValue())
+    #if (!$limit)
+      #set ($limit = 15)
+    #end
+    #set ($tourId = $request.tourId)
+    #set ($searchedTitle = $request.title)
+    #if (!$searchedTitle)
+      #set ($searchedTitle = '')
+    #end
+    #set ($allTasks = $services.guidedtour.getTourTasks($tourId, $searchedTitle))
+    #if ($offset &lt; $allTasks.size())
+      #set ($toIndex = $mathtool.min($mathtool.add($offset, $limit), $allTasks.size()))
+      #set ($resultList = [])
+      #set ($toIndex = $mathtool.sub($toIndex,1))
+      #foreach ($i in [$offset..$toIndex])
+        #set ($task = $allTasks.get($i))
+        #set ($discard = $resultList.add($task))
+      #end
+    #end
+    #set ($results = {
+      "totalrows": $allTasks.size(),
+      "returnedrows": $resultList.size(),
+      "offset": $mathtool.add($offset, 1),
+      "rows": []
+    })
+
+    #foreach ($currentEntry in $resultList)
+      #set ($tourRef = $services.model.resolveDocument($tourId))
+      #set ($docRef = $services.model.resolveDocument($currentEntry.getId(), $tourRef.getParent()))
+      #set ($docURL = $xwiki.getURL($docRef))
+      #set ($docName = "&lt;a href='${docURL}'&gt;$escapetool.xml($currentEntry.getTitle())&lt;/a&gt;")
+      #set ($numberOfSteps = $xwiki.getDocument($docRef).getObjects('XWiki.GuidedTour.StepClass').size())
+      #set ($deleteRef = "${request.getContextPath()}/rest/guidedTour/tours/${tourId}/tasks/${currentEntry.getId()}")
+      #set ($deleteAction = "&lt;a class='task-delete-action' href='${deleteRef}' data-taskName='${currentEntry.getTitle()}'&gt;Delete&lt;/a&gt;")
+
+      #set ($discard = $results.rows.add({
+        'order': $currentEntry.getOrder(),
+        'title' : $docName,
+        'steps' : $numberOfSteps,
+        'actions' : $deleteAction
+      }))
+    #end
+    #jsonResponse($results)
+  #end
+{{/velocity}}
+</content>
+</xwikidoc>

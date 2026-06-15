@@ -36,37 +36,266 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>== Tasks ==
+  <content>{{include reference="GuidedTour.Code.Macros" /}}
+
+{{velocity ouptput="false"}}
+##set ($discard = $xwiki.ssx.use('GuidedTour.Code.TaskClassSheet'))
+#set ($discard = $xwiki.jsx.use('GuidedTour.Code.TourClassSheet'))
+#set ($isEdit = $xcontext.action == 'edit')
+#set ($tour = $doc.getObject('XWiki.GuidedTour.TourClass'))
+{{/velocity}}
 
 {{velocity}}
-{{liveData
-  id="taskList"
-  properties="order,doc.title,doc.space,isActive,steps,_actions"
-  source="liveTable"
-  sourceParameters="className=XWiki.GuidedTour.TaskClass&amp;translationPrefix=guidedtour.livetable.&amp;doc.space=$doc.space"
-  meta='{"propertyDescriptors":[{"id":"isActive","filterable":true,"sortable":true}, {"id":"doc.space","visible":false},{"id":"_actions","displayer":{"id":"actions","actions":["edit","delete","consoleLog"]}}]}'
-  layouts="table"}}
-{
-  "actions": {
-    "edit": {
-      "icon": "pencil",
-      "label": "Edit",
-      "action": "edit"
-    },
-    "delete": {
-      "icon": "trash",
-      "label": "Delete Space",
-      "action": "delete",
-      "confirm": "Are you sure you want to delete this entire space?"
-    },
-    "consoleLog": {
-      "icon": "console",
-      "label": "Log Tour",
-      "action": "custom",
-      "onclick": "console.log('Tour clicked:', this.row.data); return false;"
-    }
-  }
-}
-{{/liveData}}
+{{html wiki='true'}}
+  #addTaskModal($doc.getDocumentReference)
+  #deleteTaskModal()
+  &lt;div class="taskSpecificProps"&gt;
+    &lt;dl id="guidedtour-task-props"&gt;
+    #set($xclass = $tour.xWikiClass)
+    #foreach($property in $xclass.properties)
+      #set ($propertyId = "${xclass.name}_${tour.number}_$property.name")
+      &lt;dt&gt;
+        &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
+        &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
+      &lt;/dt&gt;
+      &lt;dd&gt;
+        $doc.display($property.name, $tour)
+      &lt;/dd&gt;
+    #end
+    &lt;/dl&gt;
+  &lt;/div&gt;
+
+  &lt;h2&gt;Tasks&lt;/h2&gt;
+
+  #if ($isEdit)
+    &lt;a href="#addTaskFormModal" data-toggle="modal" data-target="#addTaskFormModal" class="btn btn-primary"&gt;Add Task&lt;/a&gt;
+  #end
+
+  #set ($liveDataConfig = {
+    "meta": {
+        "propertyDescriptors": [
+          { "id": "order", "displayer": "text", "filterable": false, "sortable": false },
+          { "id": "title", "displayer": "html", "filterable": true, "sortable": false },
+          { "id": "steps", "displayer": "text", "filterable": false, "sortable": false },
+          { 'id': 'actions', 'displayer': 'html', 'filterable': false, 'sortable': false}
+        ],
+        'entryDescriptor': {
+          'idProperty': 'order'
+        }
+      }
+  })
+  #set ($sourceParameters = $escapetool.url({
+    'resultPage': 'GuidedTour.Code.TaskJson',
+    'tourId': "${doc.getDocumentReference()}"
+  }))
+
+
+  {{liveData
+    id='tourTasksList'
+    properties="order,title,steps,actions"
+    source='liveTable'
+    sourceParameters="$sourceParameters"
+  }}$jsontool.serialize($liveDataConfig){{/liveData}}
+{{/html}}
 {{/velocity}}</content>
+  <object>
+    <name>GuidedTour.Code.TourClassSheet</name>
+    <number>0</number>
+    <className>XWiki.JavaScriptExtension</className>
+    <guid>be99109f-8569-44c6-9e23-d610be07f02a</guid>
+    <class>
+      <name>XWiki.JavaScriptExtension</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <cache>
+        <cache>0</cache>
+        <defaultValue>long</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>cache</name>
+        <number>5</number>
+        <prettyName>Caching policy</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>long|short|default|forbid</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </cache>
+      <code>
+        <contenttype>PureText</contenttype>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <name>code</name>
+        <number>2</number>
+        <prettyName>Code</prettyName>
+        <rows>20</rows>
+        <size>50</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </code>
+      <name>
+        <disabled>0</disabled>
+        <name>name</name>
+        <number>1</number>
+        <prettyName>Name</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </name>
+      <parse>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType>yesno</displayType>
+        <name>parse</name>
+        <number>4</number>
+        <prettyName>Parse content</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </parse>
+      <use>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>use</name>
+        <number>3</number>
+        <prettyName>Use this extension</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>currentPage|onDemand|always</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </use>
+    </class>
+    <property type="String">
+      <cache>long</cache>
+    </property>
+    <property type="LargeString">
+      <code>require(['jquery', 'xwiki-meta'], function($, xm) {
+  const deleteTask = function(relatedTarget) {
+    const taskName = $(relatedTarget).data('taskname');
+    const modal = $(document).find('#confirmDeleteTaskModal');
+    const confirmBtn = modal.find('.btn-danger');
+    const targetUrl = $(relatedTarget).attr('href');
+    var notification;
+    $.ajax({
+      url: targetUrl,
+      type: 'DELETE',
+      beforeSend: function(xhr) {
+        confirmBtn.prop('disabled', true);
+        notification = new XWiki.widgets.Notification('Removing task and all its steps...', 'inprogress');
+      },
+      success: function() {
+        confirmBtn.prop('disabled', false);
+        modal.modal('hide');
+        notification.replace(new XWiki.widgets.Notification('Task successfully removed!', 'done'));
+        $('#tourTasksList').data('liveData').updateEntries();
+      },
+      error: function() {
+        confirmBtn.prop('disabled', false);
+        modal.modal('hide');
+        notification.replace(new XWiki.widgets.Notification('There was an error while attempting to remove the task!', 'error'));
+      }
+    });
+  }
+
+  $(document).on('click', '#confirmDeleteTaskModal .btn.btn-danger', function() {
+    var relatedTarget = $('#confirmDeleteTaskModal').data('relatedTarget');
+    deleteTask(relatedTarget);
+  });
+
+  $(document).on('click', '.task-delete-action', function (event) {
+    event.preventDefault();
+    const taskName = $(this).data('taskname');
+    var modalDescription = `You are about to delete task &lt;${taskName}&gt; and all associated steps!`
+    var modal = $(document).find('#confirmDeleteTaskModal');
+    $(modal).find('.modal-body').text(modalDescription);
+    modal.data('relatedTarget', event.currentTarget);
+    modal.modal('show');
+  });
+
+  const getTaskUrl = function(taskId) {
+    const parentReference = XWiki.Model.resolve(xm.document, XWiki.EntityType.DOCUMENT).parent;
+    const taskReference = XWiki.Model.resolve(taskId, XWiki.EntityType.DOCUMENT, parentReference);
+    return new XWiki.Document(taskReference).getURL('view');
+  }
+  const getTaskDependencies = function() {
+    var dependsOn = [];
+    var treeElement = $('#taskTreeContainer').find('.xtree');
+    if (treeElement.length &gt; 0) {
+      var treeInstance = $.jstree.reference(treeElement);
+      if (treeInstance) {
+        var checkedIds = treeInstance.get_checked() || [];
+        $.each(checkedIds, function(index, fullId) {
+          var parts = fullId.split('.');
+          var pageName = parts[parts.length - 1];
+          dependsOn.push(pageName);
+        });
+      }
+    }
+    return dependsOn;
+  }
+  $(document).on('click', '#addTaskFormModal .btn.btn-primary', function (event) {
+    event.preventDefault();
+    const form = $('#add-tasks-form');
+    var confirmBtn = $(this);
+    var modal = $('#addTaskFormModal');
+    var dependsOn = getTaskDependencies();
+    var formData = {
+      title: $('#taskTitle').val(),
+      dependsOn: dependsOn
+    };
+    var notification;
+    $.ajax({
+      url: form.attr('target'),
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(formData),
+      beforeSend: function() {
+        confirmBtn.prop('disabled', true);
+        notification = new XWiki.widgets.Notification('Creating new task...', 'inprogress');
+      },
+      success: function(taskId) {
+        form.trigger('reset');
+        notification.replace(new XWiki.widgets.Notification('Task successfully created!', 'done'));
+        $('#tourTasksList').data('liveData').updateEntries();
+        setTimeout(function() {
+          window.location.href = getTaskUrl(taskId);
+        }, 500);
+      },
+      error: function(response) {
+        notification.replace(new XWiki.widgets.Notification('Failed to create task: ' + response.statusText, 'error'));
+      },
+      complete: function() {
+        confirmBtn.prop('disabled', false);
+        modal.modal('hide');
+      }
+    });
+  });
+});</code>
+    </property>
+    <property type="String">
+      <name>TourJS</name>
+    </property>
+    <property type="Integer">
+      <parse>0</parse>
+    </property>
+    <property type="String">
+      <use>currentPage</use>
+    </property>
+  </object>
 </xwikidoc>

@@ -19,12 +19,11 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Named;
-import javax.inject.Provider;
-
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.objects.BaseObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -39,21 +38,21 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.objects.BaseObject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.STEP_CLASS;
 
+/**
+ * Test class for {@link StepsManager}.
+ */
 @ComponentTest
 class StepsManagerTest
 {
@@ -96,73 +95,73 @@ class StepsManagerTest
     @BeforeEach
     void setUp() throws XWikiException
     {
-        when(wikiContextProvider.get()).thenReturn(xwikiContext);
-        when(xwikiContext.getWiki()).thenReturn(xwiki);
-        when(documentReferenceResolver.resolve("testTour")).thenReturn(tourReference);
-        when(documentReferenceResolver.resolve("testTask", tourReference)).thenReturn(taskReference);
-        when(xwiki.exists(taskReference, xwikiContext)).thenReturn(true);
-        when(xwiki.exists(tourReference, xwikiContext)).thenReturn(true);
-        when(xwiki.getDocument(taskReference, xwikiContext)).thenReturn(taskDocument);
+        when(this.wikiContextProvider.get()).thenReturn(this.xwikiContext);
+        when(this.xwikiContext.getWiki()).thenReturn(this.xwiki);
+        when(this.documentReferenceResolver.resolve("testTour")).thenReturn(this.tourReference);
+        when(this.documentReferenceResolver.resolve("testTask", this.tourReference)).thenReturn(this.taskReference);
+        when(this.xwiki.exists(this.taskReference, this.xwikiContext)).thenReturn(true);
+        when(this.xwiki.exists(this.tourReference, this.xwikiContext)).thenReturn(true);
+        when(this.xwiki.getDocument(this.taskReference, this.xwikiContext)).thenReturn(this.taskDocument);
 
         List<BaseObject> steps = new ArrayList<>();
-        steps.add(stepObject1);
-        steps.add(stepObject2);
+        steps.add(this.stepObject1);
+        steps.add(this.stepObject2);
         steps.add(null);
-        steps.add(stepObject3);
-        when(taskDocument.getXObjects(STEP_CLASS)).thenReturn(steps);
-        when(taskDocument.newXObject(STEP_CLASS, xwikiContext)).thenReturn(stepObject1);
+        steps.add(this.stepObject3);
+        when(this.taskDocument.getXObjects(STEP_CLASS)).thenReturn(steps);
+        when(this.taskDocument.newXObject(STEP_CLASS, this.xwikiContext)).thenReturn(this.stepObject1);
 
-        when(stepObject1.getIntValue(TourProperty.ORDER.getBaseKey())).thenReturn(1);
-        when(stepObject2.getIntValue(TourProperty.ORDER.getBaseKey())).thenReturn(2);
-        when(stepObject3.getIntValue(TourProperty.ORDER.getBaseKey())).thenReturn(3);
+        when(this.stepObject1.getIntValue(TourProperty.ORDER.getBaseKey())).thenReturn(1);
+        when(this.stepObject2.getIntValue(TourProperty.ORDER.getBaseKey())).thenReturn(2);
+        when(this.stepObject3.getIntValue(TourProperty.ORDER.getBaseKey())).thenReturn(3);
 
-        when(stepObject1.getStringValue(TourProperty.CONTENT.getBaseKey())).thenReturn("content for step 1");
-        when(stepObject2.getStringValue(TourProperty.CONTENT.getBaseKey())).thenReturn("content for step 2");
-        when(stepObject3.getStringValue(TourProperty.CONTENT.getBaseKey())).thenReturn("content for step 3");
+        when(this.stepObject1.getStringValue(TourProperty.CONTENT.getBaseKey())).thenReturn("content for step 1");
+        when(this.stepObject2.getStringValue(TourProperty.CONTENT.getBaseKey())).thenReturn("content for step 2");
+        when(this.stepObject3.getStringValue(TourProperty.CONTENT.getBaseKey())).thenReturn("content for step 3");
 
-        when(stepObject1.getStringValue(TourProperty.ELEMENT.getBaseKey())).thenReturn("element1");
-        when(stepObject2.getStringValue(TourProperty.ELEMENT.getBaseKey())).thenReturn("element2");
-        when(stepObject3.getStringValue(TourProperty.ELEMENT.getBaseKey())).thenReturn("element3");
+        when(this.stepObject1.getStringValue(TourProperty.ELEMENT.getBaseKey())).thenReturn("element1");
+        when(this.stepObject2.getStringValue(TourProperty.ELEMENT.getBaseKey())).thenReturn("element2");
+        when(this.stepObject3.getStringValue(TourProperty.ELEMENT.getBaseKey())).thenReturn("element3");
 
-        when(stepObject1.getStringValue(TourProperty.PLACEMENT.getBaseKey())).thenReturn("BOTTOM_START");
-        when(stepObject2.getStringValue(TourProperty.PLACEMENT.getBaseKey())).thenReturn("TOP_END");
-        when(stepObject3.getStringValue(TourProperty.PLACEMENT.getBaseKey())).thenReturn("LEFT_CENTER");
+        when(this.stepObject1.getStringValue(TourProperty.PLACEMENT.getBaseKey())).thenReturn("BOTTOM_START");
+        when(this.stepObject2.getStringValue(TourProperty.PLACEMENT.getBaseKey())).thenReturn("TOP_END");
+        when(this.stepObject3.getStringValue(TourProperty.PLACEMENT.getBaseKey())).thenReturn("LEFT_CENTER");
 
-        when(stepObject1.getIntValue(TourProperty.BACKDROP.getBaseKey())).thenReturn(1);
-        when(stepObject2.getIntValue(TourProperty.BACKDROP.getBaseKey())).thenReturn(1);
-        when(stepObject3.getIntValue(TourProperty.BACKDROP.getBaseKey())).thenReturn(0);
+        when(this.stepObject1.getIntValue(TourProperty.BACKDROP.getBaseKey())).thenReturn(1);
+        when(this.stepObject2.getIntValue(TourProperty.BACKDROP.getBaseKey())).thenReturn(1);
+        when(this.stepObject3.getIntValue(TourProperty.BACKDROP.getBaseKey())).thenReturn(0);
 
-        when(stepObject1.getIntValue(TourProperty.REFLEX.getBaseKey())).thenReturn(0);
-        when(stepObject2.getIntValue(TourProperty.REFLEX.getBaseKey())).thenReturn(1);
-        when(stepObject3.getIntValue(TourProperty.REFLEX.getBaseKey())).thenReturn(0);
+        when(this.stepObject1.getIntValue(TourProperty.REFLEX.getBaseKey())).thenReturn(0);
+        when(this.stepObject2.getIntValue(TourProperty.REFLEX.getBaseKey())).thenReturn(1);
+        when(this.stepObject3.getIntValue(TourProperty.REFLEX.getBaseKey())).thenReturn(0);
 
-        when(stepObject1.getStringValue(TourProperty.TARGET_PAGE.getBaseKey())).thenReturn("tp1");
-        when(stepObject2.getStringValue(TourProperty.TARGET_PAGE.getBaseKey())).thenReturn("tp2");
-        when(stepObject3.getStringValue(TourProperty.TARGET_PAGE.getBaseKey())).thenReturn("");
+        when(this.stepObject1.getStringValue(TourProperty.TARGET_PAGE.getBaseKey())).thenReturn("tp1");
+        when(this.stepObject2.getStringValue(TourProperty.TARGET_PAGE.getBaseKey())).thenReturn("tp2");
+        when(this.stepObject3.getStringValue(TourProperty.TARGET_PAGE.getBaseKey())).thenReturn("");
 
-        when(stepObject1.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("");
-        when(stepObject2.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("");
-        when(stepObject3.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("view");
+        when(this.stepObject1.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("");
+        when(this.stepObject2.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("");
+        when(this.stepObject3.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("view");
 
-        when(stepObject1.getStringValue(TourProperty.QUERY_PARAMETERS.getBaseKey())).thenReturn("param=value");
-        when(stepObject2.getStringValue(TourProperty.QUERY_PARAMETERS.getBaseKey())).thenReturn("");
-        when(stepObject3.getStringValue(TourProperty.QUERY_PARAMETERS.getBaseKey())).thenReturn("");
+        when(this.stepObject1.getStringValue(TourProperty.QUERY_PARAMETERS.getBaseKey())).thenReturn("param=value");
+        when(this.stepObject2.getStringValue(TourProperty.QUERY_PARAMETERS.getBaseKey())).thenReturn("");
+        when(this.stepObject3.getStringValue(TourProperty.QUERY_PARAMETERS.getBaseKey())).thenReturn("");
 
-        stepDTO.setContent("content for step 4");
-        stepDTO.setElement("element4");
-        stepDTO.setPlacement("RIGHT_END");
-        stepDTO.setBackdrop(true);
-        stepDTO.setReflex(false);
-        stepDTO.setTargetPage("tp4");
-        stepDTO.setTargetAction("edit");
-        stepDTO.setQueryParameters("param=value");
-        stepDTO.setOrder(3);
+        this.stepDTO.setContent("content for step 4");
+        this.stepDTO.setElement("element4");
+        this.stepDTO.setPlacement("RIGHT_END");
+        this.stepDTO.setBackdrop(true);
+        this.stepDTO.setReflex(false);
+        this.stepDTO.setTargetPage("tp4");
+        this.stepDTO.setTargetAction("edit");
+        this.stepDTO.setQueryParameters("param=value");
+        this.stepDTO.setOrder(3);
     }
 
     @Test
     void getSteps() throws XWikiException, InvalidIdException
     {
-        List<StepDTO> steps = stepsManager.getAllSteps("testTour", "testTask");
+        List<StepDTO> steps = this.stepsManager.getAllSteps("testTour", "testTask");
         assertEquals(3, steps.size());
         assertEquals("content for step 1", steps.get(0).getContent());
         assertEquals("element2", steps.get(1).getElement());
@@ -173,7 +172,7 @@ class StepsManagerTest
     void getStepsInvalidTour()
     {
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            stepsManager.getAllSteps("testTourInv", "testTask");
+            this.stepsManager.getAllSteps("testTourInv", "testTask");
         });
 
         assertEquals(String.format("Tour with the given id [%s] does not exists.", "testTourInv"),
@@ -184,7 +183,7 @@ class StepsManagerTest
     void getStepsInvalidTask()
     {
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            stepsManager.getAllSteps("testTour", "testTaskInv");
+            this.stepsManager.getAllSteps("testTour", "testTaskInv");
         });
 
         assertEquals(String.format("Task with the given id [%s] does not exists.", "testTaskInv"),
@@ -194,19 +193,20 @@ class StepsManagerTest
     @Test
     void createStep() throws XWikiException, DuplicatedIdException, InvalidIdException
     {
-        stepDTO.setOrder(-1);
-        stepsManager.createStep("testTour", "testTask", stepDTO);
-        verify(stepObject1, times(1)).set(TourProperty.PLACEMENT.getBaseKey(), Placement.RIGHT_END, xwikiContext);
-        verify(stepObject1, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, xwikiContext);
-        verify(stepObject1, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, xwikiContext);
-        verify(stepObject1, times(1)).set(TourProperty.ORDER.getBaseKey(), 4, xwikiContext);
+        this.stepDTO.setOrder(-1);
+        this.stepsManager.createStep("testTour", "testTask", this.stepDTO);
+        verify(this.stepObject1, times(1)).set(TourProperty.PLACEMENT.getBaseKey(), Placement.RIGHT_END,
+            this.xwikiContext);
+        verify(this.stepObject1, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, this.xwikiContext);
+        verify(this.stepObject1, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, this.xwikiContext);
+        verify(this.stepObject1, times(1)).set(TourProperty.ORDER.getBaseKey(), 4, this.xwikiContext);
     }
 
     @Test
     void createStepDuplicate()
     {
         DuplicatedIdException exception = assertThrows(DuplicatedIdException.class, () -> {
-            stepsManager.createStep("testTour", "testTask", stepDTO);
+            this.stepsManager.createStep("testTour", "testTask", this.stepDTO);
         });
 
         assertEquals("A step with the given order [3] already exists.", exception.getMessage());
@@ -215,31 +215,33 @@ class StepsManagerTest
     @Test
     void updateStepSameOrder() throws XWikiException, InvalidIdException
     {
-        stepsManager.updateStep("testTour", "testTask", 3, stepDTO);
-        verify(stepObject3, times(1)).set(TourProperty.PLACEMENT.getBaseKey(), Placement.RIGHT_END, xwikiContext);
-        verify(stepObject3, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, xwikiContext);
-        verify(stepObject3, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, xwikiContext);
+        this.stepsManager.updateStep("testTour", "testTask", 3, this.stepDTO);
+        verify(this.stepObject3, times(1)).set(TourProperty.PLACEMENT.getBaseKey(), Placement.RIGHT_END,
+            this.xwikiContext);
+        verify(this.stepObject3, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, this.xwikiContext);
+        verify(this.stepObject3, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, this.xwikiContext);
     }
 
     @Test
     void updateStepDifferentOrder() throws XWikiException, InvalidIdException
     {
-        stepDTO.setOrder(1);
+        this.stepDTO.setOrder(1);
 
-        stepsManager.updateStep("testTour", "testTask", 3, stepDTO);
-        verify(stepObject3, times(1)).set(TourProperty.PLACEMENT.getBaseKey(), Placement.RIGHT_END, xwikiContext);
-        verify(stepObject3, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, xwikiContext);
-        verify(stepObject3, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, xwikiContext);
-        verify(stepObject3, times(1)).set(TourProperty.ORDER.getBaseKey(), 1, xwikiContext);
-        verify(stepObject1, times(1)).set(TourProperty.ORDER.getBaseKey(), 2, xwikiContext);
-        verify(stepObject2, times(1)).set(TourProperty.ORDER.getBaseKey(), 3, xwikiContext);
+        this.stepsManager.updateStep("testTour", "testTask", 3, this.stepDTO);
+        verify(this.stepObject3, times(1)).set(TourProperty.PLACEMENT.getBaseKey(), Placement.RIGHT_END,
+            this.xwikiContext);
+        verify(this.stepObject3, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, this.xwikiContext);
+        verify(this.stepObject3, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, this.xwikiContext);
+        verify(this.stepObject3, times(1)).set(TourProperty.ORDER.getBaseKey(), 1, this.xwikiContext);
+        verify(this.stepObject1, times(1)).set(TourProperty.ORDER.getBaseKey(), 2, this.xwikiContext);
+        verify(this.stepObject2, times(1)).set(TourProperty.ORDER.getBaseKey(), 3, this.xwikiContext);
     }
 
     @Test
     void updateStepInvalidOrder()
     {
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            stepsManager.updateStep("testTour", "testTask", 5, stepDTO);
+            this.stepsManager.updateStep("testTour", "testTask", 5, this.stepDTO);
         });
 
         assertEquals("No step was found on the given order position [5].", exception.getMessage());
@@ -248,11 +250,11 @@ class StepsManagerTest
     @Test
     void deleteStep() throws XWikiException, InvalidIdException
     {
-        when(stepObject2.getOwnerDocument()).thenReturn(taskDocument);
+        when(this.stepObject2.getOwnerDocument()).thenReturn(this.taskDocument);
 
-        stepsManager.deleteStep("testTour", "testTask", 2);
-        verify(stepObject3, times(1)).set(TourProperty.ORDER.getBaseKey(), 2, xwikiContext);
-        verify(stepObject1, times(0)).set(eq(TourProperty.ORDER.getBaseKey()), any(), any(XWikiContext.class));
-        verify(xwiki, times(1)).saveDocument(taskDocument, "Removed step 2.", xwikiContext);
+        this.stepsManager.deleteStep("testTour", "testTask", 2);
+        verify(this.stepObject3, times(1)).set(TourProperty.ORDER.getBaseKey(), 2, this.xwikiContext);
+        verify(this.stepObject1, times(0)).set(eq(TourProperty.ORDER.getBaseKey()), any(), any(XWikiContext.class));
+        verify(this.xwiki, times(1)).saveDocument(this.taskDocument, "Removed step 2.", this.xwikiContext);
     }
 }

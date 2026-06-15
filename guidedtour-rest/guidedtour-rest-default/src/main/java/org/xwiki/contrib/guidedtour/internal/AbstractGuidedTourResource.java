@@ -68,21 +68,21 @@ public abstract class AbstractGuidedTourResource
     public Response execute(String logMessage, Callable<Response> action, Object... logParams)
     {
         try {
-            this.logger.debug("Executing: %s".formatted(logMessage), logParams);
+            this.logger.debug("Executing: " + logMessage, logParams);
             this.validateCSRF();
             this.contextualAuthorizationManager.checkAccess(Right.VIEW);
             return action.call();
         } catch (AccessDeniedException | SecurityException e) {
-            this.logger.warn("Authorization error: %s".formatted(logMessage), appendException(logParams, e));
+            this.logger.warn("Authorization error: " + logMessage, appendException(logParams, e));
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         } catch (InvalidIdException e) {
-            this.logger.warn("Resource not found: %s".formatted(logMessage), appendException(logParams, e));
+            this.logger.warn("Resource not found: " + logMessage, appendException(logParams, e));
             throw new WebApplicationException(Response.Status.NOT_FOUND);
         } catch (DuplicatedIdException e) {
-            this.logger.warn("Conflict: %s".formatted(logMessage), appendException(logParams, e));
+            this.logger.warn("Conflict: " + logMessage, appendException(logParams, e));
             throw new WebApplicationException(Response.Status.CONFLICT);
         } catch (Exception e) {
-            this.logger.error("Internal error: %s".formatted(logMessage), appendException(logParams, e));
+            this.logger.error("Internal error: " + logMessage, appendException(logParams, e));
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
     }

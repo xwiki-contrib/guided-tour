@@ -19,12 +19,11 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Named;
-import javax.inject.Provider;
-
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.objects.BaseObject;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,20 +46,18 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.objects.BaseObject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import java.util.ArrayList;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOUR_CLASS;
 
+/**
+ * Test class for {@link ToursManager}.
+ */
 @ComponentTest
 class ToursManagerTest
 {
@@ -126,47 +123,51 @@ class ToursManagerTest
     @BeforeEach
     void setup() throws XWikiException
     {
-        when(wikiContextProvider.get()).thenReturn(wikiContext);
-        when(wikiContext.getWiki()).thenReturn(xwiki);
-        when(documentReferenceResolver.resolve(TOUR_ID)).thenReturn(documentReference);
-        when(xwiki.getDocument(documentReference, wikiContext)).thenReturn(xwikiDocument);
-        when(xwikiDocument.newXObject(TOUR_CLASS, wikiContext)).thenReturn(baseObject);
-        when(xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(baseObject);
-        solrDocumentList.add(solrDocument);
+        when(this.wikiContextProvider.get()).thenReturn(this.wikiContext);
+        when(this.wikiContext.getWiki()).thenReturn(this.xwiki);
+        when(this.documentReferenceResolver.resolve(TOUR_ID)).thenReturn(this.documentReference);
+        when(this.xwiki.getDocument(this.documentReference, this.wikiContext)).thenReturn(this.xwikiDocument);
+        when(this.documentReference.getName()).thenReturn(TOUR_ID);
+        when(this.xwikiDocument.newXObject(TOUR_CLASS, this.wikiContext)).thenReturn(this.baseObject);
+        when(this.xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(this.baseObject);
+        this.solrDocumentList.add(this.solrDocument);
     }
 
     @Test
     void createTour() throws XWikiException, DuplicatedIdException
     {
-        when(xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(null);
+        when(this.xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(null);
 
-        toursManager.createTour(tourDTO);
-        verify(baseObject, times(1)).set("title", tourDTO.getTitle(), wikiContext);
-        verify(xwiki, times(1)).saveDocument(xwikiDocument, "Tour created.", wikiContext);
+        this.toursManager.createTour(this.tourDTO);
+        verify(this.baseObject, times(1)).set("title", this.tourDTO.getTitle(), this.wikiContext);
+        verify(this.xwiki, times(1)).saveDocument(this.xwikiDocument, "Tour created.", this.wikiContext);
     }
 
     @Test
     void createTourDuplicate()
     {
         DuplicatedIdException exception = assertThrows(DuplicatedIdException.class, () -> {
-            this.toursManager.createTour(tourDTO);
+            this.toursManager.createTour(this.tourDTO);
         });
         assertEquals(exception.getMessage(),
-            String.format("A tour with the same ID [%s] already exists.", tourDTO.getId()));
+            String.format("A tour with the same ID [%s] already exists.", this.tourDTO.getId()));
     }
 
     @Test
     void getAllTours() throws Exception
     {
-        when(queryUtil.executeQuery("class:XWiki.GuidedTour.TourClass", "type:DOCUMENT",
-            List.of(TourProperty.TITLE.formKey(CLASS_PREFIX),
-                TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX)))).thenReturn(solrDocumentList);
-        when(solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.title_string")).thenReturn("tour title");
-        when(solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.isActive_boolean")).thenReturn(true);
-        when(solrDocumentReferenceResolver.resolve(solrDocument, EntityType.DOCUMENT)).thenReturn(documentReference);
-        when(tasksManager.getAllTasks(documentReference.toString())).thenReturn(new ArrayList<>());
+        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TourClass",
+            "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate",
+            List.of(TourProperty.TITLE.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX)),
+            "")).thenReturn(this.solrDocumentList);
+        when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.title_string")).thenReturn(
+            "tour title");
+        when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.isActive_boolean")).thenReturn(true);
+        when(this.solrDocumentReferenceResolver.resolve(this.solrDocument, EntityType.DOCUMENT)).thenReturn(
+            this.documentReference);
+        when(this.tasksManager.getAllTasks(this.documentReference.toString())).thenReturn(new ArrayList<>());
 
-        List<TourDTO> tours = toursManager.getAllTours();
+        List<TourDTO> tours = this.toursManager.getAllTours();
         assertEquals(1, tours.size());
         assertEquals("tour title", tours.get(0).getTitle());
         assertTrue(tours.get(0).isActive());
@@ -176,19 +177,19 @@ class ToursManagerTest
     @Test
     void updateTour() throws Exception
     {
-        when(baseObject.getOwnerDocument()).thenReturn(xwikiDocument);
-        toursManager.updateTour(tourDTOUpdated);
-        verify(baseObject, times(1)).set("title", tourDTOUpdated.getTitle(), wikiContext);
-        verify(baseObject, times(1)).set("isActive", 0, wikiContext);
-        verify(xwiki, times(1)).saveDocument(xwikiDocument, "Updated tour object.", wikiContext);
+        when(this.baseObject.getOwnerDocument()).thenReturn(this.xwikiDocument);
+        this.toursManager.updateTour(this.tourDTOUpdated);
+        verify(this.baseObject, times(1)).set("title", this.tourDTOUpdated.getTitle(), this.wikiContext);
+        verify(this.baseObject, times(1)).set("isActive", 0, this.wikiContext);
+        verify(this.xwiki, times(1)).saveDocument(this.xwikiDocument, "Updated tour object.", this.wikiContext);
     }
 
     @Test
     void updateTourInvalidId()
     {
-        when(xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(null);
+        when(this.xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(null);
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            toursManager.updateTour(tourDTOUpdated);
+            this.toursManager.updateTour(this.tourDTOUpdated);
         });
         assertEquals(exception.getMessage(), String.format("Tour with the given id [%s] does not exist.", TOUR_ID));
     }
@@ -196,19 +197,19 @@ class ToursManagerTest
     @Test
     void deleteTour() throws Exception
     {
-        when(documentReference.getLastSpaceReference()).thenReturn(spaceReference);
-        when(requestFactory.createDeleteRequest(List.of(documentReference.getLastSpaceReference()))).thenReturn(
-            deleteReq);
-        toursManager.deleteTour(TOUR_ID);
-        verify(jobExecutor, times(1)).execute(RefactoringJobs.DELETE, deleteReq);
+        when(this.documentReference.getLastSpaceReference()).thenReturn(this.spaceReference);
+        when(this.requestFactory.createDeleteRequest(
+            List.of(this.documentReference.getLastSpaceReference()))).thenReturn(this.deleteReq);
+        this.toursManager.deleteTour(TOUR_ID);
+        verify(this.jobExecutor, times(1)).execute(RefactoringJobs.DELETE, this.deleteReq);
     }
 
     @Test
     void deleteTourInvalidId()
     {
-        when(xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(null);
+        when(this.xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(null);
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            toursManager.deleteTour(TOUR_ID);
+            this.toursManager.deleteTour(TOUR_ID);
         });
         assertEquals(exception.getMessage(), String.format("Tour with the given id [%s] does not exist.", TOUR_ID));
     }

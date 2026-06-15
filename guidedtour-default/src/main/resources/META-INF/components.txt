@@ -3,3 +3,4 @@ org.xwiki.contrib.guidedtour.internal.TasksManager
 org.xwiki.contrib.guidedtour.internal.ToursManager
 org.xwiki.contrib.guidedtour.internal.StepsManager
 org.xwiki.contrib.guidedtour.internal.util.SolrQueryUtil
+org.xwiki.contrib.guidedtour.script.GuidedTourScriptService

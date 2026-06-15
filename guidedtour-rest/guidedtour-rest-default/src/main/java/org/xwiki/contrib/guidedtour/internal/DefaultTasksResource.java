@@ -68,8 +68,8 @@ public class DefaultTasksResource extends AbstractGuidedTourResource implements 
     public Response createTask(String tourId, TaskDTO taskDTO)
     {
         return execute("Tasks API: creating task [{}] for tour [{}].", () -> {
-            this.tasksManager.createTask(tourId, taskDTO);
-            return Response.status(Response.Status.CREATED).build();
+            String taskId = this.tasksManager.createTask(tourId, taskDTO);
+            return Response.status(Response.Status.CREATED).entity(taskId).type(MediaType.TEXT_PLAIN_TYPE).build();
         }, taskDTO.getId(), tourId);
     }
 

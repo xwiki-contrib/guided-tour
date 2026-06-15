@@ -1,0 +1,112 @@
+<?xml version="1.1" encoding="UTF-8"?>
+
+<!--
+ * See the NOTICE file distributed with this work for additional
+ * information regarding copyright ownership.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+-->
+
+<xwikidoc version="1.7" reference="GuidedTour.Code.Macros" locale="">
+  <web>GuidedTour.Code</web>
+  <name>Macros</name>
+  <language/>
+  <defaultLanguage/>
+  <translation>0</translation>
+  <creator>xwiki:XWiki.Admin</creator>
+  <parent>GuidedTour.WebHome</parent>
+  <author>xwiki:XWiki.Admin</author>
+  <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
+  <version>1.1</version>
+  <title>Macros</title>
+  <comment/>
+  <minorEdit>false</minorEdit>
+  <syntaxId>xwiki/2.1</syntaxId>
+  <hidden>true</hidden>
+  <content>{{velocity output='false'}}
+#macro (deleteTaskModal)
+  &lt;div class="modal fade" id="confirmDeleteTaskModal" tabindex="-1" role="dialog"
+      aria-labelledby="confirmDeleteTaskModalLabel"&gt;
+    &lt;div class="modal-dialog modal-sm" role="document"&gt;
+      &lt;div class="modal-content"&gt;
+        &lt;div class="cache-modal-content"&gt;
+          &lt;div class="modal-header"&gt;
+            &lt;button type="button" class="close" data-dismiss="modal" aria-label="Close"&gt;
+              &lt;span aria-hidden="true"&gt;&amp;times;&lt;/span&gt;&lt;/button&gt;
+            &lt;div id="confirmDeleteTaskModalLabel" class="modal-title"&gt;
+              Delete task
+            &lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div class="modal-body"&gt;
+            This action will remove the task and all associated steps!
+          &lt;/div&gt;
+          &lt;div class="modal-footer"&gt;
+            &lt;button type="button" class="btn btn-danger"&gt;
+              $escapetool.xml($services.localization.render('confirm'))
+            &lt;/button&gt;
+            &lt;button type="button" class="btn btn-default" data-dismiss="modal"&gt;
+              $escapetool.xml($services.localization.render('cancel'))&lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+#end
+#macro (addTaskModal $tourId)
+  &lt;div class="modal fade" id="addTaskFormModal" tabindex="-1" role="dialog"
+      aria-labelledby="addTaskFormModalLabel"&gt;
+    &lt;div class="modal-dialog" role="document"&gt;
+      &lt;div class="modal-content"&gt;
+        &lt;div class="cache-modal-content"&gt;
+            &lt;div class="modal-header"&gt;
+              &lt;button type="button" class="close" data-dismiss="modal" aria-label="Close"&gt;
+                &lt;span aria-hidden="true"&gt;&amp;times;&lt;/span&gt;&lt;/button&gt;
+              &lt;div id="addTaskFormModalLabel" class="modal-title"&gt;
+                Add task
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="modal-body"&gt;
+              &lt;div id="add-tasks-form" target="${request.getContextPath()}/rest/guidedTour/tours/${escapetool.url($tourId)}/tasks"&gt;
+                &lt;div&gt;
+                  &lt;label for="taskTitle"&gt;Task Title&lt;/label&gt;&lt;br/&gt;
+                  &lt;input type="text" class="form-control" id="taskTitle" name="title" placeholder="Enter task title"&gt;
+                &lt;/div&gt;
+                &lt;div&gt;
+                  &lt;label&gt;Depends On&lt;/label&gt;
+                  &lt;div id="taskTreeContainer"&gt;
+
+                    {{documentTree root="document:${tourId}" checkboxes="true" compact="true" links="false"/}}
+
+                  &lt;/div&gt;
+                  &lt;p class="help-block"&gt;Select which tasks must be completed before this one.&lt;/p&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="modal-footer"&gt;
+              &lt;button type="button" class="btn btn-primary"&gt;
+                $escapetool.xml($services.localization.render('confirm'))
+              &lt;/button&gt;
+              &lt;button type="button" class="btn btn-default" data-dismiss="modal"&gt;
+                $escapetool.xml($services.localization.render('cancel'))&lt;/button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+#end
+{{/velocity}}
+</content>
+</xwikidoc>

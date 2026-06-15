@@ -46,9 +46,27 @@
     <defaultWeb/>
     <nameField/>
     <validationScript/>
+    <description>
+      <contenttype>PureText</contenttype>
+      <customDisplay/>
+      <disabled>0</disabled>
+      <editor>PureText</editor>
+      <hint/>
+      <name>description</name>
+      <number>3</number>
+      <picker>1</picker>
+      <prettyName>Description</prettyName>
+      <restricted>1</restricted>
+      <rows>5</rows>
+      <size>40</size>
+      <unmodifiable>0</unmodifiable>
+      <validationMessage/>
+      <validationRegExp/>
+      <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+    </description>
     <isActive>
       <customDisplay/>
-      <defaultValue/>
+      <defaultValue>0</defaultValue>
       <disabled>0</disabled>
       <displayFormType>select</displayFormType>
       <displayType/>

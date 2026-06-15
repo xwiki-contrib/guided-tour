@@ -19,9 +19,13 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.objects.BaseObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -35,22 +39,16 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.objects.BaseObject;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.USER_TOUR_CLASS;
 
+/**
+ * Test class for {@link UserStatusManager}.
+ */
 @ComponentTest
 class UserStatusManagerTest
 {
@@ -79,11 +77,11 @@ class UserStatusManagerTest
     @BeforeEach
     void setup() throws XWikiException
     {
-        when(wikiContext.getWiki()).thenReturn(xwiki);
-        when(wikiContext.getUserReference()).thenReturn(userReference);
-        when(xwiki.getDocument(userReference, wikiContext)).thenReturn(userDocument);
-        when(userDocument.getXObject(USER_TOUR_CLASS)).thenReturn(statusObject);
-        when(statusObject.getOwnerDocument()).thenReturn(userDocument);
+        when(this.wikiContext.getWiki()).thenReturn(this.xwiki);
+        when(this.wikiContext.getUserReference()).thenReturn(this.userReference);
+        when(this.xwiki.getDocument(this.userReference, this.wikiContext)).thenReturn(this.userDocument);
+        when(this.userDocument.getXObject(USER_TOUR_CLASS)).thenReturn(this.statusObject);
+        when(this.statusObject.getOwnerDocument()).thenReturn(this.userDocument);
     }
 
     @Test
@@ -91,13 +89,13 @@ class UserStatusManagerTest
     {
         Map<String, Status> tasksStatus = new HashMap<>();
         tasksStatus.put("task1", Status.DONE);
-        String tasksStatusJson = objectMapper.writeValueAsString(tasksStatus);
+        String tasksStatusJson = this.objectMapper.writeValueAsString(tasksStatus);
 
-        when(statusObject.getStringValue(TASKS_STATUS_KEY)).thenReturn(tasksStatusJson);
-        when(statusObject.getStringValue("widgetState")).thenReturn("OPEN");
-        when(statusObject.getIntValue("callToAction")).thenReturn(1);
+        when(this.statusObject.getStringValue(TASKS_STATUS_KEY)).thenReturn(tasksStatusJson);
+        when(this.statusObject.getStringValue("widgetState")).thenReturn("OPEN");
+        when(this.statusObject.getIntValue("callToAction")).thenReturn(1);
 
-        UserTourStatusDTO result = userStatusManager.getUserToursStatus();
+        UserTourStatusDTO result = this.userStatusManager.getUserToursStatus();
 
         assertEquals(Status.DONE, result.getTasksStatus().get("task1"));
         assertEquals(WidgetState.OPEN, result.getWidgetState());
@@ -107,21 +105,22 @@ class UserStatusManagerTest
     @Test
     void createUserTourStatus() throws XWikiException, DuplicatedIdException
     {
-        when(userDocument.getXObject(USER_TOUR_CLASS)).thenReturn(null);
-        userStatusManager.createUserTourStatus();
+        when(this.userDocument.getXObject(USER_TOUR_CLASS)).thenReturn(null);
+        this.userStatusManager.createUserTourStatus();
 
-        verify(userDocument, times(1)).newXObject(USER_TOUR_CLASS, wikiContext);
-        verify(xwiki, times(1)).saveDocument(userDocument, "Added guided tour user status object.", wikiContext);
+        verify(this.userDocument, times(1)).newXObject(USER_TOUR_CLASS, this.wikiContext);
+        verify(this.xwiki, times(1)).saveDocument(this.userDocument, "Added guided tour user status object.",
+            this.wikiContext);
     }
 
     @Test
     void createUserTourStatusDuplicate()
     {
         DuplicatedIdException exception = assertThrows(DuplicatedIdException.class, () -> {
-            userStatusManager.createUserTourStatus();
+            this.userStatusManager.createUserTourStatus();
         });
 
-        assertEquals(String.format("User tour status already exists for user [%s]", userReference),
+        assertEquals(String.format("User tour status already exists for user [%s]", this.userReference),
             exception.getMessage());
     }
 
@@ -135,21 +134,23 @@ class UserStatusManagerTest
         userTourStatusDTO.setWidgetState("HIDDEN");
         userTourStatusDTO.setCallToAction(false);
 
-        userStatusManager.updateUserTourStatus(userTourStatusDTO);
-        verify(statusObject, times(1)).setLargeStringValue(TASKS_STATUS_KEY,
-            objectMapper.writeValueAsString(tasksStatus));
-        verify(statusObject, times(1)).setStringValue("widgetState", "HIDDEN");
-        verify(statusObject, times(1)).setIntValue("callToAction", 0);
-        verify(xwiki, times(1)).saveDocument(userDocument, "Updated guided tour user status.", wikiContext);
+        this.userStatusManager.updateUserTourStatus(userTourStatusDTO);
+        verify(this.statusObject, times(1)).setLargeStringValue(TASKS_STATUS_KEY,
+            this.objectMapper.writeValueAsString(tasksStatus));
+        verify(this.statusObject, times(1)).setStringValue("widgetState", "HIDDEN");
+        verify(this.statusObject, times(1)).setIntValue("callToAction", 0);
+        verify(this.xwiki, times(1)).saveDocument(this.userDocument, "Updated guided tour user status.",
+            this.wikiContext);
     }
 
     @Test
     void updateUserTourStatusInvalidId()
     {
-        when(userDocument.getXObject(USER_TOUR_CLASS)).thenReturn(null);
+        when(this.userDocument.getXObject(USER_TOUR_CLASS)).thenReturn(null);
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
-            userStatusManager.updateUserTourStatus(new UserTourStatusDTO());
+            this.userStatusManager.updateUserTourStatus(new UserTourStatusDTO());
         });
-        assertEquals(String.format("User tour status not found for user [%s].", userReference), exception.getMessage());
+        assertEquals(String.format("User tour status not found for user [%s].", this.userReference),
+            exception.getMessage());
     }
 }
