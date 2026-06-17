@@ -272,7 +272,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     let stepIndex = 0;
     if (remember) {
       stepIndex = Number.parseInt(
-        globalThis.sessionStorage.getItem(
+        StorageManager.getStorageKey(
           StorageManager.getTaskCurrentStepStorageKey(task),
         ) ?? "0",
       );
