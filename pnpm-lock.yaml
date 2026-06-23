@@ -91,8 +91,8 @@ catalogs:
       specifier: 0.0.8
       version: 0.0.8
     vite:
-      specifier: 7.3.2
-      version: 7.3.2
+      specifier: 7.3.5
+      version: 7.3.5
     vite-plugin-css-injected-by-js:
       specifier: 4.0.1
       version: 4.0.1
@@ -119,9 +119,7 @@ catalogs:
       version: 4.1.0
 
 patchedDependencies:
-  '@xwiki/platform-tool-eslintconfig@18.3.0':
-    hash: c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
-    path: patches/@xwiki__platform-tool-eslintconfig@18.3.0.patch
+  '@xwiki/platform-tool-eslintconfig@18.3.0': c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
 
 importers:
 
@@ -178,10 +176,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: 'catalog:'
-        version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+        version: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
       vue:
         specifier: 'catalog:'
         version: 3.5.34(typescript@5.9.3)
@@ -263,10 +261,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: 'catalog:'
-        version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+        version: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
       vue:
         specifier: 'catalog:'
         version: 3.5.34(typescript@5.9.3)
@@ -330,10 +328,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: 'catalog:'
-        version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+        version: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
       vue-i18n:
         specifier: 'catalog:'
         version: 11.2.8(vue@3.5.34(typescript@5.9.3))
@@ -345,16 +343,16 @@ importers:
         version: 2.3.5
       '@vitejs/plugin-vue':
         specifier: 'catalog:'
-        version: 6.0.4(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))(vue@3.5.34(typescript@5.9.3))
+        version: 6.0.4(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))(vue@3.5.34(typescript@5.9.3))
       vite:
         specifier: 'catalog:'
-        version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+        version: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
       vite-plugin-css-injected-by-js:
         specifier: 'catalog:'
-        version: 4.0.1(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.0.1(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
       vite-plugin-dts:
         specifier: 'catalog:'
-        version: 4.5.4(@types/node@24.12.2)(rollup@4.60.4)(typescript@5.9.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.5.4(@types/node@24.12.2)(rollup@4.60.4)(typescript@5.9.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -373,7 +371,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
 
   guidedtour-node/guidedtour-node-ui/src/main/node:
     dependencies:
@@ -389,7 +387,7 @@ importers:
         version: link:../../../../../guidedtour-node-base/src/main/node/dev/config
       vite:
         specifier: 'catalog:'
-        version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+        version: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
 
   guidedtour-webjar/src/main/node:
     dependencies:
@@ -408,7 +406,7 @@ importers:
         version: 24.12.2
       '@vitejs/plugin-vue':
         specifier: 'catalog:'
-        version: 6.0.4(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))(vue@3.5.34(typescript@5.9.3))
+        version: 6.0.4(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))(vue@3.5.34(typescript@5.9.3))
       '@vue/test-utils':
         specifier: 'catalog:'
         version: 2.4.10(@vue/compiler-dom@3.5.35)(@vue/server-renderer@3.5.34(vue@3.5.34(typescript@5.9.3)))(vue@3.5.34(typescript@5.9.3))
@@ -432,10 +430,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: 'catalog:'
-        version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+        version: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
       vue:
         specifier: 'catalog:'
         version: 3.5.34(typescript@5.9.3)
@@ -2692,6 +2690,46 @@ packages:
       yaml:
         optional: true
 
+  vite@7.3.5:
+    resolution: {integrity: sha512-KuOaNhcnGFN2zIPGA7wRmzF+lJA1sea7rHq17aiJ++9lzY1WWG6Jpwqwe1KNbRVPIqHmr8GLYx7jbrQcN/7/ww==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^20.19.0 || >=22.12.0
+      jiti: '>=1.21.0'
+      less: ^4.0.0
+      lightningcss: ^1.21.0
+      sass: ^1.70.0
+      sass-embedded: ^1.70.0
+      stylus: '>=0.54.8'
+      sugarss: ^5.0.0
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+
   vitest@4.1.5:
     resolution: {integrity: sha512-9Xx1v3/ih3m9hN+SbfkUyy0JAs72ap3r7joc87XL6jwF0jGg6mFBvQ1SrwaX+h8BlkX6Hz9shdd1uo6AF+ZGpg==}
     engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -3448,10 +3486,10 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
 
-  '@vitejs/plugin-vue@6.0.4(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))(vue@3.5.34(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.4(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))(vue@3.5.34(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-rc.2
-      vite: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+      vite: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
       vue: 3.5.34(typescript@5.9.3)
 
   '@vitest/expect@4.1.5':
@@ -3463,13 +3501,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.1.0
 
-  '@vitest/mocker@4.1.5(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))':
+  '@vitest/mocker@4.1.5(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))':
     dependencies:
       '@vitest/spy': 4.1.5
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+      vite: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
 
   '@vitest/pretty-format@4.1.5':
     dependencies:
@@ -5177,11 +5215,11 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite-plugin-css-injected-by-js@4.0.1(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0)):
+  vite-plugin-css-injected-by-js@4.0.1(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0)):
     dependencies:
-      vite: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+      vite: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
 
-  vite-plugin-dts@4.5.4(@types/node@24.12.2)(rollup@4.60.4)(typescript@5.9.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0)):
+  vite-plugin-dts@4.5.4(@types/node@24.12.2)(rollup@4.60.4)(typescript@5.9.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0)):
     dependencies:
       '@microsoft/api-extractor': 7.58.7(@types/node@24.12.2)
       '@rollup/pluginutils': 5.3.0(rollup@4.60.4)
@@ -5194,7 +5232,7 @@ snapshots:
       magic-string: 0.30.21
       typescript: 5.9.3
     optionalDependencies:
-      vite: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+      vite: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
     transitivePeerDependencies:
       - '@types/node'
       - rollup
@@ -5213,10 +5251,23 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
 
-  vitest@4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0)):
+  vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0):
+    dependencies:
+      esbuild: 0.27.7
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
+      postcss: 8.5.15
+      rollup: 4.60.4
+      tinyglobby: 0.2.16
+    optionalDependencies:
+      '@types/node': 24.12.2
+      fsevents: 2.3.3
+      jiti: 2.7.0
+
+  vitest@4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0)):
     dependencies:
       '@vitest/expect': 4.1.5
-      '@vitest/mocker': 4.1.5(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+      '@vitest/mocker': 4.1.5(vite@7.3.5(@types/node@24.12.2)(jiti@2.7.0))
       '@vitest/pretty-format': 4.1.5
       '@vitest/runner': 4.1.5
       '@vitest/snapshot': 4.1.5
@@ -5233,7 +5284,7 @@ snapshots:
       tinyexec: 1.2.2
       tinyglobby: 0.2.16
       tinyrainbow: 3.1.0
-      vite: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
+      vite: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.12.2
