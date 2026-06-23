@@ -13,8 +13,8 @@ catalogs:
       specifier: 7.58.7
       version: 7.58.7
     '@types/jquery':
-      specifier: 4.0.0
-      version: 4.0.0
+      specifier: 4.0.1
+      version: 4.0.1
     '@types/node':
       specifier: 24.12.2
       version: 24.12.2
@@ -119,9 +119,7 @@ catalogs:
       version: 4.1.0
 
 patchedDependencies:
-  '@xwiki/platform-tool-eslintconfig@18.3.0':
-    hash: c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
-    path: patches/@xwiki__platform-tool-eslintconfig@18.3.0.patch
+  '@xwiki/platform-tool-eslintconfig@18.3.0': c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
 
 importers:
 
@@ -221,7 +219,7 @@ importers:
         version: 7.58.7(@types/node@24.12.2)
       '@types/jquery':
         specifier: 'catalog:'
-        version: 4.0.0
+        version: 4.0.1
       '@vue/test-utils':
         specifier: 'catalog:'
         version: 2.4.10(@vue/compiler-dom@3.5.35)(@vue/server-renderer@3.5.34(vue@3.5.34(typescript@5.9.3)))(vue@3.5.34(typescript@5.9.3))
@@ -294,7 +292,7 @@ importers:
         version: 7.58.7(@types/node@24.12.2)
       '@types/jquery':
         specifier: 'catalog:'
-        version: 4.0.0
+        version: 4.0.1
       '@types/sinon':
         specifier: 'catalog:'
         version: 21.0.0
@@ -979,8 +977,8 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
-  '@types/jquery@4.0.0':
-    resolution: {integrity: sha512-Z+to+A2VkaHq1DfI2oSwsoCdhCHMpTSgjWzNcbNlRGYzksDBpPUgEcAL+RQjOBJRaLoEAOHXxqDGBVP+BblBwg==}
+  '@types/jquery@4.0.1':
+    resolution: {integrity: sha512-9a59A/tycXgYuPABcp6/3spSShn0NT2UOM4EfHvMumjYi4lJWTsK5SZWjhx3yRm9IHGCeWXdV2YfNsrWrft/CA==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -3262,7 +3260,7 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
-  '@types/jquery@4.0.0': {}
+  '@types/jquery@4.0.1': {}
 
   '@types/json-schema@7.0.15': {}
 

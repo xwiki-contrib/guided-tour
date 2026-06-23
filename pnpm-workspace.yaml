@@ -9,7 +9,7 @@ packages:
 catalog:
   "@jridgewell/remapping": 2.3.5
   "@microsoft/api-extractor": 7.58.7
-  "@types/jquery": 4.0.0
+  "@types/jquery": 4.0.1
   "@types/node": 24.12.2
   "@types/sinon": 21.0.0
   "@vitejs/plugin-vue": 6.0.4
