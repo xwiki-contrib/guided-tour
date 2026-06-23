@@ -61,8 +61,8 @@ catalogs:
       specifier: 1.0.2
       version: 1.0.2
     happy-dom:
-      specifier: 17.6.3
-      version: 17.6.3
+      specifier: 20.8.9
+      version: 20.8.9
     jiti:
       specifier: 2.7.0
       version: 2.7.0
@@ -119,9 +119,7 @@ catalogs:
       version: 4.1.0
 
 patchedDependencies:
-  '@xwiki/platform-tool-eslintconfig@18.3.0':
-    hash: c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
-    path: patches/@xwiki__platform-tool-eslintconfig@18.3.0.patch
+  '@xwiki/platform-tool-eslintconfig@18.3.0': c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
 
 importers:
 
@@ -172,7 +170,7 @@ importers:
         version: 9.39.4(jiti@2.7.0)
       happy-dom:
         specifier: 'catalog:'
-        version: 17.6.3
+        version: 20.8.9
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -181,7 +179,7 @@ importers:
         version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
       vue:
         specifier: 'catalog:'
         version: 3.5.34(typescript@5.9.3)
@@ -248,7 +246,7 @@ importers:
         version: 1.0.2
       happy-dom:
         specifier: 'catalog:'
-        version: 17.6.3
+        version: 20.8.9
       jquery:
         specifier: 'catalog:'
         version: 4.0.0
@@ -266,7 +264,7 @@ importers:
         version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
       vue:
         specifier: 'catalog:'
         version: 3.5.34(typescript@5.9.3)
@@ -318,7 +316,7 @@ importers:
         version: 9.39.4(jiti@2.7.0)
       happy-dom:
         specifier: 'catalog:'
-        version: 17.6.3
+        version: 20.8.9
       jquery:
         specifier: 'catalog:'
         version: 4.0.0
@@ -333,7 +331,7 @@ importers:
         version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
       vue-i18n:
         specifier: 'catalog:'
         version: 11.2.8(vue@3.5.34(typescript@5.9.3))
@@ -373,7 +371,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
 
   guidedtour-node/guidedtour-node-ui/src/main/node:
     dependencies:
@@ -420,7 +418,7 @@ importers:
         version: 1.0.2
       happy-dom:
         specifier: 'catalog:'
-        version: 17.6.3
+        version: 20.8.9
       lodash-es:
         specifier: 'catalog:'
         version: 4.18.1
@@ -435,7 +433,7 @@ importers:
         version: 7.3.2(@types/node@24.12.2)(jiti@2.7.0)
       vitest:
         specifier: 'catalog:'
-        version: 4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
+        version: 4.1.5(@types/node@24.12.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
       vue:
         specifier: 'catalog:'
         version: 3.5.34(typescript@5.9.3)
@@ -999,6 +997,12 @@ packages:
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
+
+  '@types/whatwg-mimetype@3.0.2':
+    resolution: {integrity: sha512-c2AKvDT8ToxLIOUlN51gTiHXflsfIFisS4pO7pDPoKouJCESkhZnEy623gwP9laCy5lnLDAw1vAzu2vM2YLOrA==}
+
+  '@types/ws@8.18.1':
+    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@typescript-eslint/eslint-plugin@8.56.1':
     resolution: {integrity: sha512-Jz9ZztpB37dNC+HU2HI28Bs9QXpzCz+y/twHOwhyrIRdbuVDxSytJNDl6z/aAKlaRIwC7y8wJdkBv7FxYGgi0A==}
@@ -1902,8 +1906,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  happy-dom@17.6.3:
-    resolution: {integrity: sha512-UVIHeVhxmxedbWPCfgS55Jg2rDfwf2BCKeylcPSqazLz5w3Kri7Q4xdBJubsr/+VUzFLh0VjIvh13RaDA2/Xug==}
+  happy-dom@20.8.9:
+    resolution: {integrity: sha512-Tz23LR9T9jOGVZm2x1EPdXqwA37G/owYMxRwU0E4miurAtFsPMQ1d2Jc2okUaSjZqAFz2oEn3FLXC5a0a+siyA==}
     engines: {node: '>=20.0.0'}
 
   has-bigints@1.1.0:
@@ -2775,10 +2779,6 @@ packages:
     peerDependencies:
       vue: ^3.0.1
 
-  webidl-conversions@7.0.0:
-    resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
-    engines: {node: '>=12'}
-
   whatwg-mimetype@3.0.0:
     resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
     engines: {node: '>=12'}
@@ -2820,6 +2820,18 @@ packages:
   wrap-ansi@8.1.0:
     resolution: {integrity: sha512-si7QWI6zUMq56bESFvagtmzMdGOtoxfR+Sez11Mobfc7tm+VkUckk9bW2UeffTGVUbOksxmSw0AA2gs8g71NCQ==}
     engines: {node: '>=12'}
+
+  ws@8.21.0:
+    resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
 
   xml-name-validator@4.0.0:
     resolution: {integrity: sha512-ICP2e+jsHvAj2E2lIHxa5tjXRlKDJo4IdvPvCXbXQGdzSfmSpNVyIKMvoZHjDY9DP0zV17iI85o90vRFXNccRw==}
@@ -3280,6 +3292,12 @@ snapshots:
 
   '@types/trusted-types@2.0.7':
     optional: true
+
+  '@types/whatwg-mimetype@3.0.2': {}
+
+  '@types/ws@8.18.1':
+    dependencies:
+      '@types/node': 24.12.2
 
   '@typescript-eslint/eslint-plugin@8.56.1(@typescript-eslint/parser@8.56.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
@@ -4358,10 +4376,17 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  happy-dom@17.6.3:
+  happy-dom@20.8.9:
     dependencies:
-      webidl-conversions: 7.0.0
+      '@types/node': 24.12.2
+      '@types/whatwg-mimetype': 3.0.2
+      '@types/ws': 8.18.1
+      entities: 7.0.1
       whatwg-mimetype: 3.0.0
+      ws: 8.21.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   has-bigints@1.1.0: {}
 
@@ -5213,7 +5238,7 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
 
-  vitest@4.1.5(@types/node@24.12.2)(happy-dom@17.6.3)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0)):
+  vitest@4.1.5(@types/node@24.12.2)(happy-dom@20.8.9)(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0)):
     dependencies:
       '@vitest/expect': 4.1.5
       '@vitest/mocker': 4.1.5(vite@7.3.2(@types/node@24.12.2)(jiti@2.7.0))
@@ -5237,7 +5262,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 24.12.2
-      happy-dom: 17.6.3
+      happy-dom: 20.8.9
     transitivePeerDependencies:
       - msw
 
@@ -5289,8 +5314,6 @@ snapshots:
     dependencies:
       sortablejs: 1.14.0
       vue: 3.5.34(typescript@5.9.3)
-
-  webidl-conversions@7.0.0: {}
 
   whatwg-mimetype@3.0.0: {}
 
@@ -5357,6 +5380,8 @@ snapshots:
       ansi-styles: 6.2.3
       string-width: 5.1.2
       strip-ansi: 7.2.0
+
+  ws@8.21.0: {}
 
   xml-name-validator@4.0.0: {}
 
