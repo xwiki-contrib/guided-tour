@@ -37,8 +37,8 @@ catalogs:
       specifier: 18.3.0
       version: 18.3.0
     '@xwiki/platform-tool-tsconfig':
-      specifier: 18.3.0
-      version: 18.3.0
+      specifier: 18.4.2
+      version: 18.4.2
     '@xwiki/platform-tool-tsdocconfig':
       specifier: 18.3.0
       version: 18.3.0
@@ -119,9 +119,7 @@ catalogs:
       version: 4.1.0
 
 patchedDependencies:
-  '@xwiki/platform-tool-eslintconfig@18.3.0':
-    hash: c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
-    path: patches/@xwiki__platform-tool-eslintconfig@18.3.0.patch
+  '@xwiki/platform-tool-eslintconfig@18.3.0': c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
 
 importers:
 
@@ -160,7 +158,7 @@ importers:
         version: 18.3.0
       '@xwiki/platform-tool-tsconfig':
         specifier: 'catalog:'
-        version: 18.3.0(typescript@5.9.3)
+        version: 18.4.2(typescript@5.9.3)
       '@xwiki/platform-tool-tsdocconfig':
         specifier: 'catalog:'
         version: 18.3.0
@@ -233,7 +231,7 @@ importers:
         version: 18.3.0
       '@xwiki/platform-tool-tsconfig':
         specifier: 'catalog:'
-        version: 18.3.0(typescript@5.9.3)
+        version: 18.4.2(typescript@5.9.3)
       '@xwiki/platform-tool-tsdocconfig':
         specifier: 'catalog:'
         version: 18.3.0
@@ -306,7 +304,7 @@ importers:
         version: 18.3.0
       '@xwiki/platform-tool-tsconfig':
         specifier: 'catalog:'
-        version: 18.3.0(typescript@5.9.3)
+        version: 18.4.2(typescript@5.9.3)
       '@xwiki/platform-tool-tsdocconfig':
         specifier: 'catalog:'
         version: 18.3.0
@@ -364,7 +362,7 @@ importers:
         version: 24.12.2
       '@xwiki/platform-tool-tsconfig':
         specifier: 'catalog:'
-        version: 18.3.0(typescript@5.9.3)
+        version: 18.4.2(typescript@5.9.3)
       eslint:
         specifier: 'catalog:'
         version: 9.39.4(jiti@2.7.0)
@@ -414,7 +412,7 @@ importers:
         version: 2.4.10(@vue/compiler-dom@3.5.35)(@vue/server-renderer@3.5.34(vue@3.5.34(typescript@5.9.3)))(vue@3.5.34(typescript@5.9.3))
       '@xwiki/platform-tool-tsconfig':
         specifier: 'catalog:'
-        version: 18.3.0(typescript@5.9.3)
+        version: 18.4.2(typescript@5.9.3)
       flush-promises:
         specifier: 'catalog:'
         version: 1.0.2
@@ -1308,8 +1306,8 @@ packages:
   '@xwiki/platform-tool-eslintconfig@18.3.0':
     resolution: {integrity: sha512-vk5kpphkr1HP5YmLq9u0A6rG2Ogd6C7oSq/D2vSLZ3Dd7rNYWc0DTGkXEtRQ7M9mzbNd4G4w+asepTi51wzq6g==}
 
-  '@xwiki/platform-tool-tsconfig@18.3.0':
-    resolution: {integrity: sha512-r2rknl1SUHQMJ6nSCHsWl8dVaKB0wpJLhyffZa/Gxj01y8uxsW3cEK8NZjLTidQusHSpzvNZ3XOSR+IwL5KCXw==}
+  '@xwiki/platform-tool-tsconfig@18.4.2':
+    resolution: {integrity: sha512-3QjNlBpZmoz5yKM1EMnS3GvY7ySo2Qk1olEzOwOSLdFXYTAm/pQ+3EZShNdNifs0qfQQF1k4Ia8jIn/pEdgoHQ==}
     peerDependencies:
       typescript: 5.x
 
@@ -3644,7 +3642,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@xwiki/platform-tool-tsconfig@18.3.0(typescript@5.9.3)':
+  '@xwiki/platform-tool-tsconfig@18.4.2(typescript@5.9.3)':
     dependencies:
       typescript: 5.9.3
 
