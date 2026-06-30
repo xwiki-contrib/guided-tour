@@ -28,8 +28,8 @@ catalogs:
       specifier: 2.4.10
       version: 2.4.10
     '@xwiki/platform-model-api':
-      specifier: 18.3.0
-      version: 18.3.0
+      specifier: 18.4.2
+      version: 18.4.2
     '@xwiki/platform-tool-apiextractorconfig':
       specifier: 18.3.0
       version: 18.3.0
@@ -119,9 +119,7 @@ catalogs:
       version: 4.1.0
 
 patchedDependencies:
-  '@xwiki/platform-tool-eslintconfig@18.3.0':
-    hash: c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
-    path: patches/@xwiki__platform-tool-eslintconfig@18.3.0.patch
+  '@xwiki/platform-tool-eslintconfig@18.3.0': c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
 
 importers:
 
@@ -284,7 +282,7 @@ importers:
         version: link:../guidedtour-api
       '@xwiki/platform-model-api':
         specifier: 'catalog:'
-        version: 18.3.0
+        version: 18.4.2
       driver.js:
         specifier: 'catalog:'
         version: 1.3.0
@@ -1299,8 +1297,8 @@ packages:
       '@vue/server-renderer':
         optional: true
 
-  '@xwiki/platform-model-api@18.3.0':
-    resolution: {integrity: sha512-52HQaacFVAm8x9yrTMcXZYrTORrP3r9VO/RfZFgfwt0Qs2gYjidKPZTMTFdptvUfRNZncQT2MfCz8p2bC+cAbw==}
+  '@xwiki/platform-model-api@18.4.2':
+    resolution: {integrity: sha512-ebO3PEYm1f6FN3uCKqt5YPUQT/I13v0+rNn6wvdoDgSuMgHNvsRqTJ1mNDvcYv/L+LqaXrkQphdQZTUbm1Wb4Q==}
 
   '@xwiki/platform-tool-apiextractorconfig@18.3.0':
     resolution: {integrity: sha512-sleAznBiVzIWdap/ny5tN+12Iz3LCU7UHusuhN2XVtTCI2jTbbJvWd/N/0HGSp42NjD/54MVnv2eqj9Y5RYCYQ==}
@@ -3615,7 +3613,7 @@ snapshots:
     optionalDependencies:
       '@vue/server-renderer': 3.5.34(vue@3.5.34(typescript@5.9.3))
 
-  '@xwiki/platform-model-api@18.3.0': {}
+  '@xwiki/platform-model-api@18.4.2': {}
 
   '@xwiki/platform-tool-apiextractorconfig@18.3.0': {}
 
