@@ -57,13 +57,34 @@
   }))
 #end
 
+#*
+ * Show all properties of a step. If $template is true, add a template class
+*#
+#macro (displayStepForm $step, $extraCssClasses)
+  #set($xclass = $step.xWikiClass)
+  &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden $escapetool.xml($!extraCssClasses)'&gt;
+    #foreach($property in $xclass.properties)
+      #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
+      &lt;dt&gt;
+        &lt;label for="$!escapetool.xml($propertyId)"&gt; $escapetool.xml($services.rendering.escape($property.translatedPrettyName, 'xwiki/2.1'))&lt;/label&gt;
+        &lt;span class="xHint"&gt;$!escapetool.xml($services.rendering.escape($property.hint, 'xwiki/2.1')) &lt;/span&gt;
+      &lt;/dt&gt;
+      &lt;dd&gt;
+        $doc.display($property.name, $step)
+      &lt;/dd&gt;
+    #end
+  &lt;/dl&gt;
+#end
 {{/velocity}}
 
 {{velocity}}
 {{html wiki="true"}}
+
+&lt;input type="hidden" name="objectPolicy" value="updateOrCreate" /&gt;
 &lt;div class="taskSpecificProps"&gt;
 &lt;dl id="guidedtour-task-props"&gt;
 #set($xclass = $task.xWikiClass)
+## TODO: Make this hidden if no steps exist.
 #foreach($property in $xclass.properties)
   #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
   &lt;dt&gt;
@@ -104,34 +125,19 @@
     &lt;div class="content"&gt;
       &lt;h1 class="content-title"&gt;Properties&lt;/h1&gt;
       #foreach ($step in $steps)
-        #set($xclass = $step.xWikiClass)
-        &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden'&gt;
-          #foreach($property in $xclass.properties)
-            #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
-            &lt;dt&gt;
-              &lt;label for="$!escapetool.xml($propertyId)"&gt; $escapetool.xml($services.rendering.escape($property.translatedPrettyName, 'xwiki/2.1'))&lt;/label&gt;
-              &lt;span class="xHint"&gt;$!escapetool.xml($services.rendering.escape($property.hint, 'xwiki/2.1')) &lt;/span&gt;
-            &lt;/dt&gt;
-            &lt;dd&gt;
-              $doc.display($property.name, $step)
-            &lt;/dd&gt;
-          #end
-        &lt;/dl&gt;
+        #displayStepForm($step, '')
       #end
-      ## Have a template prepared for any Steps that might get added.
-      #set ($nb = $doc.createNewObject('XWiki.GuidedTour.StepClass'))
-      #set ($step = $doc.getObject('XWiki.GuidedTour.StepClass', $nb))
-      #set ($xclass = $step.xWikiClass)
-      &lt;dl id='${xclass.name}_template' class='itemDisplay'&gt;
-      #foreach($property in $xclass.properties)
-        #set ($propertyId = "${xclass.name}_template_$property.name")
-        &lt;dt&gt;
-          &lt;label for="$!escapetool.xml($propertyId)"&gt; $escapetool.xml($services.rendering.escape($property.translatedPrettyName, 'xwiki/2.1'))&lt;/label&gt;
-          &lt;span class="xHint"&gt;$!escapetool.xml($services.rendering.escape($property.hint, 'xwiki/2.1')) &lt;/span&gt;
-        &lt;/dt&gt;
-        &lt;dd&gt;$doc.display($property.name, $step)&lt;/dd&gt;
+      #if ($isEdit)
+        #foreach ($i in [1..20])
+          ## Preemptively add some Steps, in case the user adds them.
+          ## This is done so the various ckeditor and pickers initialize correctly, so we
+          ## don't have to handle that logic in this page's JSX.
+          ## FIXME: There has to be a better way to do this.
+          #set ($nb = $doc.createNewObject('XWiki.GuidedTour.StepClass'))
+          #set ($step = $doc.getObject('XWiki.GuidedTour.StepClass', $nb))
+          #displayStepForm($step, 'template')
+        #end
       #end
-      &lt;/dl&gt;
     &lt;/div&gt;
 &lt;/div&gt;
 {{/html}}
@@ -229,26 +235,70 @@
   }
 });
 
-require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
-  console.info(gt);
+require([], function() { //'@xwiki/contrib-guidedtour-xwiki'], function (gt) {
+  //console.info(gt);
   // Simple interactivity: load properties when clicking sidebar items
   const stepsListContainer = document.querySelector('.stepsListContainer');
   console.warn(stepsListContainer.dataset.steps)
   const steps = JSON.parse(stepsListContainer.dataset.steps);
   const items = document.querySelectorAll('.item');
   function loadItem(id) {
-    const data = steps[id];
-    if (!data) return;
     document.querySelectorAll('.item').forEach(i =&gt; i.classList.toggle('active', i.dataset.id == String(id)));
     document.querySelectorAll('.itemDisplay').forEach(i =&gt; i.classList.toggle('hidden', i.id != "XWiki.GuidedTour.StepClass_" + String(id)));
   }
-
-  function reorderItems() {
-    const children = document.querySelectorAll('.item');
-    const itemList = document.querySelectorAll('.item-list');
+  /**
+   * Replace input elements for an object with another object prefix.
+   * Used to be able to add multiple objects on a page, based on an object display template
+  */
+  function replaceChildNameAndIds(node, toReplace, replaceWith) {
+    const toReplacePrefixString = `XWiki.GuidedTour.StepClass_${toReplace}_`;
+    const replaceWithPrefixString = `XWiki.GuidedTour.StepClass_${replaceWith}_`;
+    console.log(`[id^="${toReplacePrefixString}"]`)
+    node.querySelectorAll(`[name^="${toReplacePrefixString}"]`).forEach((element) =&gt; {
+        element.name = element.name.replace(toReplacePrefixString, replaceWithPrefixString);
+    });
+    node.querySelectorAll(`[id^="${toReplacePrefixString}"]`).forEach((element) =&gt; {
+        element.id = element.id.replace(toReplacePrefixString, replaceWithPrefixString);
+    });
+  }
+  
+  function addStepForm(step_object_index) {
+    // Clone template and replace _template with _${steps.length}
+    const newStepForm = template.cloneNode(true);
+    newStepForm.id = `XWiki.GuidedTour.StepClass_${step_object_index}`
+    replaceChildNameAndIds(newStepForm, 'template', step_object_index);
+    document.querySelector(".stepsListContainer .content").appendChild(newStepForm);
+  }
+  function addStepListItem(step_object_index) {
+    // Clone template and replace _template with _${steps.length}
+    const newStepListItem = document.createElement('li');
+    newStepListItem.dataset['id'] = step_object_index;
+    newStepListItem.className = 'item';
+    newStepListItem.innerText = 'New step'
+    stepEventListener(newStepListItem);
+    document.querySelector(".stepsListContainer .sidebar .item-list").appendChild(newStepListItem);
+  }
+  function addStep() {
+    const step_object_index = document.querySelectorAll('.stepsListContainer .item-list .item').length;
+    //addStepForm(step_object_index);
+    addStepListItem(step_object_index);
+    const newStepForm = (Array.from(templateObjs).filter(t =&gt; t.classList.contains('template'))[0]);
+    newStepForm.classList.remove('template');
+    document.querySelector(".stepsListContainer .content").appendChild(newStepForm);
   }
 
-  items.forEach(i =&gt; i.addEventListener('click', () =&gt; loadItem(i.dataset.id)));
+  function reorderItems() {
+    const children = document.querySelectorAll('.stepsListContainer .item-list .item');
+    const itemList = document.querySelectorAll('.stepsListContainer .item-list');
+  }
+  
+  const templateObjs = document.querySelectorAll('.itemDisplay.template');
+  //templateObjs.forEach(e =&gt; e.remove());
+  console.error(templateObjs);
+
+  const stepEventListener = i =&gt; i.addEventListener('click', () =&gt; loadItem(i.dataset.id));
+
+  items.forEach(stepEventListener);
   // load first item by default
   loadItem(0);
   //new FormData(formElement)
@@ -258,12 +308,10 @@ require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
   if (addStepButton) {
     addStepButton.addEventListener('click', (e) =&gt; {
       e.preventDefault();
+      // Add a new step UI.
+      addStep();
+      /*
       // FIXME: This selector is brittle, but idk how else to get all the necessary data (and overwrite the actual save to not do any step updates)
-      let a = document.createElement('input');
-      a.id = 'addedObjects'
-      a.value = ['XWiki.GuiedTour.StepClass_1']
-      a.classList.add('hidden')
-      document.querySelector('form#inline').appendChild(a)
       const formData = new FormData(document.querySelector('form#inline'));
       console.info(steps)
       for (let formKey of formData.keys()) {
@@ -279,16 +327,20 @@ require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
         }
       }
       console.info(steps)
-      // formData.set('addedObjects', 'XWiki.GuidedTour.StepClass_1'); // This doesn't work.
-      console.warn('clicked', e, formData);
+      */
+      console.warn('clicked', e);
     });
   }
   document.on('xwiki:actions:beforeSave', (e) =&gt; {
     // e.preventDefault();
     // request.set('addedObjects', ['XWiki.GuidedTour.StepClass_6'])
     // request.set('deletedObjects', ['XWiki.GuidedTour.StepClass_6'])
+    templateObjs.forEach(t =&gt; {
+      if (t.classList.contains('template')) t.remove()
+    });
     console.error('before save', e);
   });
+  // TODO: listener on Content edited, so the sidebar item name is updated.
 });
 </code>
     </property>
