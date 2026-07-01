@@ -17,9 +17,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+import { StorageManager } from "../StorageManager";
 import type {
   TourStep,
   TourTask,
+  TourTaskStatus,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
 
@@ -70,6 +72,7 @@ export class TourStore {
    */
   public getTourTasks(tourId: string): TourTask[] {
     // FIXME: What if we need to fetch the cache in this step? (i.e. a valid tour is not in the cache)
+    // this.setupTasks(this.cache.toursMap.get(tourId)?.tasksList ?? [], tourId);
     return this._cache.toursMap.get(tourId)?.tasksList ?? [];
   }
 
@@ -106,8 +109,30 @@ export class TourStore {
    * Assign the tour id to each task so that tasks know their parent tour.
    */
   private setupTasks(tasks: TourTask[], tourId: string) {
+    const userTaskStatuses: Map<string, TourTaskStatus> =
+      this.getLocalUserTaskStatuses();
     for (const task of tasks) {
       task.tourId = tourId;
+      // FIXME: Use this for guest users only.
+      task.status =
+        userTaskStatuses.get(StorageManager.getStorageKeyPrefix(task)) ??
+        task.status;
+    }
+  }
+
+  private getLocalUserTaskStatuses(): Map<string, TourTaskStatus> {
+    const userTaskStatusesStr =
+      StorageManager.getStorageKey("userTaskStatuses");
+    if (!userTaskStatusesStr) {
+      console.warn("No task statuses in sessionStorage");
+      return new Map();
+    }
+    try {
+      return new Map<string, TourTaskStatus>(
+        Object.entries(JSON.parse(userTaskStatusesStr)),
+      );
+    } catch {
+      return new Map();
     }
   }
 

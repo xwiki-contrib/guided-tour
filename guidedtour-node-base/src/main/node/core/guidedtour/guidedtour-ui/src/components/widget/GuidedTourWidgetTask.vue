@@ -26,13 +26,14 @@
 
 <template>
   <GuidedTourWidgetItem
+    v-if="task.value.active"
     :loading="false"
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
-      ['task-' + task!.status]: true,
+      ['task-' + task.value.status]: true,
       'guidedtour-task': true,
     }"
-    :id="task.id"
+    :id="task.value.id"
     @click="onStartTask"
   >
     <template v-slot:pre-btns>
@@ -42,11 +43,11 @@
       </button>
     </template>
     <template v-slot:item-title>
-      {{ task.title }}
+      {{ task.value.title }}
     </template>
     <template v-slot:post-btns>
       <button
-        v-if="task!.status == TourTaskStatus.TODO"
+        v-if="task.value.status == TourTaskStatus.TODO"
         class="post-btn"
         @click.stop="onSkipTask"
       >
@@ -67,9 +68,10 @@ import type {
   GuidedTourManager,
   TourTask,
 } from "@xwiki/contrib-guidedtour-api";
+import type { Ref } from "vue";
 
 const { task, tourId } = defineProps<{
-  task: TourTask;
+  task: Ref<TourTask>;
   tourId: string;
 }>();
 
@@ -80,28 +82,25 @@ const { isWaitingAsync } = toRefs(state);
 const guidedTourManager: GuidedTourManager = inject(
   "DefaultGuidedTourManager",
 )!;
-const emit = defineEmits(["taskStatusChanged"]);
 async function onResetTask() {
   isWaitingAsync.value = true;
-  await guidedTourManager.setTaskStatus(task!, TourTaskStatus.TODO);
-  emit("taskStatusChanged", task);
+  await guidedTourManager.setTaskStatus(task.value, TourTaskStatus.TODO);
   isWaitingAsync.value = false;
 }
 
 async function onSkipTask() {
   isWaitingAsync.value = true;
-  await guidedTourManager.setTaskStatus(task!, TourTaskStatus.SKIPPED);
-  emit("taskStatusChanged", task);
+  await guidedTourManager.setTaskStatus(task.value, TourTaskStatus.SKIPPED);
   isWaitingAsync.value = false;
 }
 
 async function onStartTask() {
   // Fetch the steps manually, so we can show the loader nicely while waiting for the steps to be fetched.
   isWaitingAsync.value = true;
-  await guidedTourManager.getSteps(tourId, task!.id).finally(() => {
+  await guidedTourManager.getSteps(tourId, task.value.id).finally(() => {
     isWaitingAsync.value = false;
   });
-  guidedTourManager.startTask(task!, false);
+  guidedTourManager.startTask(task.value, false);
 }
 </script>
 

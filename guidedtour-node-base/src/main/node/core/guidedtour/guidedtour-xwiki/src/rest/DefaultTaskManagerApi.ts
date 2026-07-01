@@ -118,9 +118,6 @@ export class DefaultTaskManagerApi implements TaskManagerApi {
   private async prepareTasks(tourId: string) {
     const url = this.getTasksUrl(tourId);
     const tasks = await this.restClient.request<TourTask[]>(url, "GET");
-    for (const task of tasks) {
-      task.tourId = tourId;
-    }
     this.sharedStore.updateTourTasks(tourId, tasks);
     return tasks;
   }

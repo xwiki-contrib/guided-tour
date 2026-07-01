@@ -81,26 +81,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
   }
 
-  async loadUserTaskStatuses() {
-    // For guest users, set the session storage for persistence.
-    const userTaskStatuses = (() => {
-      const userTaskStatusesStr =
-        StorageManager.getStorageKey("userTaskStatuses");
-      if (!userTaskStatusesStr) {
-        console.warn("No task statuses in sessionStorage");
-        return;
-      }
-      try {
-        return JSON.parse(userTaskStatusesStr);
-      } catch {
-        return;
-      }
-    })();
-    // // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
-    // // ...
-    return userTaskStatuses;
-  }
-
   async saveUserTaskStatuses(guidedTourManager: DefaultGuidedTourManager) {
     // Get a map of {"task_tour": task.status}
     const taskStatuses = Object.fromEntries(
@@ -123,30 +103,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
-  private async updateTourStatusesFromStorage() {
-    const userTaskStatuses = await this.loadUserTaskStatuses();
-    if (!userTaskStatuses) {
-      return;
-    }
-    for (const key of Object.keys(userTaskStatuses)) {
-      const ids = StorageManager.parseStorageKeyPrefix(key);
-      if (!ids) {
-        console.error("Failed to parse storage key", key);
-        continue;
-      }
-      (await this.getTask(ids.tourId, ids?.taskId))!.status =
-        userTaskStatuses[key] ?? TourTaskStatus.TODO;
-    }
-  }
-
   async getTours(): Promise<TourTour[]> {
-    const refetchDone = this.sharedStore.cache.tours.length == 0;
     const tours = await this.defaultTourManagerApi.getTours();
-
-    if (refetchDone) {
-      // If Guest user, don't use the status returned by the API, use the local storage values.
-      await this.updateTourStatusesFromStorage();
-    }
 
     this.defaultTourManagerApi.computeToursStatus(tours ?? []);
     return tours;
@@ -339,17 +297,33 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     this.defaultTourManagerApi.computeToursStatus(
       Array.of((await this.defaultTourManagerApi.getTour(task.tourId!))!),
     );
-    // Since we're setting the task status, it means we're done with all steps.
-    // So we can delete both the current step index and the cached steps objects.
-    StorageManager.setStorageKey(
-      StorageManager.getTaskCurrentStepStorageKey(task),
-      undefined,
-    );
-    StorageManager.setStorageKey(
-      StorageManager.getTaskStepStorageStorageKey(task),
-      undefined,
-    );
+    if (task === this.activeTask) {
+      // Since we're setting the task status, it means we're done with all steps. So destroy the active task.
+      this.destroyActiveTask();
+    }
+    // Sync with storage.
     await this.saveUserTaskStatuses(this);
+  }
+
+  /**
+   * Delete all data pertaining to the current task in progress.
+   * Deletes the active task object, and the Session Storage keys for current step index and cached steps.
+   */
+  private destroyActiveTask() {
+    StorageManager.setStorageKey(
+      StorageManager.getTaskCurrentStepStorageKey(this.activeTask!),
+      undefined,
+    );
+    StorageManager.setStorageKey(
+      StorageManager.getTaskStepStorageStorageKey(this.activeTask!),
+      undefined,
+    );
+    StorageManager.setStorageKey(
+      StorageManager.getActiveTaskStorageKey(),
+      undefined,
+    );
+    this.activeTask = undefined;
+    this.activeDriverTask = undefined;
   }
 
   /**
