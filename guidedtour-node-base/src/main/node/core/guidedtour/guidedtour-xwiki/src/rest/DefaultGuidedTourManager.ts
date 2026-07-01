@@ -81,26 +81,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
   }
 
-  async loadUserTaskStatuses() {
-    // For guest users, set the session storage for persistence.
-    const userTaskStatuses = (() => {
-      const userTaskStatusesStr =
-        StorageManager.getStorageKey("userTaskStatuses");
-      if (!userTaskStatusesStr) {
-        console.warn("No task statuses in sessionStorage");
-        return;
-      }
-      try {
-        return JSON.parse(userTaskStatusesStr);
-      } catch {
-        return;
-      }
-    })();
-    // // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
-    // // ...
-    return userTaskStatuses;
-  }
-
   async saveUserTaskStatuses(guidedTourManager: DefaultGuidedTourManager) {
     // Get a map of {"task_tour": task.status}
     const taskStatuses = Object.fromEntries(
@@ -123,30 +103,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
-  private async updateTourStatusesFromStorage() {
-    const userTaskStatuses = await this.loadUserTaskStatuses();
-    if (!userTaskStatuses) {
-      return;
-    }
-    for (const key of Object.keys(userTaskStatuses)) {
-      const ids = StorageManager.parseStorageKeyPrefix(key);
-      if (!ids) {
-        console.error("Failed to parse storage key", key);
-        continue;
-      }
-      (await this.getTask(ids.tourId, ids?.taskId))!.status =
-        userTaskStatuses[key] ?? TourTaskStatus.TODO;
-    }
-  }
-
   async getTours(): Promise<TourTour[]> {
-    const refetchDone = this.sharedStore.cache.tours.length == 0;
     const tours = await this.defaultTourManagerApi.getTours();
-
-    if (refetchDone) {
-      // If Guest user, don't use the status returned by the API, use the local storage values.
-      await this.updateTourStatusesFromStorage();
-    }
 
     this.defaultTourManagerApi.computeToursStatus(tours ?? []);
     return tours;
