@@ -19,8 +19,8 @@ catalogs:
       specifier: 24.12.2
       version: 24.12.2
     '@types/sinon':
-      specifier: 21.0.0
-      version: 21.0.0
+      specifier: 22.0.0
+      version: 22.0.0
     '@vitejs/plugin-vue':
       specifier: 6.0.4
       version: 6.0.4
@@ -79,8 +79,8 @@ catalogs:
       specifier: 0.3.21
       version: 0.3.21
     sinon:
-      specifier: 21.1.2
-      version: 21.1.2
+      specifier: 22.0.0
+      version: 22.0.0
     tippy.js:
       specifier: 6.3.7
       version: 6.3.7
@@ -119,9 +119,7 @@ catalogs:
       version: 4.1.0
 
 patchedDependencies:
-  '@xwiki/platform-tool-eslintconfig@18.3.0':
-    hash: c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
-    path: patches/@xwiki__platform-tool-eslintconfig@18.3.0.patch
+  '@xwiki/platform-tool-eslintconfig@18.3.0': c4ef7b0264f0bfa84bfd36e434816dc3945003b84925bbe9c9f3296e83d6cc69
 
 importers:
 
@@ -257,7 +255,7 @@ importers:
         version: 4.18.1
       sinon:
         specifier: 'catalog:'
-        version: 21.1.2
+        version: 22.0.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -297,7 +295,7 @@ importers:
         version: 4.0.0
       '@types/sinon':
         specifier: 'catalog:'
-        version: 21.0.0
+        version: 22.0.0
       '@xwiki/contrib-guidedtour-dev-config':
         specifier: workspace:*
         version: link:../../../dev/config
@@ -324,7 +322,7 @@ importers:
         version: 4.0.0
       sinon:
         specifier: 'catalog:'
-        version: 21.1.2
+        version: 22.0.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -426,7 +424,7 @@ importers:
         version: 4.18.1
       sinon:
         specifier: 'catalog:'
-        version: 21.1.2
+        version: 22.0.0
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -991,8 +989,8 @@ packages:
   '@types/node@24.12.2':
     resolution: {integrity: sha512-A1sre26ke7HDIuY/M23nd9gfB+nrmhtYyMINbjI1zHJxYteKR6qSMX56FsmjMcDb3SMcjJg5BiRRgOCC/yBD0g==}
 
-  '@types/sinon@21.0.0':
-    resolution: {integrity: sha512-+oHKZ0lTI+WVLxx1IbJDNmReQaIsQJjN2e7UUrJHEeByG7bFeKJYsv1E75JxTQ9QKJDp21bAa/0W2Xo4srsDnw==}
+  '@types/sinon@22.0.0':
+    resolution: {integrity: sha512-TDbVpbccc2HfiqHR09Argj3mHV1KMW7sCCKj52fsl8lbRLkEn7fB1966EWhOKWUBcqfBueZuPoA7/OK1CKiy3g==}
 
   '@types/sinonjs__fake-timers@15.0.1':
     resolution: {integrity: sha512-Ko2tjWJq8oozHzHV+reuvS5KYIRAokHnGbDwGh/J64LntgpbuylF74ipEL24HCyRjf9FOlBiBHWBR1RlVKsI1w==}
@@ -1549,6 +1547,10 @@ packages:
 
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
+    engines: {node: '>=0.3.1'}
+
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
     engines: {node: '>=0.3.1'}
 
   doctrine@2.1.0:
@@ -2454,8 +2456,8 @@ packages:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
 
-  sinon@21.1.2:
-    resolution: {integrity: sha512-FS6mN+/bx7e2ajpXkEmOcWB6xBzWiuNoAQT18/+a20SS4U7FSYl8Ms7N6VTUxN/1JAjkx7aXp+THMC8xdpp0gA==}
+  sinon@22.0.0:
+    resolution: {integrity: sha512-sq/6DpdXOrLyfbKlXLg/Usc7xu8YXPeLkOFZRvA3bNUSA2lhbrZ06yuXbH1fkzBPCbz9O10+7hznzUsjaYNm0Q==}
 
   sortablejs@1.14.0:
     resolution: {integrity: sha512-pBXvQCs5/33fdN1/39pPL0NZF20LeRbLQ5jtnheIPN9JQAaufGjKdWduZn4U7wCtVuzKhmRkI0DFYHYRbB2H1w==}
@@ -3272,7 +3274,7 @@ snapshots:
     dependencies:
       undici-types: 7.16.0
 
-  '@types/sinon@21.0.0':
+  '@types/sinon@22.0.0':
     dependencies:
       '@types/sinonjs__fake-timers': 15.0.1
 
@@ -3896,6 +3898,8 @@ snapshots:
       object-keys: 1.1.1
 
   diff@8.0.4: {}
+
+  diff@9.0.0: {}
 
   doctrine@2.1.0:
     dependencies:
@@ -4957,12 +4961,12 @@ snapshots:
 
   signal-exit@4.1.0: {}
 
-  sinon@21.1.2:
+  sinon@22.0.0:
     dependencies:
       '@sinonjs/commons': 3.0.1
       '@sinonjs/fake-timers': 15.4.0
       '@sinonjs/samsam': 10.0.2
-      diff: 8.0.4
+      diff: 9.0.0
 
   sortablejs@1.14.0: {}
 
