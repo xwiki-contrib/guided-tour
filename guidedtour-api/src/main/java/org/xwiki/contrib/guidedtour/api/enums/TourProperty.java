@@ -23,7 +23,7 @@ import org.xwiki.stability.Unstable;
 
 /**
  * Enum representing the properties of a Tour. Each enum constant has a base key and an optional suffix to form the
- * complete key used in the XWiki Object.
+ * complete key used in the solr query for the XWiki Object.
  *
  * @version $Id$
  * @since 1.0
@@ -36,9 +36,15 @@ public enum TourProperty
      */
     TITLE("title", String.class.getSimpleName().toLowerCase()),
     /**
-     * The description key as a base key and boolean suffix representing the field type.
+     * The isActive key as a base key and boolean suffix representing the field type. When installing Tour pages from
+     * page exports, the boolean fields are indexed as int, so two properties are needed for the bool fields.
      */
-    IS_ACTIVE("isActive", Boolean.class.getSimpleName().toLowerCase()),
+    IS_ACTIVE_INT(TourProperty.IS_ACTIVE_PROP_NAME, "int"),
+    /**
+     * The isActive key as a base key and boolean suffix representing the field type. When installing Tour pages from
+     * page exports, the boolean fields are indexed as int, so two properties are needed for the bool fields.
+     */
+    IS_ACTIVE_BOOL(TourProperty.IS_ACTIVE_PROP_NAME, "boolean"),
     /**
      * The dependsOn key as a base key and string suffix representing the field type. It represents the dependencies of
      * a task on other tasks.
@@ -86,9 +92,11 @@ public enum TourProperty
      */
     QUERY_PARAMETERS("queryParameters", null);
 
-    private String baseKey;
+    private static final String IS_ACTIVE_PROP_NAME = "isActive";
 
-    private String suffix;
+    private final String baseKey;
+
+    private final String suffix;
 
     /**
      * Constructor for TourProperty.

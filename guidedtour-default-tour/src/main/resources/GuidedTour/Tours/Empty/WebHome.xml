@@ -81,8 +81,8 @@
         <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
       </title>
     </class>
-    <property type="Integer">
-      <isActive>1</isActive>
+    <property type="Boolean">
+      <isActive>true</isActive>
     </property>
     <property type="String">
       <title>Empty Tour (For Testing)</title>

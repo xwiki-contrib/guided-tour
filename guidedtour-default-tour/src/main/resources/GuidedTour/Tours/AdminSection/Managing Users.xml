@@ -1393,8 +1393,8 @@ From here, you can visit each user's page, disable or delete users.</content>
     <property type="String">
       <dependsOn/>
     </property>
-    <property type="Integer">
-      <isActive>1</isActive>
+    <property type="Boolean">
+      <isActive>true</isActive>
     </property>
     <property type="Long">
       <order>1</order>

@@ -21,13 +21,16 @@ package org.xwiki.contrib.guidedtour.internal.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.xwiki.component.annotation.Component;
+import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.query.Query;
 import org.xwiki.query.QueryException;
 import org.xwiki.query.QueryManager;
@@ -78,5 +81,27 @@ public class SolrQueryUtil
             query.bindValue("sort", sort);
         }
         return ((QueryResponse) query.execute().get(0)).getResults();
+    }
+
+    /**
+     * When installing Tour pages through the EM, the boolean fields are indexed as int, so two properties are needed
+     * for the bool fields. This method will check both fields, and return the value as a boolean. If the value is
+     * missing, it will return {@code false}.
+     *
+     * @param document the document in which to check for the "isActive" field, as returned by a solr query
+     * @param classPrefix the prefix to prepend to the property name, to get the right property
+     * @return boolean value of the isActive property, or {@code false} by default.
+     */
+    public static boolean getIsActiveProperty(SolrDocument document, String classPrefix)
+    {
+        Object boolField = document.getFirstValue(TourProperty.IS_ACTIVE_BOOL.formKey(classPrefix));
+        if (boolField != null) {
+            return (Boolean) boolField;
+        }
+        Object intField = document.getFirstValue(TourProperty.IS_ACTIVE_INT.formKey(classPrefix));
+        if (intField != null) {
+            return !Objects.equals(intField, 0);
+        }
+        return false;
     }
 }

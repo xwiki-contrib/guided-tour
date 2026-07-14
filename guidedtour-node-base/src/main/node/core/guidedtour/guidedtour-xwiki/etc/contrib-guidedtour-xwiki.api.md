@@ -38,7 +38,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     initExistingTask(): Promise<void>;
     // (undocumented)
     loadUserTaskStatuses(): Promise<any>;
-    resetTask(task: TourTask): Promise<void>;
     saveTaskStatus(tourId: string, taskId: string, status: TourTaskStatus): Promise<void>;
     // (undocumented)
     saveUserTaskStatuses(guidedTourManager: DefaultGuidedTourManager): Promise<void>;

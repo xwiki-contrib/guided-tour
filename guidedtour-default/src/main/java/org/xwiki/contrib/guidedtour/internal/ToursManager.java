@@ -57,6 +57,8 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOU
 /**
  * Manages the instance tours. It provides methods to create, retrieve, update and delete tours. Tours are stored as
  * XWiki documents with a TourClass object.
+ * <p>
+ * This class uses Solr to search for the documents, in order to avoid potential slowness in HQL queries.
  *
  * @version $Id$
  * @since 1.0
@@ -108,7 +110,7 @@ public class ToursManager
         if (tourClassObject == null) {
             tourClassObject = targetDoc.newXObject(TOUR_CLASS, wikiContext);
             tourClassObject.set(TourProperty.TITLE.getBaseKey(), tourDTO.getTitle(), wikiContext);
-            tourClassObject.set(TourProperty.IS_ACTIVE.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
+            tourClassObject.set(TourProperty.IS_ACTIVE_BOOL.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
             targetDoc.addXObject(tourClassObject);
             wiki.saveDocument(targetDoc, "Tour created.", wikiContext);
         } else {
@@ -128,7 +130,8 @@ public class ToursManager
     {
         List<String> filteredLines = new ArrayList<>();
         filteredLines.add(TourProperty.TITLE.formKey(CLASS_PREFIX));
-        filteredLines.add(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
+        filteredLines.add(TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX));
+        filteredLines.add(TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX));
         SolrDocumentList solrDocuments =
             this.queryUtil.executeQuery(QS, "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate", filteredLines, "");
         List<TourDTO> tours = new ArrayList<>(solrDocuments.size());
@@ -138,6 +141,7 @@ public class ToursManager
             String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
             Object activeObj = document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
             boolean isActive = (activeObj != null) && (Boolean) activeObj;
+            boolean isActive = SolrQueryUtil.getIsActiveProperty(document, CLASS_PREFIX);
             TourDTO dto = new TourDTO(documentReference.toString(), title, isActive);
             dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
             tours.add(dto);

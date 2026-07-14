@@ -158,8 +158,9 @@ class ToursManagerTest
     {
         when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TourClass",
             "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate",
-            List.of(TourProperty.TITLE.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX)),
-            "")).thenReturn(this.solrDocumentList);
+            List.of(TourProperty.TITLE.formKey(CLASS_PREFIX),
+                TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX),
+            ""))).thenReturn(this.solrDocumentList);
         when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.title_string")).thenReturn(
             "tour title");
         when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.isActive_boolean")).thenReturn(true);

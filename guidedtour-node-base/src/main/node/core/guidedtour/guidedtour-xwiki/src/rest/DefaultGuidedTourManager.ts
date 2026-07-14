@@ -272,7 +272,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     let stepIndex = 0;
     if (remember) {
       stepIndex = Number.parseInt(
-        globalThis.sessionStorage.getItem(
+        StorageManager.getStorageKey(
           StorageManager.getTaskCurrentStepStorageKey(task),
         ) ?? "0",
       );
@@ -286,14 +286,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     this.activeTask = task;
     this.activeDriverTask = wrapTask(driverTour, this);
     this.activeDriverTask.drive(stepIndex);
-  }
-
-  /**
-   * Reset a task to its initial state.
-   * TODO: Implement actual reset logic (GUIDEDTOUR-3).
-   */
-  async resetTask(task: TourTask): Promise<void> {
-    console.log(task);
   }
 
   /**
