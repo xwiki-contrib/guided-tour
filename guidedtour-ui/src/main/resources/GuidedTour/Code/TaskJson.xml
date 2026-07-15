@@ -76,9 +76,10 @@
       #set ($docURL = $xwiki.getURL($docRef))
       #set ($docName = "&lt;a href='${docURL}'&gt;$escapetool.xml($currentEntry.getTitle())&lt;/a&gt;")
       #set ($numberOfSteps = $xwiki.getDocument($docRef).getObjects('XWiki.GuidedTour.StepClass').size())
-      #set ($deleteRef = "${request.getContextPath()}/rest/guidedTour/tours/${tourId}/tasks/${currentEntry.getId()}")
-      #set ($deleteAction = "&lt;a class='task-delete-action' href='${deleteRef}' data-taskName='${currentEntry.getTitle()}'&gt;Delete&lt;/a&gt;")
-
+      #set ($deleteRef = $escapetool.xml(
+        "${request.getContextPath()}/rest/guidedTour/tours/${tourId}/tasks/${currentEntry.getId()}"))
+      #set ($deleteAction = "&lt;a class='task-delete-action' href='${deleteRef}' " +
+        "data-taskName='${escapetool.xml($currentEntry.getTitle())}'&gt;Delete&lt;/a&gt;")
       #set ($discard = $results.rows.add({
         'order': $currentEntry.getOrder(),
         'title' : $docName,

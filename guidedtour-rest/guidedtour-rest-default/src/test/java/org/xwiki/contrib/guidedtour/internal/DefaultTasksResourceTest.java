@@ -106,9 +106,9 @@ class DefaultTasksResourceTest
         List<TaskDTO> tasks = new ArrayList<>(2);
         tasks.add(new TaskDTO("id1", "title", 1, true, new ArrayList<>()));
         tasks.add(new TaskDTO("id2", "title", 1, true, List.of("id1")));
-        when(this.tasksManager.getAllTasks(TOUR_ID)).thenReturn(tasks);
+        when(this.tasksManager.getAllTasks(TOUR_ID, "")).thenReturn(tasks);
 
-        Response response = this.defaultTasksResource.getTourTasks(TOUR_ID);
+        Response response = this.defaultTasksResource.getTourTasks(TOUR_ID, "");
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(tasks, response.getEntity());
         assertEquals("Executing: Tasks API: retrieving the tasks for tour [tourId].", this.logCapture.getMessage(0));

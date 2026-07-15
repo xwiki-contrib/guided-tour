@@ -69,6 +69,12 @@ public class ToursManager
 {
     private static final String CLASS_PREFIX = "property.XWiki.GuidedTour.TourClass.%s";
 
+    private static final List<String> FILTERED_LINES = List.of(
+        TourProperty.TITLE.formKey(CLASS_PREFIX),
+        TourProperty.DESCRIPTION.formKey(CLASS_PREFIX),
+        TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX),
+        TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX));
+
     private static final String QS = String.format("class:%s", TOUR_CLASS);
 
     @Inject
@@ -128,21 +134,16 @@ public class ToursManager
      */
     public List<TourDTO> getAllTours() throws QueryException, XWikiException, InvalidIdException
     {
-        List<String> filteredLines = new ArrayList<>();
-        filteredLines.add(TourProperty.TITLE.formKey(CLASS_PREFIX));
-        filteredLines.add(TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX));
-        filteredLines.add(TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX));
         SolrDocumentList solrDocuments =
-            this.queryUtil.executeQuery(QS, "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate", filteredLines, "");
+            this.queryUtil.executeQuery(QS, "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate", FILTERED_LINES, "");
         List<TourDTO> tours = new ArrayList<>(solrDocuments.size());
         for (SolrDocument document : solrDocuments) {
             EntityReference documentReference =
                 this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
             String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
-            Object activeObj = document.getFirstValue(TourProperty.IS_ACTIVE.formKey(CLASS_PREFIX));
-            boolean isActive = (activeObj != null) && (Boolean) activeObj;
             boolean isActive = SolrQueryUtil.getIsActiveProperty(document, CLASS_PREFIX);
-            TourDTO dto = new TourDTO(documentReference.toString(), title, isActive);
+            String description = (String) document.getFirstValue(TourProperty.DESCRIPTION.formKey(CLASS_PREFIX));
+            TourDTO dto = new TourDTO(documentReference.toString(), title, isActive, description);
             dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
             tours.add(dto);
         }

@@ -241,7 +241,9 @@
       <action>saveandedit</action>
     </property>
     <property type="DBStringList">
-      <creationRestrictions/>
+      <creationRestrictions>
+        <value>GuidedTour</value>
+      </creationRestrictions>
     </property>
     <property type="Integer">
       <creationRestrictionsAreSuggestions>0</creationRestrictionsAreSuggestions>
@@ -265,7 +267,9 @@
       <terminal>0</terminal>
     </property>
     <property type="DBStringList">
-      <visibilityRestrictions/>
+      <visibilityRestrictions>
+        <value>GuidedTour</value>
+      </visibilityRestrictions>
     </property>
   </object>
 </xwikidoc>

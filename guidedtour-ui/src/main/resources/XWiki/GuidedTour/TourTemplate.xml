@@ -102,7 +102,7 @@
     <property type="LargeString">
       <description/>
     </property>
-    <property type="Integer">
+    <property type="Boolean">
       <isActive/>
     </property>
     <property type="String">

@@ -46,7 +46,7 @@
 {{/velocity}}
 
 {{velocity}}
-{{html wiki='true'}}
+{{html clean='false'}}
   #addTaskModal($doc.getDocumentReference)
   #deleteTaskModal()
   &lt;div class="taskSpecificProps"&gt;
@@ -54,12 +54,15 @@
     #set($xclass = $tour.xWikiClass)
     #foreach($property in $xclass.properties)
       #set ($propertyId = "${xclass.name}_${tour.number}_$property.name")
+      &lt;br/&gt;
       &lt;dt&gt;
         &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
         &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
       &lt;/dt&gt;
       &lt;dd&gt;
+      {{/html}}
         $doc.display($property.name, $tour)
+      {{html clean='false'}}
       &lt;/dd&gt;
     #end
     &lt;/dl&gt;
@@ -70,6 +73,7 @@
   #if ($isEdit)
     &lt;a href="#addTaskFormModal" data-toggle="modal" data-target="#addTaskFormModal" class="btn btn-primary"&gt;Add Task&lt;/a&gt;
   #end
+{{/html}}
 
   #set ($liveDataConfig = {
     "meta": {
@@ -89,14 +93,12 @@
     'tourId': "${doc.getDocumentReference()}"
   }))
 
-
   {{liveData
     id='tourTasksList'
     properties="order,title,steps,actions"
     source='liveTable'
     sourceParameters="$sourceParameters"
   }}$jsontool.serialize($liveDataConfig){{/liveData}}
-{{/html}}
 {{/velocity}}</content>
   <object>
     <name>GuidedTour.Code.TourClassSheet</name>

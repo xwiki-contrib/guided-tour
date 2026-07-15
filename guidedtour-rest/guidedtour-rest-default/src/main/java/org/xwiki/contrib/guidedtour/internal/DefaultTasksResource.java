@@ -47,10 +47,10 @@ public class DefaultTasksResource extends AbstractGuidedTourResource implements 
     private TasksManager tasksManager;
 
     @Override
-    public Response getTourTasks(String tourId)
+    public Response getTourTasks(String tourId, String searchedTitle)
     {
         return execute("Tasks API: retrieving the tasks for tour [{}].", () -> {
-            List<TaskDTO> tasks = this.tasksManager.getAllTasks(tourId);
+            List<TaskDTO> tasks = this.tasksManager.getAllTasks(tourId, searchedTitle);
             return Response.ok(tasks).type(MediaType.APPLICATION_JSON_TYPE).build();
         }, tourId);
     }

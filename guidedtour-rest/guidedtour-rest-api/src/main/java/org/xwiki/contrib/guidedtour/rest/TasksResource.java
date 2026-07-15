@@ -20,12 +20,14 @@
 package org.xwiki.contrib.guidedtour.rest;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -48,12 +50,14 @@ public interface TasksResource extends XWikiRestComponent
      * Returns the list of tasks for a given tour.
      *
      * @param tourId the tour id
+     * @param searchedTitle the title to filter the tasks by
      * @return the list of tasks for the given tour and 200 status code if the retrieval is successful, 401 if the user
      *     lacks rights or if the CSRF token is invalid and 500 if any other error occurs
-     * @throws XWikiRestException
+     * @throws XWikiRestException if an error occurs
      */
     @GET
-    Response getTourTasks(@PathParam("tourId") String tourId) throws XWikiRestException;
+    Response getTourTasks(@PathParam("tourId") String tourId,
+        @QueryParam("filters") @DefaultValue("") String searchedTitle) throws XWikiRestException;
 
     /**
      * Returns a specific task of a given tour.
@@ -62,6 +66,7 @@ public interface TasksResource extends XWikiRestComponent
      * @param taskId the task id
      * @return the task and 200 status code if the retrieval is successful, 404 if the task is not found, 401 if the
      *     user lacks rights or if the CSRF token is invalid and 500 if any other error occurs
+     * @throws XWikiRestException if an error occurs
      */
     @GET
     @Path("/{taskId}")
@@ -75,6 +80,7 @@ public interface TasksResource extends XWikiRestComponent
      * @param taskDTO the task data to create
      * @return 201 status code if the task has been created successfully, 401 if the user lacks rights, 404 if the tour
      *     is not found, 409 if the task already exists and 500 if any other error occurs
+     * @throws XWikiRestException if an error occurs
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -88,6 +94,7 @@ public interface TasksResource extends XWikiRestComponent
      * @param taskDTO the task data to update
      * @return 200 status code if the task has been updated successfully, 401 if the user lacks rights, 404 if the tour
      *     or the task is not found and 500 if any other error occurs
+     * @throws XWikiRestException if an error occurs
      */
     @PUT
     @Path("/{taskId}")
@@ -102,6 +109,7 @@ public interface TasksResource extends XWikiRestComponent
      * @param taskId the task id
      * @return 200 status code if the task has been deleted successfully, 401 if the user lacks rights, 404 if the tour
      *     or the task is not found and 500 if any other error occurs
+     * @throws XWikiRestException if an error occurs
      */
     @DELETE
     @Path("/{taskId}")

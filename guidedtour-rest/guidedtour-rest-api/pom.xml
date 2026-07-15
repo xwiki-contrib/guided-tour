@@ -52,4 +52,27 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.revapi</groupId>
+        <artifactId>revapi-maven-plugin</artifactId>
+        <configuration>
+          <analysisConfiguration>
+            <revapi.differences>
+              <differences>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.method.numberOfParametersChanged</code>
+                  <old>method javax.ws.rs.core.Response org.xwiki.contrib.guidedtour.rest.TasksResource::getTourTasks(java.lang.String) throws org.xwiki.rest.XWikiRestException</old>
+                  <new>method javax.ws.rs.core.Response org.xwiki.contrib.guidedtour.rest.TasksResource::getTourTasks(java.lang.String, java.lang.String) throws org.xwiki.rest.XWikiRestException</new>
+                  <justification>Added a filter value</justification>
+                </item>
+              </differences>
+            </revapi.differences>
+          </analysisConfiguration>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

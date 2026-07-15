@@ -60,11 +60,6 @@ public class GuidedTourScriptService implements ScriptService
     public List<TaskDTO> getTourTasks(String tourId, String searchedTitle)
         throws QueryException, XWikiException, InvalidIdException
     {
-        List<TaskDTO> tasks = this.tasksManager.getAllTasks(tourId);
-        if (searchedTitle == null || searchedTitle.isEmpty()) {
-            return tasks;
-        }
-        return tasks.stream().filter(task -> task.getTitle().toLowerCase().contains(searchedTitle.toLowerCase()))
-            .toList();
+        return this.tasksManager.getAllTasks(tourId, searchedTitle);
     }
 }

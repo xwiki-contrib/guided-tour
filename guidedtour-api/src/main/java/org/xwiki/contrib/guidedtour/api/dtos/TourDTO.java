@@ -71,13 +71,27 @@ public class TourDTO
     }
 
     /**
+     * Constructor for TourDTO.
+     *
+     * @param id the id of the tour
+     * @param title the title of the tour
+     * @param isActive {@code true} if the tour is active, {@code false} otherwise
+     * @param description the tour description
+     */
+    public TourDTO(String id, String title, boolean isActive, String description)
+    {
+        this(id, title, isActive);
+        this.description = description;
+    }
+
+    /**
      * Gets the description of the tour.
      *
      * @return the description of the tour
      */
     public String getDescription()
     {
-        return description;
+        return this.description;
     }
 
     /**

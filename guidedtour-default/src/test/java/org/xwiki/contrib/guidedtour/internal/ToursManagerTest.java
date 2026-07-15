@@ -67,9 +67,9 @@ class ToursManagerTest
 
     private final SolrDocumentList solrDocumentList = new SolrDocumentList();
 
-    private final TourDTO tourDTO = new TourDTO(TOUR_ID, "dto Title", true);
+    private final TourDTO tourDTO = new TourDTO(TOUR_ID, "dto Title", true, "description");
 
-    private final TourDTO tourDTOUpdated = new TourDTO(TOUR_ID, "updated title", false);
+    private final TourDTO tourDTOUpdated = new TourDTO(TOUR_ID, "updated title", false, "description");
 
     @InjectMockComponents
     private ToursManager toursManager;
@@ -158,9 +158,9 @@ class ToursManagerTest
     {
         when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TourClass",
             "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate",
-            List.of(TourProperty.TITLE.formKey(CLASS_PREFIX),
-                TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX),
-            ""))).thenReturn(this.solrDocumentList);
+            List.of(TourProperty.TITLE.formKey(CLASS_PREFIX), TourProperty.DESCRIPTION.formKey(CLASS_PREFIX),
+                TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX)),
+            "")).thenReturn(this.solrDocumentList);
         when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.title_string")).thenReturn(
             "tour title");
         when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.isActive_boolean")).thenReturn(true);
@@ -171,8 +171,8 @@ class ToursManagerTest
         List<TourDTO> tours = this.toursManager.getAllTours();
         assertEquals(1, tours.size());
         assertEquals("tour title", tours.get(0).getTitle());
-        assertTrue(tours.get(0).isActive());
-        assertTrue(tours.get(0).getTasksList().isEmpty());
+        assertTrue(tours.getFirst().isActive());
+        assertTrue(tours.getFirst().getTasksList().isEmpty());
     }
 
     @Test

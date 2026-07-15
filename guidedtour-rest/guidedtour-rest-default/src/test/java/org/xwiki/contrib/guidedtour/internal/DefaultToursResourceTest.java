@@ -64,7 +64,7 @@ class DefaultToursResourceTest
 {
     private static final String CSRF_VALUE = "csrfToken";
 
-    private final TourDTO tourDTO = new TourDTO("tourId", "name", true);
+    private final TourDTO tourDTO = new TourDTO("tourId", "name", true, "description");
 
     @InjectMockComponents
     private DefaultToursResource defaultToursResource;
@@ -108,8 +108,8 @@ class DefaultToursResourceTest
     void getAvailableTours() throws QueryException, XWikiException, InvalidIdException
     {
         List<TourDTO> tours = new ArrayList<>(2);
-        tours.add(new TourDTO("id", "name", true));
-        tours.add(new TourDTO("id2", "name2", false));
+        tours.add(new TourDTO("id", "name", true, "description"));
+        tours.add(new TourDTO("id2", "name2", false, "description"));
         when(this.toursManager.getAllTours()).thenReturn(tours);
 
         Response response = this.defaultToursResource.getAvailableTours();

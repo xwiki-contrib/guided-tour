@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -197,15 +196,15 @@ public class StepsManager
     {
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
-        DocumentReference tourDocRef = documentReferenceResolver.resolve(tourId);
+        DocumentReference tourDocRef = this.documentReferenceResolver.resolve(tourId);
         if (wiki.exists(tourDocRef, wikiContext)) {
-            DocumentReference taskDocRef = documentReferenceResolver.resolve(taskId, tourDocRef);
+            DocumentReference taskDocRef = this.documentReferenceResolver.resolve(taskId, tourDocRef);
             if (wiki.exists(taskDocRef, wikiContext)) {
                 XWikiDocument taskDoc = wiki.getDocument(taskDocRef, wikiContext);
                 return taskDoc.getXObjects(STEP_CLASS).stream()
                     .filter(Objects::nonNull)
                     .sorted(Comparator.comparingInt(step -> step.getIntValue(TourProperty.ORDER.getBaseKey())))
-                    .collect(Collectors.toList());
+                    .toList();
             } else {
                 throw new InvalidIdException("Task with the given id [%s] does not exists.", taskId);
             }

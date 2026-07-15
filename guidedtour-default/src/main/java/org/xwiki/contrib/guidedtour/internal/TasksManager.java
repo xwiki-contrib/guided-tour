@@ -19,14 +19,13 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-
+import com.google.common.base.Splitter;
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.objects.BaseObject;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.xwiki.component.annotation.Component;
@@ -43,12 +42,12 @@ import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.model.validation.EntityNameValidation;
 import org.xwiki.query.QueryException;
 
-import com.google.common.base.Splitter;
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.objects.BaseObject;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TASK_CLASS;
 
@@ -152,7 +151,7 @@ public class TasksManager
         if (results.isEmpty()) {
             throw new InvalidIdException(TASK_NOT_FOUND_ERROR, taskId);
         }
-        SolrDocument document = results.get(0);
+        SolrDocument document = results.getFirst();
         EntityReference documentReference = this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
         return getTaskDTO(document, documentReference);
     }
@@ -161,16 +160,18 @@ public class TasksManager
      * Retrieves all tasks for a given tour id.
      *
      * @param tourId the id of the tour to which the tasks belong
+     * @param filteredTitle the title to filter the tasks by, can be empty or null if no filtering is needed
      * @return a list of {@link TaskDTO} containing the tasks information
      * @throws QueryException if there is an error while executing the Solr query to retrieve the task documents
      * @throws XWikiException if there is an error while interacting with the XWiki API
      * @throws InvalidIdException if the tour with the given id does not exist
      */
-    public List<TaskDTO> getAllTasks(String tourId) throws QueryException, XWikiException, InvalidIdException
+    public List<TaskDTO> getAllTasks(String tourId, String filteredTitle)
+        throws QueryException, XWikiException, InvalidIdException
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:\"%s\"", parentSpace);
+        String fq = formFilterQuery(filteredTitle, parentSpace);
         SolrDocumentList solrDocuments =
             this.queryUtil.executeQuery(QS, fq, FILTERED_LINES, TourProperty.ORDER.formKey(CLASS_PREFIX) + " asc");
         List<TaskDTO> tasks = new ArrayList<>(solrDocuments.size());
@@ -183,17 +184,32 @@ public class TasksManager
     }
 
     /**
+     * Calls {@link #getAllTasks(String, String)} with an empty search title.
+     *
+     * @param tourId the id of the tour to which the tasks belong
+     * @return a list of {@link TaskDTO} containing the tasks information
+     * @throws QueryException     if there is an error while executing the Solr query to retrieve the task documents
+     * @throws XWikiException     if there is an error while interacting with the XWiki API
+     * @throws InvalidIdException if the tour with the given id does not exist
+     */
+    public List<TaskDTO> getAllTasks(String tourId) throws QueryException, XWikiException, InvalidIdException
+    {
+        return getAllTasks(tourId, "");
+    }
+
+    /**
      * Updates an existing task based on the provided DTO. If the order of the task is modified, it also updates the
      * order of the other tasks in the tour accordingly.
      *
      * @param tourId the id of the tour to which the task belongs
      * @param newDTO the {@link TaskDTO} containing the updated task information
-     * @throws XWikiException if there is an error while interacting with the XWiki API
-     * @throws QueryException if there is an error while querying for existing tasks to determine the order updates
+     * @throws XWikiException     if there is an error while interacting with the XWiki API
+     * @throws QueryException     if there is an error while querying for existing tasks to determine the order updates
      * @throws InvalidIdException if the task with the given id does not exist in the tour
      */
     public void updateTask(String tourId, TaskDTO newDTO) throws XWikiException, QueryException, InvalidIdException
     {
+        // We get all tasks as we will have to update the order of remaining tasks.
         List<TaskDTO> existingTasks = getAllTasks(tourId);
         TaskDTO oldTask = getTaskDTOFromList(newDTO.getId(), existingTasks);
         int oldOrder = oldTask.getOrder();
@@ -217,25 +233,41 @@ public class TasksManager
      */
     public void deleteTask(String tourId, String taskId) throws XWikiException, QueryException, InvalidIdException
     {
+        // We get all tasks as we will have to update the order of remaining tasks.
         List<TaskDTO> existingTasks = getAllTasks(tourId);
         TaskDTO targetTask = getTaskDTOFromList(taskId, existingTasks);
         existingTasks.remove(targetTask);
         // The existence of the tour document is already checked in the getAllTasks method.
         DocumentReference tourDocRef = this.documentReferenceResolver.resolve(tourId);
         DocumentReference taskDocRef = this.documentReferenceResolver.resolve(taskId, tourDocRef);
-        XWikiContext wikiContext = wikiContextProvider.get();
+        XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
         wiki.deleteAllDocuments(wiki.getDocument(taskDocRef, wikiContext), wikiContext);
         updateRemainingTasks(existingTasks, targetTask, tourDocRef);
     }
 
+    private String formFilterQuery(String searchedTitle, String parentSpace)
+    {
+        StringBuilder fq = new StringBuilder(String.format("{!q.op=AND} type:DOCUMENT AND space:\"%s\"", parentSpace));
+        if (StringUtils.isNotBlank(searchedTitle)) {
+            fq.append(" AND ");
+            fq.append(TourProperty.TITLE.formKey(CLASS_PREFIX)).append("_lowercase:*");
+            fq.append(searchedTitle.toLowerCase().replace(" ", "\\ ")).append("*");
+        }
+        return fq.toString();
+    }
+
     private String validateTaskId(TaskDTO taskDTO)
     {
         String unvalidatedId = taskDTO.getId();
-        if (unvalidatedId == null || unvalidatedId.isEmpty()) {
+        if (StringUtils.isBlank(unvalidatedId)) {
             unvalidatedId = taskDTO.getTitle();
         }
-        return this.nameValidator.transform(unvalidatedId);
+        String validatedId = this.nameValidator.transform(unvalidatedId);
+        if (StringUtils.isBlank(validatedId)) {
+            throw new RuntimeException("Given DTO is missing both id and title, cannot create a task.");
+        }
+        return validatedId;
     }
 
     private TaskDTO getTaskDTOFromList(String taskId, List<TaskDTO> existingTasks) throws InvalidIdException

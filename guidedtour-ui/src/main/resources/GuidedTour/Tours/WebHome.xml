@@ -39,7 +39,6 @@
   <content>
 {{velocity}}
 #set ($discard = $xwiki.jsx.use('GuidedTour.Tours.WebHome'))
-{{html wiki='true'}}
   #set ($sourceParameters = $escapetool.url({
     'className': 'XWiki.GuidedTour.TourClass',
     'translationPrefix': 'guidedtour.livetable.'
@@ -65,6 +64,5 @@
     sourceParameters="$sourceParameters"
     layouts='table'
   }}$jsontool.serialize($liveDataConfig){{/liveData}}
-{{/html}}
 {{/velocity}}</content>
 </xwikidoc>

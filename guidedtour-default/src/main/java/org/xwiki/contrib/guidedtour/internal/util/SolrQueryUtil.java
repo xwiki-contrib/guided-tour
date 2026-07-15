@@ -26,6 +26,7 @@ import java.util.Objects;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -73,14 +74,14 @@ public class SolrQueryUtil
         filteredLines.add(WIKI_KEY);
         filteredLines.add(SPACES_KEY);
         filteredLines.add(NAME_KEY);
-        Query query = queryManager.createQuery(qs, "solr");
+        Query query = this.queryManager.createQuery(qs, "solr");
         query.bindValue("fq", fq);
         query.bindValue("fl", filteredLines);
         query.bindValue("group", true).bindValue("group.field", "fullname").bindValue("group.main", true);
-        if (sort != null && !sort.isEmpty()) {
+        if (StringUtils.isNotBlank(sort)) {
             query.bindValue("sort", sort);
         }
-        return ((QueryResponse) query.execute().get(0)).getResults();
+        return ((QueryResponse) query.execute().getFirst()).getResults();
     }
 
     /**

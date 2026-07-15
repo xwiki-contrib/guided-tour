@@ -211,7 +211,6 @@ class TasksManagerTest
     @Test
     void createTaskSameOrder() throws XWikiException
     {
-        this.taskDTO1.setId("");
         when(this.xwiki.exists(this.taskReference1, this.wikiContext)).thenReturn(false);
         this.taskDTO1.setOrder(2);
         DuplicatedIdException exception = assertThrows(DuplicatedIdException.class, () -> {
