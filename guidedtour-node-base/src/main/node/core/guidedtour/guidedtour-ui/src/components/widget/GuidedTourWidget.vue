@@ -165,8 +165,10 @@ const progress = {
     return (
       allTasks.filter(
         (task: TourTask) =>
-          task.status != undefined && task.status != TourTaskStatus.TODO,
-      ).length / allTasks.length
+          task.active &&
+          task.status != undefined &&
+          task.status != TourTaskStatus.TODO,
+      ).length / allTasks.filter((task) => task.active).length
     );
   }),
 };

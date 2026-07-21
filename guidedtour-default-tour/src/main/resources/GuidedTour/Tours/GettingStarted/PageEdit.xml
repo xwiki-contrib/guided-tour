@@ -224,7 +224,7 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>dadada</content>
+      <content>This tour will get you acquainted with the editing in XWiki.</content>
     </property>
     <property type="String">
       <element/>
@@ -649,7 +649,7 @@
       <content>You can write stuff now!</content>
     </property>
     <property type="String">
-      <element>#xwikicontent.cke_editable</element>
+      <element>#xwikieditcontent,#xwikicontent.cke_editable</element>
     </property>
     <property type="Long">
       <order>2</order>

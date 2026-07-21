@@ -35,6 +35,7 @@ import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.query.Query;
 import org.xwiki.query.QueryException;
 import org.xwiki.query.QueryManager;
+import org.xwiki.query.SecureQuery;
 
 /**
  * Utility class to execute Solr queries.
@@ -81,7 +82,10 @@ public class SolrQueryUtil
         if (StringUtils.isNotBlank(sort)) {
             query.bindValue("sort", sort);
         }
-        return ((QueryResponse) query.execute().getFirst()).getResults();
+        // Respect the view rights of the current user.
+        ((SecureQuery) query).checkCurrentUser(true);
+
+        return ((QueryResponse) query.execute().get(0)).getResults();
     }
 
     /**
