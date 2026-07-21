@@ -77,7 +77,7 @@ class DefaultStepsResourceTest
     private CSRFToken csrf;
 
     @RegisterExtension
-    private LogCaptureExtension logCapture = new LogCaptureExtension(LogLevel.DEBUG);
+    private final LogCaptureExtension logCapture = new LogCaptureExtension(LogLevel.DEBUG);
 
     @Mock
     private Container container;
