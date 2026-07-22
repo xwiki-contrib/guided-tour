@@ -77,7 +77,7 @@
         <displayType/>
         <hint/>
         <name>isActive</name>
-        <number>3</number>
+        <number>2</number>
         <prettyName>Is active</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>

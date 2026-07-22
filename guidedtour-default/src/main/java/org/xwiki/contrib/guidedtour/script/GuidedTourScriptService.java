@@ -39,7 +39,7 @@ import com.xpn.xwiki.XWikiException;
  * Default script service for Guided tour application.
  *
  * @version $Id$
- * @since 1.0
+ * @since 0.2
  */
 @Component
 @Named("guidedtour")
@@ -56,6 +56,7 @@ public class GuidedTourScriptService implements ScriptService
      * @param tourId the id of the tour
      * @param searchedTitle the title to filter the tasks by
      * @return the list of tasks for the given tour and filtered by the given title
+     * @since 0.2
      */
     public List<TaskDTO> getTourTasks(String tourId, String searchedTitle)
         throws QueryException, XWikiException, InvalidIdException

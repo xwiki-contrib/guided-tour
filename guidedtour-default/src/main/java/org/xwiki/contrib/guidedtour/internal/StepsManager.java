@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -101,11 +99,12 @@ public class StepsManager
     public List<StepDTO> getAllSteps(String tourId, String taskId) throws XWikiException, InvalidIdException
     {
         List<BaseObject> stepObjects = getStepObjects(tourId, taskId);
-        Set<StepDTO> sortedSet = new TreeSet<>(Comparator.comparingInt(StepDTO::getOrder));
+        List<StepDTO> steps = new ArrayList<>(stepObjects.size());
         for (BaseObject stepObject : stepObjects) {
-            sortedSet.add(getStepDTO(stepObject));
+            steps.add(getStepDTO(stepObject));
         }
-        return new ArrayList<>(sortedSet);
+        steps.sort(Comparator.comparingInt(StepDTO::getOrder));
+        return steps;
     }
 
     /**
@@ -201,8 +200,7 @@ public class StepsManager
             DocumentReference taskDocRef = this.documentReferenceResolver.resolve(taskId, tourDocRef);
             if (wiki.exists(taskDocRef, wikiContext)) {
                 XWikiDocument taskDoc = wiki.getDocument(taskDocRef, wikiContext);
-                return taskDoc.getXObjects(STEP_CLASS).stream()
-                    .filter(Objects::nonNull)
+                return taskDoc.getXObjects(STEP_CLASS).stream().filter(Objects::nonNull)
                     .sorted(Comparator.comparingInt(step -> step.getIntValue(TourProperty.ORDER.getBaseKey())))
                     .toList();
             } else {
@@ -219,9 +217,7 @@ public class StepsManager
         List<BaseObject> existingSteps = getStepObjects(tourId, taskId);
         int highestOrder = 0;
         if (!existingSteps.isEmpty()) {
-            if (existingSteps.stream()
-                .anyMatch(step -> step.getIntValue(TourProperty.ORDER.getBaseKey()) == stepId))
-            {
+            if (existingSteps.stream().anyMatch(step -> step.getIntValue(TourProperty.ORDER.getBaseKey()) == stepId)) {
                 throw new DuplicatedIdException("A step with the given order [%d] already exists.", stepId);
             }
             highestOrder =

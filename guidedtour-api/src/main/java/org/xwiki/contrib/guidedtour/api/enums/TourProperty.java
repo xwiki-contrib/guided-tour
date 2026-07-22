@@ -93,6 +93,7 @@ public enum TourProperty
     QUERY_PARAMETERS("queryParameters", null),
     /**
      * The description key as a base key and sortString suffix representing the field type.
+     * @since 0.2
      */
     DESCRIPTION("description", "sortString");
 

@@ -36,7 +36,7 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{velocity ouptput="false"}}
+  <content>{{velocity output='false'}}
 #set ($discard = $xwiki.ssx.use('GuidedTour.Code.TaskClassSheet'))
 #set ($discard = $xwiki.jsx.use('GuidedTour.Code.TaskClassSheet'))
 #set ($isEdit = ($xcontext.action == 'edit'))

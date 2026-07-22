@@ -73,7 +73,8 @@ public class ToursManager
         TourProperty.TITLE.formKey(CLASS_PREFIX),
         TourProperty.DESCRIPTION.formKey(CLASS_PREFIX),
         TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX),
-        TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX));
+        TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX)
+    );
 
     private static final String QS = String.format("class:%s", TOUR_CLASS);
 
@@ -116,6 +117,7 @@ public class ToursManager
         if (tourClassObject == null) {
             tourClassObject = targetDoc.newXObject(TOUR_CLASS, wikiContext);
             tourClassObject.set(TourProperty.TITLE.getBaseKey(), tourDTO.getTitle(), wikiContext);
+            tourClassObject.set(TourProperty.DESCRIPTION.getBaseKey(), tourDTO.getDescription(), wikiContext);
             tourClassObject.set(TourProperty.IS_ACTIVE_BOOL.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
             targetDoc.addXObject(tourClassObject);
             wiki.saveDocument(targetDoc, "Tour created.", wikiContext);
@@ -163,8 +165,9 @@ public class ToursManager
         BaseObject tourClassObject = getTourClassObject(tourDTO.getId());
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
-        tourClassObject.set("title", tourDTO.getTitle(), wikiContext);
-        tourClassObject.set("isActive", tourDTO.isActive() ? 1 : 0, wikiContext);
+        tourClassObject.set(TourProperty.TITLE.getBaseKey(), tourDTO.getTitle(), wikiContext);
+        tourClassObject.set(TourProperty.DESCRIPTION.getBaseKey(), tourDTO.getDescription(), wikiContext);
+        tourClassObject.set(TourProperty.IS_ACTIVE_BOOL.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
         XWikiDocument tourDoc = tourClassObject.getOwnerDocument();
         tourDoc.setTitle(tourDTO.getTitle());
         wiki.saveDocument(tourDoc, "Updated tour object.", wikiContext);

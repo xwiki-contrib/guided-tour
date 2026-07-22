@@ -38,26 +38,25 @@
   <hidden>true</hidden>
   <content>{{include reference="GuidedTour.Code.Macros" /}}
 
-{{velocity ouptput="false"}}
-##set ($discard = $xwiki.ssx.use('GuidedTour.Code.TaskClassSheet'))
+{{velocity output='false'}}
 #set ($discard = $xwiki.jsx.use('GuidedTour.Code.TourClassSheet'))
 #set ($isEdit = $xcontext.action == 'edit')
 #set ($tour = $doc.getObject('XWiki.GuidedTour.TourClass'))
 {{/velocity}}
 
 {{velocity}}
+## Translations should be added as part of GUIDEDTOUR-4: Make UI translated
 {{html clean='false'}}
   #addTaskModal($doc.getDocumentReference)
   #deleteTaskModal()
-  &lt;div class="taskSpecificProps"&gt;
-    &lt;dl id="guidedtour-task-props"&gt;
+  &lt;div class='xform'&gt;
+    &lt;dl&gt;
     #set($xclass = $tour.xWikiClass)
     #foreach($property in $xclass.properties)
       #set ($propertyId = "${xclass.name}_${tour.number}_$property.name")
-      &lt;br/&gt;
       &lt;dt&gt;
         &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
-        &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
+        &lt;span class='xHint'&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
       &lt;/dt&gt;
       &lt;dd&gt;
       {{/html}}
@@ -67,35 +66,40 @@
     #end
     &lt;/dl&gt;
   &lt;/div&gt;
-
+  &lt;hr/&gt;
   &lt;h2&gt;Tasks&lt;/h2&gt;
 
   #if ($isEdit)
-    &lt;a href="#addTaskFormModal" data-toggle="modal" data-target="#addTaskFormModal" class="btn btn-primary"&gt;Add Task&lt;/a&gt;
+    &lt;a href="#addTaskFormModal" data-toggle="modal" data-target="#addTaskFormModal" class="btn btn-primary"&gt;
+      Add Task
+    &lt;/a&gt;
   #end
 {{/html}}
 
   #set ($liveDataConfig = {
     "meta": {
         "propertyDescriptors": [
-          { "id": "order", "displayer": "text", "filterable": false, "sortable": false },
-          { "id": "title", "displayer": "html", "filterable": true, "sortable": false },
-          { "id": "steps", "displayer": "text", "filterable": false, "sortable": false },
-          { 'id': 'actions', 'displayer': 'html', 'filterable': false, 'sortable': false}
+          { 'id': 'order', 'displayer': 'text', 'filterable': false, 'sortable': false },
+          { 'id': 'title', 'displayer': 'html', 'filterable': true, 'sortable': false },
+          { 'id': 'steps', 'displayer': 'text', 'filterable': false, 'sortable': false },
+          { 'id': '_actions', 'displayer': {'id': 'actions', 'actions': ['delete']} }
         ],
         'entryDescriptor': {
           'idProperty': 'order'
-        }
+        },
+      'actions': [
+        { 'id': 'delete', 'description': 'Delete tour' }
+      ]
       }
   })
   #set ($sourceParameters = $escapetool.url({
-    'resultPage': 'GuidedTour.Code.TaskJson',
+    'resultPage': 'GuidedTour.Code.TasksLiveTableResults',
     'tourId': "${doc.getDocumentReference()}"
   }))
 
   {{liveData
     id='tourTasksList'
-    properties="order,title,steps,actions"
+    properties="order,title,steps,_actions"
     source='liveTable'
     sourceParameters="$sourceParameters"
   }}$jsontool.serialize($liveDataConfig){{/liveData}}
@@ -220,9 +224,11 @@
     deleteTask(relatedTarget);
   });
 
-  $(document).on('click', '.task-delete-action', function (event) {
+  $(document).on('click', '#tourTasksList .action_delete', function (event) {
     event.preventDefault();
-    const taskName = $(this).data('taskname');
+    const tableRow = $(this).closest('tr');
+    const titleCell = tableRow.find('[data-livedata-property-id="title"]');
+    const taskName = titleCell.text().trim();
     var modalDescription = `You are about to delete task &lt;${taskName}&gt; and all associated steps!`
     var modal = $(document).find('#confirmDeleteTaskModal');
     $(modal).find('.modal-body').text(modalDescription);

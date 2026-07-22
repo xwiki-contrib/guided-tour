@@ -19,12 +19,14 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import com.google.common.base.Splitter;
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.objects.BaseObject;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
@@ -42,12 +44,12 @@ import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.model.validation.EntityNameValidation;
 import org.xwiki.query.QueryException;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.base.Splitter;
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.objects.BaseObject;
 
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TASK_CLASS;
 
@@ -157,7 +159,7 @@ public class TasksManager
     }
 
     /**
-     * Retrieves all tasks for a given tour id.
+     * Retrieves all tasks for a given tour id and with the title containing the given string.
      *
      * @param tourId the id of the tour to which the tasks belong
      * @param filteredTitle the title to filter the tasks by, can be empty or null if no filtering is needed
@@ -165,6 +167,7 @@ public class TasksManager
      * @throws QueryException if there is an error while executing the Solr query to retrieve the task documents
      * @throws XWikiException if there is an error while interacting with the XWiki API
      * @throws InvalidIdException if the tour with the given id does not exist
+     * @since 0.2
      */
     public List<TaskDTO> getAllTasks(String tourId, String filteredTitle)
         throws QueryException, XWikiException, InvalidIdException
@@ -188,8 +191,8 @@ public class TasksManager
      *
      * @param tourId the id of the tour to which the tasks belong
      * @return a list of {@link TaskDTO} containing the tasks information
-     * @throws QueryException     if there is an error while executing the Solr query to retrieve the task documents
-     * @throws XWikiException     if there is an error while interacting with the XWiki API
+     * @throws QueryException if there is an error while executing the Solr query to retrieve the task documents
+     * @throws XWikiException if there is an error while interacting with the XWiki API
      * @throws InvalidIdException if the tour with the given id does not exist
      */
     public List<TaskDTO> getAllTasks(String tourId) throws QueryException, XWikiException, InvalidIdException
@@ -203,8 +206,8 @@ public class TasksManager
      *
      * @param tourId the id of the tour to which the task belongs
      * @param newDTO the {@link TaskDTO} containing the updated task information
-     * @throws XWikiException     if there is an error while interacting with the XWiki API
-     * @throws QueryException     if there is an error while querying for existing tasks to determine the order updates
+     * @throws XWikiException if there is an error while interacting with the XWiki API
+     * @throws QueryException if there is an error while querying for existing tasks to determine the order updates
      * @throws InvalidIdException if the task with the given id does not exist in the tour
      */
     public void updateTask(String tourId, TaskDTO newDTO) throws XWikiException, QueryException, InvalidIdException
@@ -287,48 +290,78 @@ public class TasksManager
         }
     }
 
+    /**
+     * Check and update the remaining tasks order and dependency list depending on the removed task.
+     *
+     * @param existingTasks remaining tasks list
+     * @param removedTask the task that was removed
+     * @param tourDocRef the reference to the tour document
+     */
     private void updateRemainingTasks(List<TaskDTO> existingTasks, TaskDTO removedTask, DocumentReference tourDocRef)
         throws XWikiException
     {
         for (TaskDTO task : existingTasks) {
-            boolean wasOrderModified = modifiedOrder(Integer.MAX_VALUE, task, removedTask.getOrder());
-            boolean wasDependencyRemoved = removedTaskDependency(task, removedTask.getId());
+            // We only shift those tasks that have an order greater than the removed task's order, as they need to be
+            // shifted down to fill the gap.
+            boolean wasOrderModified = shiftOrderIfNeeded(Integer.MAX_VALUE, task, removedTask.getOrder());
+            boolean wasDependencyRemoved = removeTaskDependency(task, removedTask.getId());
+            // If either the order was shifted or the task dependency list was modified, we update the object to
+            // persist the changes.
             if (wasOrderModified || wasDependencyRemoved) {
                 updateTaskObject(task, tourDocRef);
             }
         }
     }
 
-    private boolean removedTaskDependency(TaskDTO task, String taskId)
+    /**
+     * If the removed task is a dependency for the given task, we remove it from the list.
+     *
+     * @param task the task for which we check the list
+     * @param removedTaskId the ID of the task to remove from dependencies
+     * @return true if the dependency was removed, false otherwise
+     * @since 0.2
+     */
+    private boolean removeTaskDependency(TaskDTO task, String removedTaskId)
     {
         boolean isModified = false;
-        if (task.getDependsOn().contains(taskId)) {
+        if (task.getDependsOn().contains(removedTaskId)) {
             ArrayList<String> updatedDependencies = new ArrayList<>(task.getDependsOn());
-            updatedDependencies.remove(taskId);
+            updatedDependencies.remove(removedTaskId);
             task.setDependsOn(updatedDependencies);
             isModified = true;
         }
         return isModified;
     }
 
-    private boolean modifiedOrder(int modifiedOrder, TaskDTO task, int oldOrder)
+    /**
+     * Shifts the order of the given task to accommodate a task being moved or deleted. If the task's order is above the
+     * previous position and at or below the new position, it is shifted down by one. If the task's order is below the
+     * previous position and at or above the new position, it is shifted up by one.
+     *
+     * @param newOrder the new order position of the moved task
+     * @param task the task whose order may need to be shifted
+     * @param previousOrder the original order position before the move or deletion
+     * @return {@code true} if the task's order was modified, {@code false} otherwise
+     * @since 0.2
+     */
+    private boolean shiftOrderIfNeeded(int newOrder, TaskDTO task, int previousOrder)
     {
         boolean isModified = false;
-        if (task.getOrder() > oldOrder && task.getOrder() <= modifiedOrder) {
+        if (task.getOrder() > previousOrder && task.getOrder() <= newOrder) {
             task.setOrder(task.getOrder() - 1);
             isModified = true;
-        } else if (task.getOrder() < oldOrder && task.getOrder() >= modifiedOrder) {
+        } else if (task.getOrder() < previousOrder && task.getOrder() >= newOrder) {
             task.setOrder(task.getOrder() + 1);
             isModified = true;
         }
         return isModified;
     }
 
-    private void updateTasksOrder(DocumentReference tourRef, int modifiedOrder, List<TaskDTO> existingTasks,
-        int oldOrder) throws XWikiException
+    private void updateTasksOrder(DocumentReference tourRef, int newOrder, List<TaskDTO> existingTasks,
+        int previousOrder) throws XWikiException
     {
         for (TaskDTO task : existingTasks) {
-            if (modifiedOrder(modifiedOrder, task, oldOrder)) {
+            if (shiftOrderIfNeeded(newOrder, task, previousOrder)) {
                 updateTaskObject(task, tourRef);
             }
         }

@@ -53,6 +53,7 @@ public class TourDTO
     {
         this.isActive = false;
         this.tasks = new ArrayList<>();
+        this.description = "";
     }
 
     /**
@@ -68,6 +69,7 @@ public class TourDTO
         this.id = id;
         this.isActive = isActive;
         this.tasks = new ArrayList<>();
+        this.description = "";
     }
 
     /**
@@ -77,6 +79,7 @@ public class TourDTO
      * @param title the title of the tour
      * @param isActive {@code true} if the tour is active, {@code false} otherwise
      * @param description the tour description
+     * @since 0.2
      */
     public TourDTO(String id, String title, boolean isActive, String description)
     {

@@ -20,9 +20,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 -->
 
-<xwikidoc version="1.7" reference="GuidedTour.Code.TaskJson" locale="">
+<xwikidoc version="1.7" reference="GuidedTour.Code.TasksLiveTableResults" locale="">
   <web>GuidedTour.Code</web>
-  <name>TaskJson</name>
+  <name>TasksLiveTableResults</name>
   <language/>
   <defaultLanguage/>
   <translation>0</translation>
@@ -31,7 +31,7 @@
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <version>1.1</version>
-  <title>TaskJson</title>
+  <title>TasksLiveTableResults</title>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
@@ -76,15 +76,16 @@
       #set ($docURL = $xwiki.getURL($docRef))
       #set ($docName = "&lt;a href='${docURL}'&gt;$escapetool.xml($currentEntry.getTitle())&lt;/a&gt;")
       #set ($numberOfSteps = $xwiki.getDocument($docRef).getObjects('XWiki.GuidedTour.StepClass').size())
-      #set ($deleteRef = $escapetool.xml(
+      ## Check if the current user has delete rights on the given task document.
+      #set ($hasDeleteRights = $services.security.authorization.hasAccess('delete', $docRef))
+      #set ($deleteUrl = $escapetool.xml(
         "${request.getContextPath()}/rest/guidedTour/tours/${tourId}/tasks/${currentEntry.getId()}"))
-      #set ($deleteAction = "&lt;a class='task-delete-action' href='${deleteRef}' " +
-        "data-taskName='${escapetool.xml($currentEntry.getTitle())}'&gt;Delete&lt;/a&gt;")
       #set ($discard = $results.rows.add({
         'order': $currentEntry.getOrder(),
         'title' : $docName,
         'steps' : $numberOfSteps,
-        'actions' : $deleteAction
+        'doc_hasdelete': $hasDeleteRights,
+        'doc_delete_url': $deleteUrl
       }))
     #end
     #jsonResponse($results)

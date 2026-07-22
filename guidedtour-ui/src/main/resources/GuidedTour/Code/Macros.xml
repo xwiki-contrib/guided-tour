@@ -84,12 +84,12 @@
                   &lt;label for="taskTitle"&gt;Task Title&lt;/label&gt;&lt;br/&gt;
                   &lt;input type="text" class="form-control" id="taskTitle" name="title" placeholder="Enter task title"&gt;
                 &lt;/div&gt;
+                &lt;br/&gt;
                 &lt;div&gt;
                   &lt;label&gt;Depends On&lt;/label&gt;
                   &lt;div id="taskTreeContainer"&gt;
-
-                    {{documentTree root="document:${tourId}" checkboxes="true" compact="true" links="false"/}}
-
+                    #set($treeSource = "{{documentTree root='document:${escapetool.xml($tourId)}' checkboxes='true' compact='true' links='false'/}}")
+                    $doc.getRenderedContent($treeSource, $doc.syntax.toIdString())
                   &lt;/div&gt;
                   &lt;p class="help-block"&gt;Select which tasks must be completed before this one.&lt;/p&gt;
                 &lt;/div&gt;
