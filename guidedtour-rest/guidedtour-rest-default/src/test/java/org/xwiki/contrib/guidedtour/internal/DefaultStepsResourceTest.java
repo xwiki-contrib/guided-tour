@@ -19,8 +19,15 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import com.xpn.xwiki.XWikiException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Provider;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+
 import jakarta.servlet.http.HttpServletRequest;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -39,17 +46,18 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import javax.inject.Provider;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.List;
+import com.xpn.xwiki.XWikiException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+/**
+ * Test class for {@link DefaultStepsResource}.
+ *
+ * @version $Id$
+ */
 @ComponentTest
 class DefaultStepsResourceTest
 {
@@ -60,6 +68,9 @@ class DefaultStepsResourceTest
     private static final String TASK_ID = "taskId";
 
     private final StepDTO stepDTO = new StepDTO();
+
+    @RegisterExtension
+    private final LogCaptureExtension logCapture = new LogCaptureExtension(LogLevel.DEBUG);
 
     @InjectMockComponents
     private DefaultStepsResource defaultStepsResource;
@@ -75,9 +86,6 @@ class DefaultStepsResourceTest
 
     @MockComponent
     private CSRFToken csrf;
-
-    @RegisterExtension
-    private final LogCaptureExtension logCapture = new LogCaptureExtension(LogLevel.DEBUG);
 
     @Mock
     private Container container;

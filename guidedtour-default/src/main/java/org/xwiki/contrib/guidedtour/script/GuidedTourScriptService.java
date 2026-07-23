@@ -56,7 +56,9 @@ public class GuidedTourScriptService implements ScriptService
      * @param tourId the id of the tour
      * @param searchedTitle the title to filter the tasks by
      * @return the list of tasks for the given tour and filtered by the given title
-     * @since 0.2
+     * @throws QueryException if an error occurs while executing the query
+     * @throws XWikiException if there is an error while interacting with the XWiki API
+     * @throws InvalidIdException if the tour with the given id does not exist
      */
     public List<TaskDTO> getTourTasks(String tourId, String searchedTitle)
         throws QueryException, XWikiException, InvalidIdException

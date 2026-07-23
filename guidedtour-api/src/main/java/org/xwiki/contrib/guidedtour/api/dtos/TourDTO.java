@@ -91,6 +91,7 @@ public class TourDTO
      * Gets the description of the tour.
      *
      * @return the description of the tour
+     * @since 0.2
      */
     public String getDescription()
     {
@@ -101,6 +102,7 @@ public class TourDTO
      * Sets the description of the tour.
      *
      * @param description the description to set for the tour
+     * @since 0.2
      */
     public void setDescription(String description)
     {

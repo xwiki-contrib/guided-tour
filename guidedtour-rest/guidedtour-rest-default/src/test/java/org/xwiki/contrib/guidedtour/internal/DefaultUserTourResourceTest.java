@@ -19,9 +19,12 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.xpn.xwiki.XWikiException;
+import javax.inject.Provider;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+
 import jakarta.servlet.http.HttpServletRequest;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -41,9 +44,8 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import javax.inject.Provider;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.xpn.xwiki.XWikiException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,10 +53,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 /**
- * Test of {@link DefaultUserTourResource}.
+ * Test class for {@link DefaultUserTourResource}.
  *
  * @version $Id$
- * @since 1.0
  */
 @ComponentTest
 class DefaultUserTourResourceTest

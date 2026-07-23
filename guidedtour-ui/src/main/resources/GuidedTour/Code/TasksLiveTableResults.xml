@@ -54,9 +54,9 @@
       #set ($searchedTitle = '')
     #end
     #set ($allTasks = $services.guidedtour.getTourTasks($tourId, $searchedTitle))
+    #set ($resultList = [])
     #if ($offset &lt; $allTasks.size())
       #set ($toIndex = $mathtool.min($mathtool.add($offset, $limit), $allTasks.size()))
-      #set ($resultList = [])
       #set ($toIndex = $mathtool.sub($toIndex,1))
       #foreach ($i in [$offset..$toIndex])
         #set ($task = $allTasks.get($i))

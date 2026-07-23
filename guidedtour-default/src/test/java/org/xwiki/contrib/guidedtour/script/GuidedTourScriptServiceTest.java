@@ -19,6 +19,8 @@
  */
 package org.xwiki.contrib.guidedtour.script;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.xwiki.contrib.guidedtour.api.dtos.TaskDTO;
 import org.xwiki.contrib.guidedtour.internal.TasksManager;
@@ -26,21 +28,20 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 /**
  * Test class for {@link GuidedTourScriptService}.
+ *
+ * @version $Id$
  */
 @ComponentTest
 class GuidedTourScriptServiceTest
 {
-
     private static final String TOUR_ID = "tourId";
 
-    public static final String TITLE = "TiTlE";
+    private static final String TITLE = "TiTlE";
 
     @InjectMockComponents
     private GuidedTourScriptService guidedTourScriptService;
