@@ -54,10 +54,9 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 /**
- * Test of {@link DefaultToursResource}.
+ * Test class for {@link DefaultToursResource}.
  *
  * @version $Id$
- * @since 1.0
  */
 @ComponentTest
 class DefaultToursResourceTest

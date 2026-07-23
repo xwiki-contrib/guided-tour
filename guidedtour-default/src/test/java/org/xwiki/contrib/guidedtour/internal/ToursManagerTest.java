@@ -19,11 +19,12 @@
  */
 package org.xwiki.contrib.guidedtour.internal;
 
-import com.xpn.xwiki.XWiki;
-import com.xpn.xwiki.XWikiContext;
-import com.xpn.xwiki.XWikiException;
-import com.xpn.xwiki.doc.XWikiDocument;
-import com.xpn.xwiki.objects.BaseObject;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Named;
+import javax.inject.Provider;
+
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,17 +47,24 @@ import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import javax.inject.Named;
-import javax.inject.Provider;
-import java.util.ArrayList;
-import java.util.List;
+import com.xpn.xwiki.XWiki;
+import com.xpn.xwiki.XWikiContext;
+import com.xpn.xwiki.XWikiException;
+import com.xpn.xwiki.doc.XWikiDocument;
+import com.xpn.xwiki.objects.BaseObject;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOUR_CLASS;
 
 /**
  * Test class for {@link ToursManager}.
+ *
+ * @version $Id$
  */
 @ComponentTest
 class ToursManagerTest

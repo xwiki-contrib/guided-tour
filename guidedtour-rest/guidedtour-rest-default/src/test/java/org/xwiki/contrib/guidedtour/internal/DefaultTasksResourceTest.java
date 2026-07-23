@@ -52,6 +52,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+/**
+ * Test class for {@link DefaultTasksResource}.
+ *
+ * @version $Id$
+ */
 @ComponentTest
 class DefaultTasksResourceTest
 {

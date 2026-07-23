@@ -19,25 +19,26 @@
  */
 package org.xwiki.contrib.guidedtour.internal.util;
 
+import java.util.List;
+
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.xwiki.query.Query;
 import org.xwiki.query.QueryManager;
 import org.xwiki.query.internal.DefaultQuery;
 import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 /**
  * Test class for {@link SolrQueryUtil}.
+ *
+ * @version $Id$
  */
 @ComponentTest
 class SolrQueryUtilTest
@@ -63,10 +64,10 @@ class SolrQueryUtilTest
     @BeforeEach
     void setup() throws Exception
     {
-        List<String> FILTERED_LINES = List.of("test", "reference", "wiki", "spaces", "name");
+        List<String> filteredLines = List.of("test", "reference", "wiki", "spaces", "name");
         when(this.queryManager.createQuery(QUERY_STRING, "solr")).thenReturn(this.query);
         when(this.query.bindValue("fq", FILTER_QUERY)).thenReturn(this.query);
-        when(this.query.bindValue("fl", FILTERED_LINES)).thenReturn(this.query);
+        when(this.query.bindValue("fl", filteredLines)).thenReturn(this.query);
         when(this.query.bindValue("group", true)).thenReturn(this.query);
         when(this.query.bindValue("group.field", "fullname")).thenReturn(this.query);
         when(this.query.bindValue("group.main", true)).thenReturn(this.query);
