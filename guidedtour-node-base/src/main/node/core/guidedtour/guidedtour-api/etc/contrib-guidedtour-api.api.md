@@ -100,17 +100,6 @@ export interface TourTour {
     title: string;
 }
 
-// @beta
-export type TranslationQuery = {
-    prefix: string;
-    keys: string[];
-};
-
-// @beta
-export type Translations = {
-    [p: string]: string;
-};
-
 // (No @packageDocumentation comment for this package)
 
 ```

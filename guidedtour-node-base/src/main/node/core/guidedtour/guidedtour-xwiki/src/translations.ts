@@ -17,10 +17,12 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+import { createI18n } from "vue-i18n";
 import type {
-  TranslationQuery,
+  Query,
+  Resolver,
   Translations,
-} from "@xwiki/contrib-guidedtour-api";
+} from "@xwiki/platform-localization-api";
 import type { I18n } from "vue-i18n";
 
 function buildRequest(
@@ -67,21 +69,41 @@ async function getTranslations(
  * Build the translation resolver.
  * @param locale - the current locale
  * @param i18n - the i18n instance to populate
- * @since 1.0
+ * @since 0.2
  * @beta
  */
-function buildTranslations(locale: string, i18n: I18n) {
-  return async function resolveTranslations(
-    query: TranslationQuery,
-  ): Promise<Translations> {
-    const translations = await getTranslations(
-      locale,
-      query.prefix,
-      query.keys,
-    );
-    i18n.global.setLocaleMessage(locale, translations);
-    return translations;
+function buildTranslations(locale: string, i18n: I18n): Resolver {
+  return {
+    async resolve(query: Query) {
+      const { prefix = "", keys } = query as {
+        prefix?: string;
+        keys: string[];
+      };
+      const translations = await getTranslations(locale, prefix, keys);
+      i18n.global.setLocaleMessage(locale, translations);
+      const requestedKeys = keys.map((k) => `${prefix}${k}`);
+      const resolvedKeys = Object.keys(translations);
+      const missed = requestedKeys.filter((k) => !resolvedKeys.includes(k));
+      return { translations, missed };
+    },
   };
 }
 
-export { buildTranslations };
+/**
+ * Initialize the translation system: creates a vue-i18n instance and builds the resolver.
+ * @returns the resolver and the i18n instance to install on the Vue app
+ * @since 0.2
+ * @beta
+ */
+function initTranslations(): { resolver: Resolver; i18n: I18n } {
+  const locale = navigator.language;
+  const i18n = createI18n({
+    locale,
+    fallbackLocale: "en",
+    messages: {},
+  });
+  const resolver = buildTranslations(locale, i18n as I18n);
+  return { resolver, i18n: i18n as I18n };
+}
+
+export { initTranslations };

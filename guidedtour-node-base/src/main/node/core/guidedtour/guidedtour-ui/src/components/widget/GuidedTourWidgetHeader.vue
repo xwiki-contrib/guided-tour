@@ -28,7 +28,9 @@
   <div class="header">
     <div class="top-bar" @click="onCloseButtonClicked(false)">
       <span class="icon fa fa-compass" />
-      <div class="title">Guided Tours</div>
+      <div class="title">
+        ana s {{ l18n("guidedtour.widget.header.title") }}
+      </div>
       <div class="right-group">
         <button
           id="widget-close"
@@ -45,8 +47,11 @@
 
 <script setup lang="ts">
 import GuidedTourWidgetProgressBar from "./GuidedTourWidgetProgressBar.vue";
-import { computed } from "vue";
+import { useI18nAdapter } from "@xwiki/platform-localization-adapter-vue";
+import { computed, inject } from "vue";
+import type { Resolver } from "@xwiki/platform-localization-api";
 import type { ComputedRef } from "vue";
+
 const emit = defineEmits(["closeGuidedTourWidget"]);
 
 function onCloseButtonClicked(buttonClicked: boolean) {
@@ -56,6 +61,12 @@ function onCloseButtonClicked(buttonClicked: boolean) {
 const props = defineProps<{ progress: ComputedRef<number> }>();
 // Reactive read-only ref for progress.
 const progress = props.progress;
+
+const resolver = inject<Resolver>("GuidedTourResolver")!;
+const { t: l18n } = useI18nAdapter(resolver, {
+  prefix: "guidedtour.widget.",
+  keys: ["header.title"],
+});
 </script>
 
 <style scoped>

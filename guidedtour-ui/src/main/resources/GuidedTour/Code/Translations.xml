@@ -36,10 +36,74 @@
   <minorEdit>false</minorEdit>
   <syntaxId>plain/1.0</syntaxId>
   <hidden>true</hidden>
-  <content>XWiki.GuidedTour.StepClass_order=Order
-XWiki.GuidedTour.StepClass_order.hint=Order of the step in the task.
+  <content>## Classes
+
+XWiki.GuidedTour.StepClass_order=Order
+XWiki.GuidedTour.StepClass_order_hint=Order of the step in the task.
+XWiki.GuidedTour.StepClass_element=Element
+XWiki.GuidedTour.StepClass_element_hint=The CSS selector of the element to be highlighted for this step. If no element is selected, the step will be displayed centered on the screen.
 XWiki.GuidedTour.StepClass_content=Content
-XWiki.GuidedTour.StepClass_content.hint=The text to display at this step.</content>
+XWiki.GuidedTour.StepClass_content_hint=The content to display for this step.
+XWiki.GuidedTour.StepClass_placement=Placement
+XWiki.GuidedTour.StepClass_placement_hint=The placement of the step tooltip.
+XWiki.GuidedTour.StepClass_backdrop=Backdrop
+XWiki.GuidedTour.StepClass_backdrop_hint=Marks if a backdrop should be shown for this step.
+XWiki.GuidedTour.StepClass_reflex=Reflex
+XWiki.GuidedTour.StepClass_reflex_hint=Marks if clicking on the highlighted element should be allowed to go to the next step.
+XWiki.GuidedTour.StepClass_targetPage=Target page
+XWiki.GuidedTour.StepClass_targetPage_hint=The target page on which the step should be displayed. If left empty, the current page will be used.
+XWiki.GuidedTour.StepClass_targetAction=Target action
+XWiki.GuidedTour.StepClass_targetAction_hint=The target action on the target page. If left empty, the current action will be used.
+XWiki.GuidedTour.StepClass_queryParameters=Query parameters
+XWiki.GuidedTour.StepClass_queryParameters_hint=The query parameters to add to the URL when navigating to the target page.
+XWiki.GuidedTour.TourClass_title=Title
+XWiki.GuidedTour.TourClass_title_hint=The tour title that will be displayed in the widget.
+XWiki.GuidedTour.TourClass_description=Description
+XWiki.GuidedTour.TourClass_description_hint=Description of the tour.
+XWiki.GuidedTour.TourClass_isActive=Is active
+XWiki.GuidedTour.TourClass_isActive_hint=Select if the tour should be active or not. A disabled tour will not be displayed in the guided tours widget.
+XWiki.GuidedTour.TaskClass_title=Title
+XWiki.GuidedTour.TaskClass_title_hint=Task title.
+XWiki.GuidedTour.TaskClass_order=Order
+XWiki.GuidedTour.TaskClass_order_hint=Order of the task in the tour.
+XWiki.GuidedTour.TaskClass_dependsOn=Depends on
+XWiki.GuidedTour.TaskClass_dependsOn_hint=The tasks that need to be finished before beginning this one.
+XWiki.GuidedTour.TaskClass_isActive=Is active
+XWiki.GuidedTour.TaskClass_isActive_hint=Marks the task as active or not.
+
+## Livedata tables
+
+guidedtour.tours.livedata.title=Title
+guidedtour.tours.livedata.isActive=Is active
+guidedtour.tours.livedata._actions=Actions
+guidedtour.tours.livedata._actions.delete.hint=Delete tour
+guidedtour.tours.livedata._actions.edit.hint=Edit tour
+guidedtour.tours.livedata._actions.view.hint=View tour
+guidedtour.tour.tasks.livedata.title=Title
+guidedtour.tour.tasks.livedata.order=Order
+guidedtour.tour.tasks.livedata.steps=Steps
+guidedtour.tour.tasks.livedata._actions=Actions
+guidedtour.tour.tasks.livedata._actions.delete.hint=Delete task
+
+## Sheets
+
+guidedtour.tours.sheet.tasks.header=Tasks
+guidedtour.tours.sheet.tasks.button.add=Add task
+guidedtour.tours.sheet.tasks.header=Tasks
+guidedtour.tasks.sheet.title.properties=Properties
+guidedtour.tasks.sheet.title.steps=Steps
+guidedtour.tasks.sheet.steps.count=Step #{0}
+guidedtour.tasks.sheet.steps.button.add=Add step
+
+## Modals
+
+guidedtour.modal.delete.task.title=Delete Task
+guidedtour.modal.delete.task.standardmessage=This action will remove the task and all associated steps!
+guidedtour.modal.add.task.title=Add Task
+
+## Widget
+
+guidedtour.widget.header.title=Guided Tours</content>
   <object>
     <name>GuidedTour.Code.Translations</name>
     <number>0</number>

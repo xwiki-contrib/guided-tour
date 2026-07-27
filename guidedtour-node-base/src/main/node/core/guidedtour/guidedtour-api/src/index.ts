@@ -24,8 +24,6 @@ import type { StepManagerApi } from "./rest/StepManagerApi";
 import type { TaskManagerApi } from "./rest/TaskManagerApi";
 import type { TourManagerApi } from "./rest/TourManagerApi";
 import type { TourStep, TourTask, TourTour } from "./tourData";
-import type { TranslationQuery } from "./translationQuery";
-import type { Translations } from "./translations";
 
 export type {
   GuidedTourManager,
@@ -35,8 +33,6 @@ export type {
   TourStep,
   TourTask,
   TourTour,
-  TranslationQuery,
-  Translations,
 };
 
 export { TourTaskStatus };

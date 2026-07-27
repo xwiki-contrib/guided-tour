@@ -40,18 +40,18 @@
 #macro (deleteTaskModal)
   &lt;div class="modal fade" id="confirmDeleteTaskModal" tabindex="-1" role="dialog"
       aria-labelledby="confirmDeleteTaskModalLabel"&gt;
-    &lt;div class="modal-dialog modal-sm" role="document"&gt;
+    &lt;div class="modal-dialog" role="document"&gt;
       &lt;div class="modal-content"&gt;
         &lt;div class="cache-modal-content"&gt;
           &lt;div class="modal-header"&gt;
             &lt;button type="button" class="close" data-dismiss="modal" aria-label="Close"&gt;
               &lt;span aria-hidden="true"&gt;&amp;times;&lt;/span&gt;&lt;/button&gt;
             &lt;div id="confirmDeleteTaskModalLabel" class="modal-title"&gt;
-              Delete task
+              $escapetool.xml($services.localization.render('guidedtour.modal.delete.task.title'))
             &lt;/div&gt;
           &lt;/div&gt;
           &lt;div class="modal-body"&gt;
-            This action will remove the task and all associated steps!
+            $escapetool.xml($services.localization.render('guidedtour.modal.delete.task.standardmessage'))
           &lt;/div&gt;
           &lt;div class="modal-footer"&gt;
             &lt;button type="button" class="btn btn-danger"&gt;
@@ -75,23 +75,31 @@
               &lt;button type="button" class="close" data-dismiss="modal" aria-label="Close"&gt;
                 &lt;span aria-hidden="true"&gt;&amp;times;&lt;/span&gt;&lt;/button&gt;
               &lt;div id="addTaskFormModalLabel" class="modal-title"&gt;
-                Add task
+                $escapetool.xml($services.localization.render('guidedtour.modal.add.task.title'))
               &lt;/div&gt;
             &lt;/div&gt;
             &lt;div class="modal-body"&gt;
-              &lt;div id="add-tasks-form" target="${request.getContextPath()}/rest/guidedTour/tours/${escapetool.url($tourId)}/tasks"&gt;
+              &lt;div id="add-tasks-form"
+                target="${request.getContextPath()}/rest/guidedTour/tours/${escapetool.url($tourId)}/tasks"&gt;
                 &lt;div&gt;
-                  &lt;label for="taskTitle"&gt;Task Title&lt;/label&gt;&lt;br/&gt;
+                  &lt;label for="taskTitle"&gt;
+                    $escapetool.xml($services.localization.render('XWiki.GuidedTour.TaskClass_title'))
+                  &lt;/label&gt;&lt;br/&gt;
+                  &lt;p class="help-block"&gt;
+                    $escapetool.xml($services.localization.render('XWiki.GuidedTour.TaskClass_title_hint'))
+                  &lt;/p&gt;
                   &lt;input type="text" class="form-control" id="taskTitle" name="title" placeholder="Enter task title"&gt;
                 &lt;/div&gt;
                 &lt;br/&gt;
                 &lt;div&gt;
-                  &lt;label&gt;Depends On&lt;/label&gt;
+                  &lt;label&gt;$escapetool.xml($services.localization.render('XWiki.GuidedTour.TaskClass_dependsOn'))&lt;/label&gt;
+                  &lt;p class="help-block"&gt;
+                    $escapetool.xml($services.localization.render('XWiki.GuidedTour.TaskClass_dependsOn_hint'))
+                  &lt;/p&gt;
                   &lt;div id="taskTreeContainer"&gt;
                     #set($treeSource = "{{documentTree root='document:${escapetool.xml($tourId)}' checkboxes='true' compact='true' links='false'/}}")
                     $doc.getRenderedContent($treeSource, $doc.syntax.toIdString())
                   &lt;/div&gt;
-                  &lt;p class="help-block"&gt;Select which tasks must be completed before this one.&lt;/p&gt;
                 &lt;/div&gt;
               &lt;/div&gt;
             &lt;/div&gt;

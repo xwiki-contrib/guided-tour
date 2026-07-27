@@ -38,7 +38,7 @@
   <hidden>true</hidden>
   <content>{{include reference="GuidedTour.Code.Macros" /}}
 
-{{velocity output='false'}}
+{{velocity ouptput="false"}}
 #set ($discard = $xwiki.jsx.use('GuidedTour.Code.TourClassSheet'))
 #set ($isEdit = $xcontext.action == 'edit')
 #set ($tour = $doc.getObject('XWiki.GuidedTour.TourClass'))
@@ -67,11 +67,11 @@
     &lt;/dl&gt;
   &lt;/div&gt;
   &lt;hr/&gt;
-  &lt;h2&gt;Tasks&lt;/h2&gt;
-
+  &lt;h2&gt;$escapetool.xml($services.localization.render('guidedtour.tours.sheet.tasks.header'))&lt;/h2&gt;
+  &lt;hr/&gt;
   #if ($isEdit)
     &lt;a href="#addTaskFormModal" data-toggle="modal" data-target="#addTaskFormModal" class="btn btn-primary"&gt;
-      Add Task
+      $escapetool.xml($services.localization.render('guidedtour.tours.sheet.tasks.button.add'))
     &lt;/a&gt;
   #end
 {{/html}}
@@ -87,14 +87,19 @@
         'entryDescriptor': {
           'idProperty': 'order'
         },
-      'actions': [
-        { 'id': 'delete', 'description': 'Delete tour' }
+      "actions": [
+        {
+          'id': 'delete',
+          'description':
+            "${escapetool.xml($services.localization.render('guidedtour.tour.tasks.livedata._actions.delete.hint'))}"
+        }
       ]
       }
   })
   #set ($sourceParameters = $escapetool.url({
     'resultPage': 'GuidedTour.Code.TasksLiveTableResults',
-    'tourId': "${doc.getDocumentReference()}"
+    'tourId': "${doc.getDocumentReference()}",
+    'translationPrefix': 'guidedtour.tour.tasks.livedata.'
   }))
 
   {{liveData

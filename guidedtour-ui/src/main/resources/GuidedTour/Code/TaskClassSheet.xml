@@ -79,20 +79,25 @@
 ##makeTaskPropertyDisplay('title')
 &lt;/div&gt;
 
-== Steps ==
+== $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.steps')) ==
 
 #if ($isEdit)
-  &lt;button id='add-step-btn' class="btn btn-primary"&gt;Add Step&lt;/button&gt;
+  &lt;button id='add-step-btn' class="btn btn-primary"&gt;
+    $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add'))
+  &lt;/button&gt;
 #end
 
 &lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape($jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
     &lt;div class="sidebar"&gt;
-      &lt;h2 class="sidebar-title"&gt;Steps&lt;/h2&gt;
+      &lt;h2 class="sidebar-title"&gt;
+        $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.steps'))
+      &lt;/h2&gt;
       &lt;ul class="item-list"&gt;
         #foreach ($step in $steps)
           &lt;li class="item" data-id="$step.number"&gt;
             #if ("$!step.getValue('content')" == '')
-              Step # $escapetool.xml($services.rendering.escape($step.getValue('order'), 'xwiki/2.1'))
+              $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.count',
+                $escapetool.xml($services.rendering.escape($step.getValue('order'), 'xwiki/2.1'))))
             #else
               $escapetool.xml($services.rendering.escape($step.getValue('content'), 'xwiki/2.1'))
             #end
@@ -102,14 +107,18 @@
     &lt;/div&gt;
 
     &lt;div class="content"&gt;
-      &lt;h1 class="content-title"&gt;Properties&lt;/h1&gt;
+      &lt;h1 class="content-title"&gt;
+        $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.properties'))
+      &lt;/h1&gt;
       #foreach ($step in $steps)
         #set($xclass = $step.xWikiClass)
         &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden'&gt;
           #foreach($property in $xclass.properties)
             #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
             &lt;dt&gt;
-              &lt;label for="$!escapetool.xml($propertyId)"&gt; $escapetool.xml($services.rendering.escape($property.translatedPrettyName, 'xwiki/2.1'))&lt;/label&gt;
+              &lt;label for="$!escapetool.xml($propertyId)"&gt;
+                $escapetool.xml($services.rendering.escape($property.translatedPrettyName, 'xwiki/2.1'))
+              &lt;/label&gt;
               &lt;span class="xHint"&gt;$!escapetool.xml($services.rendering.escape($property.hint, 'xwiki/2.1')) &lt;/span&gt;
             &lt;/dt&gt;
             &lt;dd&gt;

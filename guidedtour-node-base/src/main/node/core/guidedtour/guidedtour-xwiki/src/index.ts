@@ -20,6 +20,7 @@
 
 import { DefaultGuidedTourManager } from "./rest/DefaultGuidedTourManager";
 import { TourStore } from "./rest/TourStore";
+import { initTranslations } from "./translations";
 
 /**
  * The main API of the GuidedTour app.
@@ -34,4 +35,4 @@ const sharedStore = new TourStore();
  */
 const guidedTourManager = new DefaultGuidedTourManager(sharedStore);
 
-export { type DefaultGuidedTourManager, guidedTourManager };
+export { type DefaultGuidedTourManager, guidedTourManager, initTranslations };
