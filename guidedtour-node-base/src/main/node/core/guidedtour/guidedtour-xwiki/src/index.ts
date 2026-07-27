@@ -20,18 +20,19 @@
 
 import { DefaultGuidedTourManager } from "./rest/DefaultGuidedTourManager";
 import { TourStore } from "./rest/TourStore";
+// @ts-expect-error this is a JavaScript file, it is expected to not have types.
+import { loadById } from "./services/require.js";
 
 /**
  * The main API of the GuidedTour app.
  * @since 1.0
  * @beta
  */
-const sharedStore = new TourStore();
-/**
- * The main API of the GuidedTour app.
- * @since 1.0
- * @beta
- */
-const guidedTourManager = new DefaultGuidedTourManager(sharedStore);
-
+const guidedTourManager: Promise<DefaultGuidedTourManager> = loadById(
+  "xwiki-meta",
+  // @ts-expect-error this is a JavaScript file, it is expected to not have types.
+).then((xwikiMeta) => {
+  const sharedStore = new TourStore(xwikiMeta);
+  return new DefaultGuidedTourManager(xwikiMeta, sharedStore);
+});
 export { type DefaultGuidedTourManager, guidedTourManager };

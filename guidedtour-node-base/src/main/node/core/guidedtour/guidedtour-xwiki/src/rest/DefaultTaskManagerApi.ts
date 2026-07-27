@@ -44,6 +44,7 @@ export class DefaultTaskManagerApi implements TaskManagerApi {
    * Get all tasks for a tour. Returns cached data if available.
    */
   public async getTasks(tourId: string): Promise<TourTask[]> {
+    // FIXME: What if the tour data is not fetched yet? To fix as part of GUIDEDTOUR-23.
     const tasks = this.sharedStore.getTourTasks(tourId);
 
     if (tasks.length == 0) {
@@ -118,9 +119,6 @@ export class DefaultTaskManagerApi implements TaskManagerApi {
   private async prepareTasks(tourId: string) {
     const url = this.getTasksUrl(tourId);
     const tasks = await this.restClient.request<TourTask[]>(url, "GET");
-    for (const task of tasks) {
-      task.tourId = tourId;
-    }
     this.sharedStore.updateTourTasks(tourId, tasks);
     return tasks;
   }

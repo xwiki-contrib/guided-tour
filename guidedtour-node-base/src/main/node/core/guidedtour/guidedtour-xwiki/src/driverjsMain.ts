@@ -24,7 +24,21 @@ import type { DefaultGuidedTourManager } from "./rest/DefaultGuidedTourManager";
 import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
 import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
 
+type StepDirection = "next" | "previous";
 const util = {
+  /**
+   * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
+   * step). This flag is true when the page is being unloaded before a redirect (after a `beforeunload` event).
+   */
+  pageUnloadingFlag: false,
+  /**
+   * Add listener so `pageUnloadingFlag` is set to true on `beforeunload` event trigger.
+   */
+  addPageUnloadingListener() {
+    window.addEventListener("beforeunload", () => {
+      util.pageUnloadingFlag = true;
+    });
+  },
   /**
    * Do the necessary setup for rendering the `Skip All` link.
    * @param guidedTourManager - API
@@ -40,7 +54,6 @@ const util = {
 
     function onSkipAll() {
       guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
-      guidedTourManager.activeDriverTask?.destroy();
     }
 
     customSkipAll.onclick = onSkipAll;
@@ -65,47 +78,40 @@ const util = {
    * Wait until an element is visible on the page.
    *
    * @param selector - css selector for the element to wait for (should be compatible with document.querySelector)
-   * @param probeInterval - time (in ms) to wait after a failed check for the specified element
-   * @param maxIntervals - how many probe intervals to wait until rejecting
    * @returns a promise which succeeds if the element is found within the time limit, and fails otherwise
    */
   async waitForElement(
     selector: string | undefined,
-    probeInterval = 500,
-    maxIntervals = 6,
   ): Promise<Element | undefined> {
     if (!selector) {
+      // Return instantly if we're not supposed to wait for an element.
       return;
     }
-    return util.retryWithCallback(
-      () => {
-        const queriedElement = document.querySelector(selector);
-        if (queriedElement && util.isElementVisible(queriedElement)) {
-          return queriedElement;
-        } else {
-          return undefined;
-        }
-      },
-      probeInterval,
-      maxIntervals,
-      selector,
-    );
+    return util.retryWithCallback(() => {
+      const queriedElement = document.querySelector(selector);
+      if (queriedElement && util.isElementVisible(queriedElement)) {
+        return queriedElement;
+      } else {
+        return undefined;
+      }
+    }, selector);
   },
   /**
    *
    * @param callbackFn - The function to run to test if our goal has been achieved. Should return truthy if achieved,
    *     false otherwise (if we still need to wait)
-   * @param probeInterval - time (in ms) to wait after a failed check for the specified element
+   * @param probeInterval - time (in ms) to wait after a failed check for the specified element. Decrease this argument
+   *                to get a quicker response once the specified element appears in the page.
    * @param maxIntervals - how many probe intervals to wait until rejecting
    * @param consoleName - For debugging, to display in console
-   * @returns undefined for timeout, the return value of callbackFn if successful.
+   * @returns the return value of callbackFn if successful, or a failed Promise if the timeout is reached.
    */
   async retryWithCallback<T>(
-    callbackFn: () => T | undefined,
-    probeInterval = 500,
-    maxIntervals = 6,
+    callbackFn: () => T,
     consoleName = "something",
-  ) {
+    probeInterval = 50,
+    maxIntervals = 60,
+  ): Promise<T> {
     // TODO: Could maybe use MutationObservers here?
     console.debug(`waiting for ${consoleName}...`);
     for (let i = 0; i < maxIntervals; i += 1) {
@@ -116,12 +122,11 @@ const util = {
       console.debug(`(${i}/${maxIntervals}) waiting for ${consoleName}...`);
       await new Promise((resolve) => setTimeout(resolve, probeInterval));
     }
-    console.debug(
+    return Promise.reject(
       `Failed to confirm ${consoleName} after waiting ${
         probeInterval * maxIntervals
       } (${probeInterval} * ${maxIntervals}) ms.`,
     );
-    return undefined;
   },
   /**
    * Decides which buttons should be visible in the modal, and updates the DOM.
@@ -146,56 +151,62 @@ const util = {
       util.makeSkipAllButton(guidedTourManager, guidedTourTask),
     );
   },
-  async shouldSwitchSteps(
+  getAdjacentStep(
     guidedTourTask: TourTask,
-    thisStepActiveIndex: number,
-    currentStep: TourStep,
-    nextStep: TourStep,
+    currentStepActiveIndex: number,
+    direction: StepDirection,
+  ): TourStep | undefined {
+    const stepOffset = direction == "next" ? 1 : -1;
+    return guidedTourTask.steps?.[currentStepActiveIndex + stepOffset];
+  },
+  async moveToAdjacentStep(
+    guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
+    direction: StepDirection,
   ) {
-    // TODO: Add a better check here, in a separate method.
-    // if (currentStep.path != nextStep.path) {
-    //   console.debug(
-    //     "Attempted to go to next step, but that one is on another page.",
-    //     currentStep,
-    //     nextStep,
-    //   );
-    //   // TODO: Maybe add a redirect here.
-    //   return false;
-    // }
+    /*
+     * Things to consider:
+     * - Is the current step the one I expect?
+     * - Am I in the last step?
+     * - Am I expecting a redirect?
+     * - Wait for element to appear
+     */
+    if (util.pageUnloadingFlag) {
+      // Don't do anything if the page is currently in the process of redirecting.
+      return;
+    }
+    // Cache the current step index, so we can check later (after async operations) if we are in the same step
+    // we started in.
+    const currentStepActiveIndex =
+      guidedTourManager.activeDriverTask!.getActiveIndex()!;
+    const adjacentStep = util.getAdjacentStep(
+      guidedTourTask,
+      currentStepActiveIndex,
+      direction,
+    );
+    if (!adjacentStep) {
+      // End the tour, there are no more steps.
+      guidedTourManager.activeDriverTask!.destroy();
+      return;
+    }
 
-    // FIXME: Refactor this
-    return await util
-      .waitForElement(nextStep.element)
-      .then((targetedElement) => {
-        if (
-          thisStepActiveIndex !=
-          guidedTourManager.activeDriverTask!.getActiveIndex()
-        ) {
-          // The task moved to some other step while we were waiting, so no need to do anything.
-          return false;
-        }
+    const adjacentStepIndex = guidedTourTask.steps!.indexOf(adjacentStep);
+    // Set the storage key prematurely, in case a reflex action caused a redirect.
+    StorageManager.setStorageKey(
+      StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
+      adjacentStepIndex.toString(),
+    );
 
-        if (nextStep.element !== undefined && targetedElement === undefined) {
-          // We didn't find the expected element in the page, so the task is probably broken, so skip it.
-          console.error(
-            `Failed to find ${nextStep.element} element in the page when going back to step ${nextStep.order}`,
-            nextStep,
-          );
-          new XWiki.widgets.Notification(
-            "Failed to find targeted element. Skipping the task.",
-            "error",
-          );
-          guidedTourManager.activeDriverTask!.destroy();
-          return false;
-        }
-        return targetedElement;
-      });
+    // The `.drive()` method is overridden in xwiki to wait for elements to appear in the page, thus making it async (as
+    // opposed to driver.js's default non-async method).
+    await guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
   },
 };
 
+util.addPageUnloadingListener();
+
 /**
- * This is a function to ensure each call has it's own object, and subsequent manipulation doesn't alter the defaults.
+ * This is a function to ensure each call has its own object, and subsequent manipulation doesn't alter the defaults.
  */
 function XWikiDriverConfig(
   guidedTourManager: DefaultGuidedTourManager,
@@ -237,121 +248,33 @@ function XWikiDriverConfig(
     },
     onDestroyed: function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
-      // The state is empty when this function is called.
-      const status =
-        Number.parseInt(
-          StorageManager.getStorageKey(
-            StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
-          ) ?? "-1",
-        ) +
-          1 >=
-        guidedTourTask.steps!.length
-          ? TourTaskStatus.DONE
-          : TourTaskStatus.SKIPPED;
-      guidedTourManager.setTaskStatus(guidedTourTask, status);
-      // TODO: See if this is needed.
-      // TODO: Maybe move this to guidedTourManager.setTaskStatus(task, status) ?
-      StorageManager.setStorageKey(
-        StorageManager.getActiveTaskStorageKey(),
-        undefined,
-      );
-      guidedTourManager.activeTask = undefined;
-      guidedTourManager.activeDriverTask = undefined;
-    },
-    // TODO: Remove this linter disable and refactor the function.
-    onNextClick: async () => {
-      /*
-       * TODO: Things to consider:
-       * - Is the current step the one I expect?
-       * - Am I in the last step?
-       * - Am I expecting a redirect?
-       * - Wait for element to appear
-       * - Setting the guidedTourTask status shouldn't be done here
-       */
-      // Cache the current step index, so we can check later (after async operations) if we are in the same step
-      // we started in.
-      const thisStepActiveIndex =
-        guidedTourManager.activeDriverTask!.getActiveIndex()!;
-      const nextStep = guidedTourTask.steps![thisStepActiveIndex + 1];
-      if (!nextStep) {
-        guidedTourManager.activeDriverTask!.moveNext();
+      // The state provided by driver.js is empty when this function is called.
+      if (guidedTourManager.activeTask === undefined) {
+        // The task status was already set by an external command, so don't recompute the status here.
         return;
-      }
-      const targetedElement = await util.shouldSwitchSteps(
-        guidedTourTask,
-        thisStepActiveIndex,
-        guidedTourTask.steps![thisStepActiveIndex],
-        nextStep,
-        guidedTourManager,
-      );
-      if (targetedElement !== false) {
-        bindReflexEvents(targetedElement, nextStep, guidedTourManager, () => {
-          console.warn(
-            "Calling callback for next step move (hopefully)",
-            nextStep.order,
-            guidedTourTask.steps![thisStepActiveIndex].order,
-          );
-          const thisStepActiveIndex2 =
-            guidedTourManager.activeDriverTask!.getActiveIndex()!;
-          const nextStep2 = guidedTourTask.steps![thisStepActiveIndex2 + 1];
-          if (nextStep.path != nextStep2.path) {
-            console.debug(
-              "Setting the task step index prematurely to",
-              guidedTourTask.steps!.indexOf(nextStep2),
-            );
-            StorageManager.setStorageKey(
+      } else {
+        const currentStepIndex =
+          Number.parseInt(
+            StorageManager.getStorageKey(
               StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
-              guidedTourTask.steps!.indexOf(nextStep2).toString(),
-            );
-          }
-          // FIXME: This recursion should be guarded better, lest there be an infinite recursion.
-          guidedTourManager
-            .activeDriverTask!.getState()
-            .popover!.nextButton.click();
-        });
-        guidedTourManager.activeDriverTask!.moveNext();
+            ) ?? "-1",
+          ) + 1;
+        const status =
+          currentStepIndex >= guidedTourTask.steps!.length
+            ? TourTaskStatus.DONE
+            : TourTaskStatus.SKIPPED;
+        guidedTourManager.setTaskStatus(guidedTourTask, status);
       }
+    },
+    onNextClick: async () => {
+      await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
     },
     onPrevClick: async () => {
-      // Cache the current step index, so we can check later (after async operations) if we are in the same step
-      // we started in.
-      const thisStepActiveIndex =
-        guidedTourManager.activeDriverTask!.getActiveIndex()!;
-      const prevStep = guidedTourTask.steps![thisStepActiveIndex - 1];
-      if (!prevStep) {
-        guidedTourManager.activeDriverTask!.movePrevious();
-        return;
-      }
-      const targetedElement = await util.shouldSwitchSteps(
+      await util.moveToAdjacentStep(
         guidedTourTask,
-        thisStepActiveIndex,
-        guidedTourTask.steps![thisStepActiveIndex],
-        prevStep,
         guidedTourManager,
+        "previous",
       );
-      if (targetedElement !== false) {
-        bindReflexEvents(targetedElement, prevStep, guidedTourManager, () => {
-          console.warn("Calling callback for prev step move (hopefully)");
-          const thisStepActiveIndex2 =
-            guidedTourManager.activeDriverTask!.getActiveIndex()!;
-          const nextStep2 = guidedTourTask.steps![thisStepActiveIndex2 - 1];
-          if (prevStep.path != nextStep2.path) {
-            console.debug(
-              "Setting the task step index prematurely to",
-              guidedTourTask.steps!.indexOf(prevStep),
-            );
-            StorageManager.setStorageKey(
-              StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
-              guidedTourTask.steps!.indexOf(prevStep).toString(),
-            );
-          }
-          // FIXME: This recursion should be guarded better, lest there be an infinite recursion.
-          guidedTourManager
-            .activeDriverTask!.getState()
-            .popover!.nextButton.click();
-        });
-        guidedTourManager.activeDriverTask!.movePrevious();
-      }
     },
   };
 }
@@ -389,72 +312,79 @@ function wrapTask(
   guidedTourTask: Driver,
   guidedTourManager: DefaultGuidedTourManager,
 ): Driver {
+  function hasActiveStepIndexChanged(
+    previousActiveStepIndex: number | undefined,
+    currentStepActiveIndex: number | undefined,
+  ) {
+    return (
+      previousActiveStepIndex !== undefined &&
+      currentStepActiveIndex != previousActiveStepIndex
+    );
+  }
   const _drive = guidedTourTask.drive;
-  const _destroy = guidedTourTask.destroy;
+  // eslint-disable-next-line max-statements
   guidedTourTask.drive = async function (stepIndex: number = 0) {
-    StorageManager.setStorageKey(
-      StorageManager.getTaskStepStorageStorageKey(
-        guidedTourManager.activeTask!,
-      ),
-      JSON.stringify(guidedTourManager.activeTask!.steps!),
+    // TODO: Add translation as part of GUIDEDTOUR-4.
+    const loadingNotification = new XWiki.widgets.Notification(
+      "Loading task step...",
+      "inprogress",
     );
-    StorageManager.setStorageKey(
-      StorageManager.getTaskCurrentStepStorageKey(
-        guidedTourManager.activeTask!,
-      ),
-      stepIndex.toString(),
-    );
-    // TODO: Add bindReflexEvents call here.
-    bindReflexEvents(
-      await util.waitForElement(
+    const currentStepActiveIndex = guidedTourTask.getActiveIndex();
+    try {
+      const targetedElement = await util.waitForElement(
         guidedTourManager.activeTask!.steps![stepIndex].element,
-      ),
-      guidedTourManager.activeTask!.steps![stepIndex],
-      guidedTourManager,
-    );
-    _drive(stepIndex);
-  }.bind(guidedTourTask);
-
-  guidedTourTask.destroy = function () {
-    const currentStep = guidedTourTask.getActiveIndex();
-    // FIXME: Don't use guidedTourManager.activeTask! null assertion everywhere.
-    console.info(
-      `Trying to see if, on destroy, the guidedTourTask is actually done, or we're expecting a redirect`,
-    );
-    if (currentStep == guidedTourTask.getConfig().steps?.length) {
-      // Delete the current step storage key.
+      );
+      if (
+        hasActiveStepIndexChanged(
+          currentStepActiveIndex,
+          guidedTourTask.getActiveIndex(),
+        )
+      ) {
+        // The active step moved while waiting for the element, so don't do anything.
+        loadingNotification.hide();
+        return;
+      }
+      bindReflexEvents(
+        targetedElement,
+        guidedTourManager.activeTask!.steps![stepIndex],
+        guidedTourManager,
+      );
       StorageManager.setStorageKey(
         StorageManager.getTaskCurrentStepStorageKey(
           guidedTourManager.activeTask!,
         ),
-        undefined,
+        stepIndex.toString(),
       );
-      // Clear the step cache.
-      StorageManager.setStorageKey(
-        StorageManager.getTaskStepStorageStorageKey(
-          guidedTourManager.activeTask!,
+      _drive(stepIndex);
+      loadingNotification.hide();
+      return;
+    } catch (e) {
+      if (
+        hasActiveStepIndexChanged(
+          currentStepActiveIndex,
+          guidedTourTask.getActiveIndex(),
+        )
+      ) {
+        // The active step moved while waiting for the element, so don't do anything.
+        loadingNotification.hide();
+        return;
+      }
+      // We didn't find the element we wanted. Don't proceed with the task.
+      console.error(e);
+      // TODO: Add translation as part of GUIDEDTOUR-4.
+      loadingNotification.replace(
+        new XWiki.widgets.Notification(
+          "Error while moving between task steps.",
+          "error",
         ),
-        undefined,
       );
+      // Skip the task since we didn't find the step's targeted element in the page.
       guidedTourManager.setTaskStatus(
         guidedTourManager.activeTask!,
         TourTaskStatus.SKIPPED,
       );
-    } else {
-      StorageManager.setStorageKey(
-        StorageManager.getTaskCurrentStepStorageKey(
-          guidedTourManager.activeTask!,
-        ),
-        guidedTourTask.getActiveIndex()!.toString(),
-      );
-      guidedTourManager.setTaskStatus(
-        guidedTourManager.activeTask!,
-        TourTaskStatus.DONE,
-      );
     }
-    _destroy();
   }.bind(guidedTourTask);
-
   return guidedTourTask;
 }
 
@@ -473,18 +403,30 @@ function bindReflexEvents(
   step: TourStep,
   guidedTourManager: DefaultGuidedTourManager,
   callbackFn: () => void = () => {
-    console.warn("Calling callback for prev step move (hopefully)");
-    // FIXME: This recursion should be guarded better, lest there be an infinite recursion.
-    guidedTourManager.activeDriverTask!.getState().popover!.nextButton.click();
+    const activeIndex = guidedTourManager.activeDriverTask?.getActiveIndex();
+    if (activeIndex === undefined) {
+      return;
+    }
+    // Always move to the next step on reflex click.
+    void util.moveToAdjacentStep(
+      guidedTourManager.activeTask!,
+      guidedTourManager,
+      "next",
+    );
   },
 ) {
-  console.warn("Doing reflex bind");
+  console.debug("Doing reflex bind");
   if (!step.reflex || element === undefined) {
     if (step.reflex && element === undefined) {
       console.warn("WARNING: reflex step with empty element:", step);
     }
     return;
   }
+  const triggerCallback = () => {
+    console.debug("Removing reflex listener on ", element);
+    element.removeEventListener("click", callback);
+    callbackFn();
+  };
   const callback = (event: Event) => {
     console.debug(event);
     if (
@@ -493,7 +435,7 @@ function bindReflexEvents(
     ) {
       // Special case for text inputs.
       // Right now, the text input awaits for 5s before continuing, to allow the user to type stuff.
-      // TODO: Maybe add a 'match text' setting for going next.
+      // TODO: Maybe add a 'match text' setting for advancing the step.
       const msTimeout = 5000;
       new Promise((resolve) => setTimeout(resolve, msTimeout))
         .then(() => {
@@ -501,26 +443,13 @@ function bindReflexEvents(
           if (
             step.order != guidedTourManager.activeDriverTask?.getActiveIndex()
           ) {
-            // FIXME: This might not work.
-            console.debug("Removing reflex listener on ", element);
-            element.removeEventListener("click", callback);
-            callbackFn();
+            triggerCallback();
           }
           return;
         })
         .catch(console.error);
     } else {
-      // FIXME: This might not work.
-      console.debug("Removing reflex listener on ", element);
-      element.removeEventListener("click", callback);
-      callbackFn();
-      /* The localStorage item should theoretically be set to the same value in the moveNext(), so no harm done
-            new Promise(resolve => setTimeout(resolve, 1500)).then(() => {
-              // Wait a bit to see if the clicked element was actually a redirect.
-              if (!beforeUnloadFired) {
-                tour.moveNext();
-              }
-            });*/
+      triggerCallback();
     }
   };
   console.debug("Adding reflex listener on ", element);
@@ -529,15 +458,6 @@ function bindReflexEvents(
 
 // FIXME: From old TourJS.xml
 /*
-function loadCss(href) {
-    var link = document.createElement("link");
-    link.type = "text/css";
-    link.rel = "stylesheet";
-    //link.href = href;
-    //link.href = "$services.webjars.url('org.webjars.npm:driver.js', 'dist/driver.css')";
-    document.getElementsByTagName("head")[0].appendChild(link);
-}
-
   // TODO: Check for unused translation strings at the end of development.
 
 // FIXME: From old TourJS.xml

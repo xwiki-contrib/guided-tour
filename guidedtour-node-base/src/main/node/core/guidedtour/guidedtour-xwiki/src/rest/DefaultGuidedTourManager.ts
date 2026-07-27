@@ -62,9 +62,14 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   sharedStore: TourStore;
 
   /**
+   * @param xm - xwikiMeta object, for access to some context and metadata.
    * @param sharedStore - Shared in-memory cache for tours, tasks, and steps.
    */
-  constructor(sharedStore: TourStore) {
+  constructor(
+    // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
+    private readonly xm,
+    sharedStore: TourStore,
+  ) {
     this.sharedStore = sharedStore;
     const restClient = new GuidedTourRestClient();
     this.defaultTourManagerApi = new DefaultTourManagerApi(
@@ -79,26 +84,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       restClient,
       sharedStore,
     );
-  }
-
-  async loadUserTaskStatuses() {
-    // For guest users, set the session storage for persistence.
-    const userTaskStatuses = (() => {
-      const userTaskStatusesStr =
-        StorageManager.getStorageKey("userTaskStatuses");
-      if (!userTaskStatusesStr) {
-        console.warn("No task statuses in sessionStorage");
-        return;
-      }
-      try {
-        return JSON.parse(userTaskStatusesStr);
-      } catch {
-        return;
-      }
-    })();
-    // // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
-    // // ...
-    return userTaskStatuses;
   }
 
   async saveUserTaskStatuses(guidedTourManager: DefaultGuidedTourManager) {
@@ -117,36 +102,14 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
     // For guest users, set the session storage for persistence.
     StorageManager.setStorageKey(
-      "userTaskStatuses",
+      StorageManager.getUserTaskStatusesStorageKey(this.xm.userReference),
       JSON.stringify(taskStatuses),
     );
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
-  private async updateTourStatusesFromStorage() {
-    const userTaskStatuses = await this.loadUserTaskStatuses();
-    if (!userTaskStatuses) {
-      return;
-    }
-    for (const key of Object.keys(userTaskStatuses)) {
-      const ids = StorageManager.parseStorageKeyPrefix(key);
-      if (!ids) {
-        console.error("Failed to parse storage key", key);
-        continue;
-      }
-      (await this.getTask(ids.tourId, ids?.taskId))!.status =
-        userTaskStatuses[key] ?? TourTaskStatus.TODO;
-    }
-  }
-
   async getTours(): Promise<TourTour[]> {
-    const refetchDone = this.sharedStore.cache.tours.length == 0;
     const tours = await this.defaultTourManagerApi.getTours();
-
-    if (refetchDone) {
-      // If Guest user, don't use the status returned by the API, use the local storage values.
-      await this.updateTourStatusesFromStorage();
-    }
 
     this.defaultTourManagerApi.computeToursStatus(tours ?? []);
     return tours;
@@ -282,6 +245,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getActiveTaskStorageKey(),
       StorageManager.getStorageKeyPrefix(task),
     );
+    StorageManager.setStorageKey(
+      StorageManager.getTaskStepStorageStorageKey(task),
+      JSON.stringify(task.steps!),
+    );
 
     this.activeTask = task;
     this.activeDriverTask = wrapTask(driverTour, this);
@@ -305,13 +272,13 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getActiveTaskStorageKey(),
     );
     if (existingActiveTask) {
-      // FIXME: I shouldn't parse this here, but have it already available somehow more easily.
-      // Also, this parsing is not robust to pages which contains the `__` separator present in the item value.
       const parsedIds =
         StorageManager.parseStorageKeyPrefix(existingActiveTask);
       if (parsedIds === undefined) {
         console.error("No good task parsing value:", parsedIds);
       } else {
+        // Populate the cache by fetching all tours first.
+        await this.getTours();
         const task = await this.getTask(
           parsedIds["tourId"],
           parsedIds["taskId"],
@@ -331,6 +298,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
   /**
    * Update the status of a task and clear the associated session storage keys.
+   * If the given task is the currently active task, the task will be instantly ended.
    * @param task - The task whose status to change.
    * @param status - The new status (TODO, SKIPPED, or DONE).
    */
@@ -339,17 +307,38 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     this.defaultTourManagerApi.computeToursStatus(
       Array.of((await this.defaultTourManagerApi.getTour(task.tourId!))!),
     );
-    // Since we're setting the task status, it means we're done with all steps.
-    // So we can delete both the current step index and the cached steps objects.
-    StorageManager.setStorageKey(
-      StorageManager.getTaskCurrentStepStorageKey(task),
-      undefined,
-    );
-    StorageManager.setStorageKey(
-      StorageManager.getTaskStepStorageStorageKey(task),
-      undefined,
-    );
+    if (task === this.activeTask) {
+      // Since we're setting the task status, it means we're done with all steps. So destroy the active task.
+      this.destroyActiveTask();
+    }
+    // Sync with storage.
     await this.saveUserTaskStatuses(this);
+  }
+
+  /**
+   * Delete all data pertaining to the current task in progress.
+   * Deletes the active task object, and the Session Storage keys for current step index and cached steps.
+   * Will also end the active task which is in progress.
+   */
+  private destroyActiveTask() {
+    const currentStepKey = StorageManager.getTaskCurrentStepStorageKey(
+      this.activeTask!,
+    );
+    const stepStorageKey = StorageManager.getTaskStepStorageStorageKey(
+      this.activeTask!,
+    );
+
+    this.activeTask = undefined;
+    // this.activeTask is used as a flag to tell `onDestroy()` to not re-compute the task status.
+    this.activeDriverTask?.destroy();
+    this.activeDriverTask = undefined;
+    // Update the storage keys last, since they could be used in `onDestroy()` to compute the task status.
+    StorageManager.setStorageKey(currentStepKey, undefined);
+    StorageManager.setStorageKey(stepStorageKey, undefined);
+    StorageManager.setStorageKey(
+      StorageManager.getActiveTaskStorageKey(),
+      undefined,
+    );
   }
 
   /**

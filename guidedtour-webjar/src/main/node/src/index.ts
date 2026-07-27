@@ -22,8 +22,9 @@ import { guidedTourManager } from "@xwiki/contrib-guidedtour-xwiki";
 import { GuidedTourWidget } from "@xwiki/contrib-guidedtour-ui";
 import { createApp } from "vue";
 
-function init() {
-  const app = createApp(GuidedTourWidget, { guidedTourManager });
+async function init() {
+  const guidedTourManagerUnwrapped = await guidedTourManager;
+  const app = createApp(GuidedTourWidget, { guidedTourManager: guidedTourManagerUnwrapped });
   app.mount("#guidedtour-uix");
 }
 
