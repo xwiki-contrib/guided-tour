@@ -21,27 +21,24 @@ package org.xwiki.contrib.guidedtour.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.contrib.guidedtour.api.dtos.TourDTO;
 import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.contrib.guidedtour.api.exceptions.DuplicatedIdException;
 import org.xwiki.contrib.guidedtour.api.exceptions.InvalidIdException;
-import org.xwiki.contrib.guidedtour.internal.util.SolrQueryUtil;
+import org.xwiki.contrib.guidedtour.internal.util.QueryUtil;
 import org.xwiki.job.JobException;
 import org.xwiki.job.JobExecutor;
 import org.xwiki.job.Request;
-import org.xwiki.model.EntityType;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
-import org.xwiki.model.reference.EntityReference;
 import org.xwiki.query.QueryException;
 import org.xwiki.refactoring.job.RefactoringJobs;
 import org.xwiki.refactoring.script.RequestFactory;
@@ -57,8 +54,6 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOU
 /**
  * Manages the instance tours. It provides methods to create, retrieve, update and delete tours. Tours are stored as
  * XWiki documents with a TourClass object.
- * <p>
- * This class uses Solr to search for the documents, in order to avoid potential slowness in HQL queries.
  *
  * @version $Id$
  * @since 1.0
@@ -67,16 +62,11 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOU
 @Singleton
 public class ToursManager
 {
-    private static final String CLASS_PREFIX = "property.XWiki.GuidedTour.TourClass.%s";
+    private static final String GET_ALL_TOURS_QUERY = String.format(
+        "select doc.fullName from XWikiDocument doc, BaseObject obj "
+            + "where doc.fullName = obj.name and obj.className = '%s' and doc.name <> :excludeName", TOUR_CLASS);
 
-    private static final List<String> FILTERED_LINES = List.of(
-        TourProperty.TITLE.formKey(CLASS_PREFIX),
-        TourProperty.DESCRIPTION.formKey(CLASS_PREFIX),
-        TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX),
-        TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX)
-    );
-
-    private static final String QS = String.format("class:%s", TOUR_CLASS);
+    private static final String EXCLUDE_NAME = "TourTemplate";
 
     @Inject
     private Provider<XWikiContext> wikiContextProvider;
@@ -86,13 +76,10 @@ public class ToursManager
     private DocumentReferenceResolver<String> documentReferenceResolver;
 
     @Inject
-    private DocumentReferenceResolver<SolrDocument> solrDocumentReferenceResolver;
-
-    @Inject
     private TasksManager tasksManager;
 
     @Inject
-    private SolrQueryUtil queryUtil;
+    private QueryUtil queryUtil;
 
     @Inject
     private JobExecutor jobExecutor;
@@ -118,7 +105,7 @@ public class ToursManager
             tourClassObject = targetDoc.newXObject(TOUR_CLASS, wikiContext);
             tourClassObject.set(TourProperty.TITLE.getBaseKey(), tourDTO.getTitle(), wikiContext);
             tourClassObject.set(TourProperty.DESCRIPTION.getBaseKey(), tourDTO.getDescription(), wikiContext);
-            tourClassObject.set(TourProperty.IS_ACTIVE_BOOL.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
+            tourClassObject.set(TourProperty.IS_ACTIVE.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
             targetDoc.addXObject(tourClassObject);
             wiki.saveDocument(targetDoc, "Tour created.", wikiContext);
         } else {
@@ -127,24 +114,26 @@ public class ToursManager
     }
 
     /**
-     * Retrieves all tours. It executes a Solr query to get all documents with a TourClass object and maps the results
-     * to a list of TourDTOs.
+     * Retrieves all tours. It executes a HQL query to get all documents with a TourClass object, excluding the
+     * template, and maps the results to a list of TourDTOs.
      *
      * @return a JSON string representing the list of tours
-     * @throws QueryException if there is an error while executing the Solr query
+     * @throws QueryException if there is an error while executing the HQL query
      * @throws XWikiException if there is an error while interacting with the XWiki API
      */
     public List<TourDTO> getAllTours() throws QueryException, XWikiException, InvalidIdException
     {
-        SolrDocumentList solrDocuments =
-            this.queryUtil.executeQuery(QS, "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate", FILTERED_LINES, "");
-        List<TourDTO> tours = new ArrayList<>(solrDocuments.size());
-        for (SolrDocument document : solrDocuments) {
-            EntityReference documentReference =
-                this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
-            String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
-            boolean isActive = SolrQueryUtil.getIsActiveProperty(document, CLASS_PREFIX);
-            String description = (String) document.getFirstValue(TourProperty.DESCRIPTION.formKey(CLASS_PREFIX));
+        List<DocumentReference> docRefs =
+            this.queryUtil.executeQuery(GET_ALL_TOURS_QUERY, Map.of("excludeName", EXCLUDE_NAME));
+        List<TourDTO> tours = new ArrayList<>(docRefs.size());
+        XWikiContext wikiContext = this.wikiContextProvider.get();
+        XWiki wiki = wikiContext.getWiki();
+        for (DocumentReference documentReference : docRefs) {
+            XWikiDocument doc = wiki.getDocument(documentReference, wikiContext);
+            BaseObject tourObj = doc.getXObject(TOUR_CLASS);
+            String title = tourObj.getStringValue(TourProperty.TITLE.getBaseKey());
+            boolean isActive = tourObj.getIntValue(TourProperty.IS_ACTIVE.getBaseKey()) == 1;
+            String description = tourObj.getStringValue(TourProperty.DESCRIPTION.getBaseKey());
             TourDTO dto = new TourDTO(documentReference.toString(), title, isActive, description);
             dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
             tours.add(dto);
@@ -167,7 +156,7 @@ public class ToursManager
         XWiki wiki = wikiContext.getWiki();
         tourClassObject.set(TourProperty.TITLE.getBaseKey(), tourDTO.getTitle(), wikiContext);
         tourClassObject.set(TourProperty.DESCRIPTION.getBaseKey(), tourDTO.getDescription(), wikiContext);
-        tourClassObject.set(TourProperty.IS_ACTIVE_BOOL.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
+        tourClassObject.set(TourProperty.IS_ACTIVE.getBaseKey(), tourDTO.isActive() ? 1 : 0, wikiContext);
         XWikiDocument tourDoc = tourClassObject.getOwnerDocument();
         tourDoc.setTitle(tourDTO.getTitle());
         wiki.saveDocument(tourDoc, "Updated tour object.", wikiContext);

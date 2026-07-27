@@ -46,4 +46,24 @@
       <artifactId>jackson-annotations</artifactId>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.revapi</groupId>
+        <artifactId>revapi-maven-plugin</artifactId>
+        <configuration>
+          <analysisConfiguration>
+            <revapi.ignore>
+              <item>
+                <regex>true</regex>
+                <code>java\..*</code>
+                <old>.*org\.xwiki\.contrib\.guidedtour\.api\.enums\.TourProperty.*</old>
+                <justification>Reordered class properties after migrating from SOLR to HQL.</justification>
+              </item>
+            </revapi.ignore>
+          </analysisConfiguration>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

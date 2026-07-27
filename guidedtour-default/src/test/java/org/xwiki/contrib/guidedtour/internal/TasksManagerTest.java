@@ -21,20 +21,17 @@ package org.xwiki.contrib.guidedtour.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Named;
 
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.xwiki.contrib.guidedtour.api.dtos.TaskDTO;
-import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.contrib.guidedtour.api.exceptions.DuplicatedIdException;
 import org.xwiki.contrib.guidedtour.api.exceptions.InvalidIdException;
-import org.xwiki.contrib.guidedtour.internal.util.SolrQueryUtil;
-import org.xwiki.model.EntityType;
+import org.xwiki.contrib.guidedtour.internal.util.QueryUtil;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
 import org.xwiki.model.reference.EntityReferenceSerializer;
@@ -68,8 +65,6 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TAS
 @ComponentTest
 class TasksManagerTest
 {
-    private static final String CLASS_PREFIX = "property.XWiki.GuidedTour.TaskClass.%s";
-
     private static final String TOUR_ID = "tourId";
 
     private static final String TASK_ID1 = "taskId1";
@@ -80,20 +75,15 @@ class TasksManagerTest
 
     private static final String VALIDATED_TASK_ID2 = "validatedTaskId2";
 
-    private static final List<String> FL =
-        List.of(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX), TourProperty.TITLE.formKey(CLASS_PREFIX),
-            TourProperty.ORDER.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX),
-            TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX));
+    private static final String GET_ALL_TASKS_QUERY =
+        "select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp "
+            + "where doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TaskClass' "
+            + "and doc.space = :space and obj.id = orderProp.id.id and orderProp.id.name = 'order' "
+            + "and lower(doc.title) like lower(:titleFilter) order by orderProp.value asc";
 
-    private static final String SORT_KEY = TourProperty.ORDER.formKey(CLASS_PREFIX) + " asc";
-
-    private final SolrDocumentList solrDocumentList = new SolrDocumentList();
-
-    @Mock
-    private SolrDocument solrDocument1;
-
-    @Mock
-    private SolrDocument solrDocument2;
+    private static final String GET_TASK_QUERY = "select doc.fullName from XWikiDocument doc, BaseObject obj "
+        + "where doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TaskClass' "
+        + "and doc.space = :space and doc.name = :taskName";
 
     @InjectMockComponents
     private TasksManager tasksManager;
@@ -102,7 +92,7 @@ class TasksManagerTest
     private XWikiContext wikiContext;
 
     @MockComponent
-    private SolrQueryUtil queryUtil;
+    private QueryUtil queryUtil;
 
     @MockComponent
     @Named("current")
@@ -115,9 +105,6 @@ class TasksManagerTest
     @MockComponent
     @Named("local")
     private EntityReferenceSerializer<String> localSerializer;
-
-    @MockComponent
-    private DocumentReferenceResolver<SolrDocument> solrDocumentReferenceResolver;
 
     @Mock
     private SpaceReference spaceReference;
@@ -172,35 +159,30 @@ class TasksManagerTest
             this.taskReference1);
         when(this.documentReferenceResolver.resolve(VALIDATED_TASK_ID2, this.tourReference)).thenReturn(
             this.taskReference2);
-        when(this.solrDocumentReferenceResolver.resolve(this.solrDocument1, EntityType.DOCUMENT)).thenReturn(
-            this.taskReference1);
-        when(this.solrDocumentReferenceResolver.resolve(this.solrDocument2, EntityType.DOCUMENT)).thenReturn(
-            this.taskReference2);
 
         when(this.tourReference.getLastSpaceReference()).thenReturn(this.spaceReference);
         when(this.localSerializer.serialize(this.spaceReference)).thenReturn("tourSpace");
-        this.solrDocumentList.add(this.solrDocument1);
-        this.solrDocumentList.add(this.solrDocument2);
 
         when(this.taskReference1.getName()).thenReturn(VALIDATED_TASK_ID1);
         when(this.taskReference2.getName()).thenReturn(VALIDATED_TASK_ID2);
-        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ",
-            "{!q.op=AND} type:DOCUMENT AND space:\"tourSpace\"", FL, SORT_KEY)).thenReturn(this.solrDocumentList);
+        when(this.taskDocument1.getDocumentReference()).thenReturn(this.taskReference1);
+        when(this.taskDocument2.getDocumentReference()).thenReturn(this.taskReference2);
+        when(this.taskDocument1.getXObject(TASK_CLASS)).thenReturn(this.taskObject1);
+        when(this.taskDocument2.getXObject(TASK_CLASS)).thenReturn(this.taskObject2);
 
-        when(this.solrDocument1.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn("");
-        when(this.solrDocument1.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(
-            this.taskDTO1.getTitle());
-        when(this.solrDocument1.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(1L);
-        when(this.solrDocument1.getFirstValue(TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX))).thenReturn(true);
-        when(this.solrDocument1.getFirstValue(TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX))).thenReturn(1);
+        when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
+            Map.of("space", "tourSpace", "titleFilter", "%%"))).thenReturn(
+            List.of(this.taskReference1, this.taskReference2));
 
-        when(this.solrDocument2.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX))).thenReturn(
-            VALIDATED_TASK_ID1);
-        when(this.solrDocument2.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX))).thenReturn(
-            this.taskDTO2.getTitle());
-        when(this.solrDocument2.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX))).thenReturn(2L);
-        when(this.solrDocument2.getFirstValue(TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX))).thenReturn(false);
-        when(this.solrDocument2.getFirstValue(TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX))).thenReturn(0);
+        when(this.taskObject1.getStringValue("title")).thenReturn(this.taskDTO1.getTitle());
+        when(this.taskObject1.getStringValue("dependsOn")).thenReturn("");
+        when(this.taskObject1.getIntValue("order")).thenReturn(1);
+        when(this.taskObject1.getIntValue("isActive")).thenReturn(1);
+
+        when(this.taskObject2.getStringValue("title")).thenReturn(this.taskDTO2.getTitle());
+        when(this.taskObject2.getStringValue("dependsOn")).thenReturn(VALIDATED_TASK_ID1);
+        when(this.taskObject2.getIntValue("order")).thenReturn(2);
+        when(this.taskObject2.getIntValue("isActive")).thenReturn(0);
     }
 
     @Test
@@ -243,11 +225,8 @@ class TasksManagerTest
     @Test
     void getTask() throws Exception
     {
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:\"tourSpace\" AND name:\"%s\"", TASK_ID2);
-        this.solrDocumentList.clear();
-        this.solrDocumentList.add(this.solrDocument2);
-        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ", fq, FL, "")).thenReturn(
-            this.solrDocumentList);
+        when(this.queryUtil.executeQuery(GET_TASK_QUERY, Map.of("space", "tourSpace", "taskName", TASK_ID2))).thenReturn(
+            List.of(this.taskReference2));
 
         TaskDTO result = this.tasksManager.getTask(TOUR_ID, TASK_ID2);
 
@@ -259,10 +238,8 @@ class TasksManagerTest
     @Test
     void getTaskInvalidId() throws Exception
     {
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:\"tourSpace\" AND name:\"%s\"", TASK_ID2);
-        this.solrDocumentList.clear();
-        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TaskClass AND ", fq, FL, "")).thenReturn(
-            this.solrDocumentList);
+        when(this.queryUtil.executeQuery(GET_TASK_QUERY, Map.of("space", "tourSpace", "taskName", TASK_ID2))).thenReturn(
+            List.of());
 
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
             this.tasksManager.getTask(TOUR_ID, TASK_ID2);
@@ -288,6 +265,23 @@ class TasksManagerTest
         assertEquals(2, tasks.get(1).getOrder());
         assertFalse(tasks.get(1).isActive());
         assertEquals(VALIDATED_TASK_ID1, tasks.get(1).getDependsOn().get(0));
+    }
+
+    @Test
+    void getAllTasksFiltered() throws Exception
+    {
+        when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
+            Map.of("space", "tourSpace", "titleFilter", "%test%"))).thenReturn(
+            List.of(this.taskReference1));
+
+        List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID, "test");
+
+        assertEquals(1, tasks.size());
+        assertEquals(VALIDATED_TASK_ID1, tasks.getFirst().getId());
+        assertEquals(this.taskDTO1.getTitle(), tasks.getFirst().getTitle());
+        assertEquals(1, tasks.getFirst().getOrder());
+        assertTrue(tasks.getFirst().isActive());
+        assertTrue(tasks.getFirst().getDependsOn().isEmpty());
     }
 
     @Test

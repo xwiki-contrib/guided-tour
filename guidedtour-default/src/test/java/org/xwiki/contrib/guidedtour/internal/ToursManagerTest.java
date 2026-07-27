@@ -21,22 +21,19 @@ package org.xwiki.contrib.guidedtour.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Named;
 import javax.inject.Provider;
 
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.xwiki.contrib.guidedtour.api.dtos.TourDTO;
-import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.contrib.guidedtour.api.exceptions.DuplicatedIdException;
 import org.xwiki.contrib.guidedtour.api.exceptions.InvalidIdException;
-import org.xwiki.contrib.guidedtour.internal.util.SolrQueryUtil;
+import org.xwiki.contrib.guidedtour.internal.util.QueryUtil;
 import org.xwiki.job.JobExecutor;
-import org.xwiki.model.EntityType;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
 import org.xwiki.model.reference.SpaceReference;
@@ -69,11 +66,7 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOU
 @ComponentTest
 class ToursManagerTest
 {
-    private static final String CLASS_PREFIX = "property.XWiki.GuidedTour.TourClass.%s";
-
     private static final String TOUR_ID = "tourId";
-
-    private final SolrDocumentList solrDocumentList = new SolrDocumentList();
 
     private final TourDTO tourDTO = new TourDTO(TOUR_ID, "dto Title", true, "description");
 
@@ -90,13 +83,10 @@ class ToursManagerTest
     private DocumentReferenceResolver<String> documentReferenceResolver;
 
     @MockComponent
-    private DocumentReferenceResolver<SolrDocument> solrDocumentReferenceResolver;
-
-    @MockComponent
     private TasksManager tasksManager;
 
     @MockComponent
-    private SolrQueryUtil queryUtil;
+    private QueryUtil queryUtil;
 
     @MockComponent
     private JobExecutor jobExecutor;
@@ -120,9 +110,6 @@ class ToursManagerTest
     private BaseObject baseObject;
 
     @Mock
-    private SolrDocument solrDocument;
-
-    @Mock
     private SpaceReference spaceReference;
 
     @Mock
@@ -138,7 +125,6 @@ class ToursManagerTest
         when(this.documentReference.getName()).thenReturn(TOUR_ID);
         when(this.xwikiDocument.newXObject(TOUR_CLASS, this.wikiContext)).thenReturn(this.baseObject);
         when(this.xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(this.baseObject);
-        this.solrDocumentList.add(this.solrDocument);
     }
 
     @Test
@@ -164,22 +150,21 @@ class ToursManagerTest
     @Test
     void getAllTours() throws Exception
     {
-        when(this.queryUtil.executeQuery("class:XWiki.GuidedTour.TourClass",
-            "{!q.op=AND} type:DOCUMENT AND -name:TourTemplate",
-            List.of(TourProperty.TITLE.formKey(CLASS_PREFIX), TourProperty.DESCRIPTION.formKey(CLASS_PREFIX),
-                TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX)),
-            "")).thenReturn(this.solrDocumentList);
-        when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.title_string")).thenReturn(
-            "tour title");
-        when(this.solrDocument.getFirstValue("property.XWiki.GuidedTour.TourClass.isActive_boolean")).thenReturn(true);
-        when(this.solrDocumentReferenceResolver.resolve(this.solrDocument, EntityType.DOCUMENT)).thenReturn(
-            this.documentReference);
+        when(this.queryUtil.executeQuery("select doc.fullName from XWikiDocument doc, BaseObject obj "
+            + "where doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TourClass' and doc.name <> "
+            + ":excludeName", Map.of("excludeName", "TourTemplate"))).thenReturn(List.of(this.documentReference));
+        when(this.xwiki.getDocument(this.documentReference, this.wikiContext)).thenReturn(this.xwikiDocument);
+        when(this.xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(this.baseObject);
+        when(this.baseObject.getStringValue("title")).thenReturn("tour title");
+        when(this.baseObject.getIntValue("isActive")).thenReturn(1);
+        when(this.baseObject.getStringValue("description")).thenReturn("tour description");
         when(this.tasksManager.getAllTasks(this.documentReference.toString())).thenReturn(new ArrayList<>());
 
         List<TourDTO> tours = this.toursManager.getAllTours();
         assertEquals(1, tours.size());
         assertEquals("tour title", tours.get(0).getTitle());
         assertTrue(tours.getFirst().isActive());
+        assertEquals("tour description", tours.getFirst().getDescription());
         assertTrue(tours.getFirst().getTasksList().isEmpty());
     }
 

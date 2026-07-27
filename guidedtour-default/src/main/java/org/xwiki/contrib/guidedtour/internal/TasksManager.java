@@ -20,7 +20,9 @@
 package org.xwiki.contrib.guidedtour.internal;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -28,18 +30,14 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.solr.common.SolrDocument;
-import org.apache.solr.common.SolrDocumentList;
 import org.xwiki.component.annotation.Component;
 import org.xwiki.contrib.guidedtour.api.dtos.TaskDTO;
 import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.contrib.guidedtour.api.exceptions.DuplicatedIdException;
 import org.xwiki.contrib.guidedtour.api.exceptions.InvalidIdException;
-import org.xwiki.contrib.guidedtour.internal.util.SolrQueryUtil;
-import org.xwiki.model.EntityType;
+import org.xwiki.contrib.guidedtour.internal.util.QueryUtil;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
-import org.xwiki.model.reference.EntityReference;
 import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.model.validation.EntityNameValidation;
 import org.xwiki.query.QueryException;
@@ -57,8 +55,6 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TAS
  * Manages the tasks for the guided tour. It provides methods to create, retrieve, update and delete tasks. Tasks are
  * stored as XWiki documents with a TaskClass object. The document name is the task id and the parent document is the
  * tour document.
- * <p>
- * This class uses Solr to search for the documents, in order to avoid potential slowness in HQL queries.
  *
  * @version $Id$
  * @since 1.0
@@ -67,14 +63,19 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TAS
 @Singleton
 public class TasksManager
 {
-    private static final String QS = String.format("class:%s AND ", TASK_CLASS);
+    private static final String SPACE_KEY = "space";
 
-    private static final String CLASS_PREFIX = "property.XWiki.GuidedTour.TaskClass.%s";
+    private static final String TITLE_FILTER = "titleFilter";
 
-    private static final List<String> FILTERED_LINES =
-        List.of(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX), TourProperty.TITLE.formKey(CLASS_PREFIX),
-            TourProperty.ORDER.formKey(CLASS_PREFIX), TourProperty.IS_ACTIVE_INT.formKey(CLASS_PREFIX),
-            TourProperty.IS_ACTIVE_BOOL.formKey(CLASS_PREFIX));
+    private static final String GET_TASK_QUERY = String.format(
+        "select doc.fullName from XWikiDocument doc, BaseObject obj where doc.fullName = obj.name and obj.className ="
+            + " '%s' and doc.space = :space and doc.name = :taskName", TASK_CLASS);
+
+    private static final String GET_ALL_TASKS_QUERY = String.format(
+        "select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp "
+            + "where doc.fullName = obj.name and obj.className = '%s' and doc.space = :space "
+            + "and obj.id = orderProp.id.id and orderProp.id.name = 'order' "
+            + "and lower(doc.title) like lower(:titleFilter) order by orderProp.value asc", TASK_CLASS);
 
     private static final String TASK_NOT_FOUND_ERROR = "Task with the given id [%s] does not exists.";
 
@@ -90,14 +91,11 @@ public class TasksManager
     private DocumentReferenceResolver<String> documentReferenceResolver;
 
     @Inject
-    private DocumentReferenceResolver<SolrDocument> solrDocumentReferenceResolver;
-
-    @Inject
     @Named("local")
     private EntityReferenceSerializer<String> localSerializer;
 
     @Inject
-    private SolrQueryUtil queryUtil;
+    private QueryUtil queryUtil;
 
     /**
      * Creates a new task based on the provided DTO. The task is stored as an {@link XWikiDocument} with a TaskClass
@@ -141,21 +139,22 @@ public class TasksManager
      * @param taskId the id of the task to retrieve
      * @return a {@link TaskDTO} containing the task information
      * @throws XWikiException if there is an error while interacting with the XWiki API
-     * @throws QueryException if there is an error while executing the Solr query to retrieve the task document
+     * @throws QueryException if there is an error while executing the HQL query to retrieve the task document
      * @throws InvalidIdException if the task with the given id does not exist in the tour
      */
     public TaskDTO getTask(String tourId, String taskId) throws XWikiException, QueryException, InvalidIdException
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        String fq = String.format("{!q.op=AND} type:DOCUMENT AND space:\"%s\" AND name:\"%s\"", parentSpace, taskId);
-        SolrDocumentList results = this.queryUtil.executeQuery(QS, fq, FILTERED_LINES, "");
+        List<DocumentReference> results =
+            this.queryUtil.executeQuery(GET_TASK_QUERY, Map.of(SPACE_KEY, parentSpace, "taskName", taskId));
         if (results.isEmpty()) {
             throw new InvalidIdException(TASK_NOT_FOUND_ERROR, taskId);
         }
-        SolrDocument document = results.getFirst();
-        EntityReference documentReference = this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
-        return getTaskDTO(document, documentReference);
+        XWikiContext wikiContext = this.wikiContextProvider.get();
+        XWiki wiki = wikiContext.getWiki();
+        XWikiDocument doc = wiki.getDocument(results.get(0), wikiContext);
+        return getTaskDTO(doc);
     }
 
     /**
@@ -164,7 +163,7 @@ public class TasksManager
      * @param tourId the id of the tour to which the tasks belong
      * @param filteredTitle the title to filter the tasks by, can be empty or null if no filtering is needed
      * @return a list of {@link TaskDTO} containing the tasks information
-     * @throws QueryException if there is an error while executing the Solr query to retrieve the task documents
+     * @throws QueryException if there is an error while executing the HQL query to retrieve the task documents
      * @throws XWikiException if there is an error while interacting with the XWiki API
      * @throws InvalidIdException if the tour with the given id does not exist
      * @since 0.2
@@ -174,14 +173,20 @@ public class TasksManager
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        String fq = formFilterQuery(filteredTitle, parentSpace);
-        SolrDocumentList solrDocuments =
-            this.queryUtil.executeQuery(QS, fq, FILTERED_LINES, TourProperty.ORDER.formKey(CLASS_PREFIX) + " asc");
-        List<TaskDTO> tasks = new ArrayList<>(solrDocuments.size());
-        for (SolrDocument document : solrDocuments) {
-            EntityReference documentReference =
-                this.solrDocumentReferenceResolver.resolve(document, EntityType.DOCUMENT);
-            tasks.add(getTaskDTO(document, documentReference));
+        Map<String, Object> bindValues = new HashMap<>(Map.of(SPACE_KEY, parentSpace, TITLE_FILTER, ""));
+        String titleFilter = "%%";
+        if (StringUtils.isNotBlank(filteredTitle)) {
+            titleFilter = String.format("%%%s%%", filteredTitle);
+        }
+        bindValues.put(TITLE_FILTER, titleFilter);
+
+        List<DocumentReference> docRefs = this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY, bindValues);
+        List<TaskDTO> tasks = new ArrayList<>(docRefs.size());
+        XWikiContext wikiContext = this.wikiContextProvider.get();
+        XWiki wiki = wikiContext.getWiki();
+        for (DocumentReference taskDocRef : docRefs) {
+            XWikiDocument doc = wiki.getDocument(taskDocRef, wikiContext);
+            tasks.add(getTaskDTO(doc));
         }
         return tasks;
     }
@@ -191,7 +196,7 @@ public class TasksManager
      *
      * @param tourId the id of the tour to which the tasks belong
      * @return a list of {@link TaskDTO} containing the tasks information
-     * @throws QueryException if there is an error while executing the Solr query to retrieve the task documents
+     * @throws QueryException if there is an error while executing the HQL query to retrieve the task documents
      * @throws XWikiException if there is an error while interacting with the XWiki API
      * @throws InvalidIdException if the tour with the given id does not exist
      */
@@ -249,15 +254,16 @@ public class TasksManager
         updateRemainingTasks(existingTasks, targetTask, tourDocRef);
     }
 
-    private String formFilterQuery(String searchedTitle, String parentSpace)
+    private TaskDTO getTaskDTO(XWikiDocument doc)
     {
-        StringBuilder fq = new StringBuilder(String.format("{!q.op=AND} type:DOCUMENT AND space:\"%s\"", parentSpace));
-        if (StringUtils.isNotBlank(searchedTitle)) {
-            fq.append(" AND ");
-            fq.append(TourProperty.TITLE.formKey(CLASS_PREFIX)).append("_lowercase:*");
-            fq.append(searchedTitle.toLowerCase().replace(" ", "\\ ")).append("*");
-        }
-        return fq.toString();
+        BaseObject taskObj = doc.getXObject(TASK_CLASS);
+        String title = taskObj.getStringValue(TourProperty.TITLE.getBaseKey());
+        String dependsOn = taskObj.getStringValue(TourProperty.DEPENDS_ON.getBaseKey());
+        int order = taskObj.getIntValue(TourProperty.ORDER.getBaseKey());
+        boolean isActive = taskObj.getIntValue(TourProperty.IS_ACTIVE.getBaseKey()) == 1;
+
+        return new TaskDTO(doc.getDocumentReference().getName(), title, order, isActive,
+            Splitter.on(',').omitEmptyStrings().splitToList(dependsOn));
     }
 
     private String validateTaskId(TaskDTO taskDTO)
@@ -365,17 +371,6 @@ public class TasksManager
                 updateTaskObject(task, tourRef);
             }
         }
-    }
-
-    private TaskDTO getTaskDTO(SolrDocument document, EntityReference documentReference)
-    {
-        String title = (String) document.getFirstValue(TourProperty.TITLE.formKey(CLASS_PREFIX));
-        String dependsOn = (String) document.getFirstValue(TourProperty.DEPENDS_ON.formKey(CLASS_PREFIX));
-        long order = (Long) document.getFirstValue(TourProperty.ORDER.formKey(CLASS_PREFIX));
-        boolean isActive = SolrQueryUtil.getIsActiveProperty(document, CLASS_PREFIX);
-
-        return new TaskDTO(documentReference.getName(), title, (int) order, isActive,
-            Splitter.on(',').omitEmptyStrings().splitToList(dependsOn));
     }
 
     private void updateTaskObject(TaskDTO newDTO, DocumentReference tourDocRef) throws XWikiException
