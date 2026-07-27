@@ -39,8 +39,6 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@xwiki/contrib-guidedtour-api": "workspace:*",
-    "@xwiki/platform-localization-api": "catalog:",
-    "@xwiki/platform-localization-adapter-vue": "catalog:",
     "@xwiki/platform-model-api": "catalog:",
     "driver.js": "catalog:",
     "vue-i18n": "catalog:"
@@ -51,6 +49,7 @@
     "@types/sinon": "catalog:",
     "@xwiki/contrib-guidedtour-dev-config": "workspace:*",
     "@xwiki/platform-tool-apiextractorconfig": "catalog:",
+    "@xwiki/platform-localization-api": "catalog:",
     "@xwiki/platform-tool-tsconfig": "catalog:",
     "@xwiki/platform-tool-tsdocconfig": "catalog:",
     "@xwiki/platform-tool-viteconfig": "catalog:",

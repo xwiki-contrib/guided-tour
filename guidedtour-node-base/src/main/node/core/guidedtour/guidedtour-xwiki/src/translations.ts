@@ -69,7 +69,7 @@ async function getTranslations(
  * Build the translation resolver.
  * @param locale - the current locale
  * @param i18n - the i18n instance to populate
- * @since 0.2
+ * @since 0.1
  * @beta
  */
 function buildTranslations(locale: string, i18n: I18n): Resolver {
