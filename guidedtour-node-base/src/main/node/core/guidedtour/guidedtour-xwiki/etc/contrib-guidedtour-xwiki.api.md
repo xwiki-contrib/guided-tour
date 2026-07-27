@@ -15,7 +15,7 @@ import { TourTour } from '@xwiki/contrib-guidedtour-api';
 
 // @beta
 export class DefaultGuidedTourManager implements GuidedTourManager {
-    constructor(sharedStore: TourStore);
+    constructor(xm: any, sharedStore: TourStore);
     activeDriverTask?: Driver;
     activeTask?: TourTask;
     createStep(tourId: string, taskId: string, stepData: TourStep): Promise<void>;
@@ -38,8 +38,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     getTours(): Promise<TourTour[]>;
     getUsefulLinks(): Promise<string[]>;
     initExistingTask(): Promise<void>;
-    // (undocumented)
-    loadUserTaskStatuses(): Promise<any>;
     saveTaskStatus(tourId: string, taskId: string, status: TourTaskStatus): Promise<void>;
     // (undocumented)
     saveUserTaskStatuses(guidedTourManager: DefaultGuidedTourManager): Promise<void>;
@@ -56,7 +54,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 }
 
 // @beta
-export const guidedTourManager: DefaultGuidedTourManager;
+export const guidedTourManager: Promise<DefaultGuidedTourManager>;
 
 // @beta
 export function initTranslations(): {

@@ -60,6 +60,10 @@ export class StorageManager {
     return this.getStorageKeyPrefix(task) + "_steps";
   }
 
+  static getUserTaskStatusesStorageKey(user: string): string {
+    return "userTaskStatuses_" + user;
+  }
+
   /**
    * Get the Storage in which a key should be kept (sessionStorage or localStorage).
    * Keys pertaining to tasks that are in progress should be kept in sessionStorage, to ensure a task can only be

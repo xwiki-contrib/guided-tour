@@ -22,10 +22,11 @@ import { guidedTourManager, initTranslations } from "@xwiki/contrib-guidedtour-x
 import { GuidedTourWidget } from "@xwiki/contrib-guidedtour-ui";
 import { createApp } from "vue";
 
-function init() {
+async function init() {
   const { resolver, i18n } = initTranslations();
 
-  const app = createApp(GuidedTourWidget, { guidedTourManager });
+  const guidedTourManagerUnwrapped = await guidedTourManager;
+  const app = createApp(GuidedTourWidget, { guidedTourManager: guidedTourManagerUnwrapped });
   app.use(i18n);
   app.provide("GuidedTourResolver", resolver);
   app.mount("#guidedtour-uix");
