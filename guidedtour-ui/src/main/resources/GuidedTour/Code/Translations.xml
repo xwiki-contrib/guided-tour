@@ -97,9 +97,16 @@ guidedtour.tasks.sheet.steps.button.add=Add step
 
 ## Modals
 
-guidedtour.modal.delete.task.title=Delete Task
-guidedtour.modal.delete.task.standardmessage=This action will remove the task and all associated steps!
-guidedtour.modal.add.task.title=Add Task
+guidedtour.modal.task.delete.title=Delete Task
+guidedtour.modal.task.delete.error=There was an error while attempting to remove the task!
+guidedtour.modal.task.delete.done=Task successfully removed!
+guidedtour.modal.task.delete.inprogress=Removing task and all its steps...
+guidedtour.modal.task.delete.message=You are about to delete task &lt;{0}&gt; and all associated steps!
+guidedtour.modal.task.delete.standardmessage=This action will remove the task and all associated steps!
+guidedtour.modal.task.add.title=Add Task
+guidedtour.modal.task.add.done=Task successfully created!
+guidedtour.modal.task.add.error=Failed to create task: [{0}]
+guidedtour.modal.task.add.inprogress=Creating new task...
 
 ## Widget
 

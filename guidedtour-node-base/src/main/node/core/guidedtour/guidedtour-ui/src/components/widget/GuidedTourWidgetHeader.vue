@@ -28,9 +28,7 @@
   <div class="header">
     <div class="top-bar" @click="onCloseButtonClicked(false)">
       <span class="icon fa fa-compass" />
-      <div class="title">
-        ana s {{ l18n("guidedtour.widget.header.title") }}
-      </div>
+      <div class="title">{{ l18n("guidedtour.widget.header.title") }}</div>
       <div class="right-group">
         <button
           id="widget-close"

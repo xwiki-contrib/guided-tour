@@ -196,7 +196,20 @@
       <cache>long</cache>
     </property>
     <property type="LargeString">
-      <code>require(['jquery', 'xwiki-meta'], function($, xm) {
+      <code>define('guidedtour-tour-modals', {
+  prefix: 'guidedtour.modal.task.',
+  keys: [
+    'delete.error',
+    'delete.message',
+    'delete.inprogress',
+    'delete.done',
+    'add.done',
+    'add.error',
+    'add.inprogress',
+  ]
+});
+
+require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-tour-modals'], function($, xm, l10n) {
   const deleteTask = function(relatedTarget) {
     const taskName = $(relatedTarget).data('taskname');
     const modal = $(document).find('#confirmDeleteTaskModal');
@@ -208,18 +221,18 @@
       type: 'DELETE',
       beforeSend: function(xhr) {
         confirmBtn.prop('disabled', true);
-        notification = new XWiki.widgets.Notification('Removing task and all its steps...', 'inprogress');
+        notification = new XWiki.widgets.Notification(l10n.get('delete.inprogress'), 'inprogress');
       },
       success: function() {
         confirmBtn.prop('disabled', false);
         modal.modal('hide');
-        notification.replace(new XWiki.widgets.Notification('Task successfully removed!', 'done'));
+        notification.replace(new XWiki.widgets.Notification(l10n.get('delete.done'), 'done'));
         $('#tourTasksList').data('liveData').updateEntries();
       },
       error: function() {
         confirmBtn.prop('disabled', false);
         modal.modal('hide');
-        notification.replace(new XWiki.widgets.Notification('There was an error while attempting to remove the task!', 'error'));
+        notification.replace(new XWiki.widgets.Notification(l10n.get('delete.error'), 'error'));
       }
     });
   }
@@ -234,7 +247,7 @@
     const tableRow = $(this).closest('tr');
     const titleCell = tableRow.find('[data-livedata-property-id="title"]');
     const taskName = titleCell.text().trim();
-    var modalDescription = `You are about to delete task &lt;${taskName}&gt; and all associated steps!`
+    var modalDescription = l10n.get('delete.message', taskName);
     var modal = $(document).find('#confirmDeleteTaskModal');
     $(modal).find('.modal-body').text(modalDescription);
     modal.data('relatedTarget', event.currentTarget);
@@ -280,18 +293,18 @@
       data: JSON.stringify(formData),
       beforeSend: function() {
         confirmBtn.prop('disabled', true);
-        notification = new XWiki.widgets.Notification('Creating new task...', 'inprogress');
+        notification = new XWiki.widgets.Notification(l10n.get('add.inprogress'), 'inprogress');
       },
       success: function(taskId) {
         form.trigger('reset');
-        notification.replace(new XWiki.widgets.Notification('Task successfully created!', 'done'));
+        notification.replace(new XWiki.widgets.Notification(l10n.get('add.done'), 'done'));
         $('#tourTasksList').data('liveData').updateEntries();
         setTimeout(function() {
           window.location.href = getTaskUrl(taskId);
         }, 500);
       },
       error: function(response) {
-        notification.replace(new XWiki.widgets.Notification('Failed to create task: ' + response.statusText, 'error'));
+        notification.replace(new XWiki.widgets.Notification(l10n.get('add.error', response.statusText), 'error'));
       },
       complete: function() {
         confirmBtn.prop('disabled', false);

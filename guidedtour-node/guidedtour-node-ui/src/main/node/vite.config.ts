@@ -22,4 +22,5 @@ import {generateWebjarNodeConfig} from "@xwiki/contrib-guidedtour-dev-config/vit
 export default generateWebjarNodeConfig(import.meta.url, [
   "@xwiki/contrib-guidedtour-ui",
   "@xwiki/contrib-guidedtour-api",
+  "@xwiki/platform-localization-adapter-vue",
 ]);
