@@ -39,7 +39,7 @@
   <content>## Classes
 
 XWiki.GuidedTour.StepClass_order=Order
-XWiki.GuidedTour.StepClass_order_hint=Order of the step in the task.
+XWiki.GuidedTour.StepClass_order_hint=Order of this step in the task.
 XWiki.GuidedTour.StepClass_element=Element
 XWiki.GuidedTour.StepClass_element_hint=The CSS selector of the element to be highlighted for this step. If no element is selected, the step will be displayed centered on the screen.
 XWiki.GuidedTour.StepClass_content=Content
@@ -49,13 +49,13 @@ XWiki.GuidedTour.StepClass_placement_hint=The placement of the step tooltip.
 XWiki.GuidedTour.StepClass_backdrop=Backdrop
 XWiki.GuidedTour.StepClass_backdrop_hint=Marks if a backdrop should be shown for this step.
 XWiki.GuidedTour.StepClass_reflex=Reflex
-XWiki.GuidedTour.StepClass_reflex_hint=Marks if clicking on the highlighted element should be allowed to go to the next step.
+XWiki.GuidedTour.StepClass_reflex_hint=Marks if clicking the highlighted element allows proceeding to the next step.
 XWiki.GuidedTour.StepClass_targetPage=Target page
-XWiki.GuidedTour.StepClass_targetPage_hint=The target page on which the step should be displayed. If left empty, the current page will be used.
+XWiki.GuidedTour.StepClass_targetPage_hint=The page on which the step should be displayed. If left empty, the current page will be used.
 XWiki.GuidedTour.StepClass_targetAction=Target action
-XWiki.GuidedTour.StepClass_targetAction_hint=The target action on the target page. If left empty, the current action will be used.
+XWiki.GuidedTour.StepClass_targetAction_hint=The action on the target page. If left empty, the current action will be used.
 XWiki.GuidedTour.StepClass_queryParameters=Query parameters
-XWiki.GuidedTour.StepClass_queryParameters_hint=The query parameters to add to the URL when navigating to the target page.
+XWiki.GuidedTour.StepClass_queryParameters_hint=Parameters to append to the URL when navigating to the target page.
 XWiki.GuidedTour.TourClass_title=Title
 XWiki.GuidedTour.TourClass_title_hint=The tour title that will be displayed in the widget.
 XWiki.GuidedTour.TourClass_description=Description
@@ -63,9 +63,9 @@ XWiki.GuidedTour.TourClass_description_hint=Description of the tour.
 XWiki.GuidedTour.TourClass_isActive=Is active
 XWiki.GuidedTour.TourClass_isActive_hint=Select if the tour should be active or not. A disabled tour will not be displayed in the guided tours widget.
 XWiki.GuidedTour.TaskClass_title=Title
-XWiki.GuidedTour.TaskClass_title_hint=Task title.
+XWiki.GuidedTour.TaskClass_title_hint=The title of the task. It will be displayed in the widget.
 XWiki.GuidedTour.TaskClass_order=Order
-XWiki.GuidedTour.TaskClass_order_hint=Order of the task in the tour.
+XWiki.GuidedTour.TaskClass_order_hint=Order of this task in the tour.
 XWiki.GuidedTour.TaskClass_dependsOn=Depends on
 XWiki.GuidedTour.TaskClass_dependsOn_hint=The tasks that need to be finished before beginning this one.
 XWiki.GuidedTour.TaskClass_isActive=Is active
@@ -89,7 +89,6 @@ guidedtour.tour.tasks.livedata._actions.delete.hint=Delete task
 
 guidedtour.tours.sheet.tasks.header=Tasks
 guidedtour.tours.sheet.tasks.button.add=Add task
-guidedtour.tours.sheet.tasks.header=Tasks
 guidedtour.tasks.sheet.title.properties=Properties
 guidedtour.tasks.sheet.title.steps=Steps
 guidedtour.tasks.sheet.steps.count=Step #{0}
@@ -98,19 +97,15 @@ guidedtour.tasks.sheet.steps.button.add=Add step
 ## Modals
 
 guidedtour.modal.task.delete.title=Delete Task
-guidedtour.modal.task.delete.error=There was an error while attempting to remove the task!
-guidedtour.modal.task.delete.done=Task successfully removed!
-guidedtour.modal.task.delete.inprogress=Removing task and all its steps...
+guidedtour.modal.task.delete.error=There was an error while attempting to delete the task!
+guidedtour.modal.task.delete.done=Task successfully deleted!
+guidedtour.modal.task.delete.inprogress=Deleting task and all its steps...
 guidedtour.modal.task.delete.message=You are about to delete task &lt;{0}&gt; and all associated steps!
-guidedtour.modal.task.delete.standardmessage=This action will remove the task and all associated steps!
+guidedtour.modal.task.delete.standardmessage=This action will delete the task and all associated steps!
 guidedtour.modal.task.add.title=Add Task
 guidedtour.modal.task.add.done=Task successfully created!
 guidedtour.modal.task.add.error=Failed to create task: [{0}]
-guidedtour.modal.task.add.inprogress=Creating new task...
-
-## Widget
-
-guidedtour.widget.header.title=Guided Tours</content>
+guidedtour.modal.task.add.inprogress=Creating new task...</content>
   <object>
     <name>GuidedTour.Code.Translations</name>
     <number>0</number>
