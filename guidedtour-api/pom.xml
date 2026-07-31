@@ -58,7 +58,9 @@
                 <regex>true</regex>
                 <code>java\..*</code>
                 <old>.*org\.xwiki\.contrib\.guidedtour\.api\.enums\.TourProperty.*</old>
-                <justification>Reordered class properties after migrating from SOLR to HQL.</justification>
+                <justification>As part of GUIDEDTOUR-13: Switch from Solr to HQL, by migrating to HQL, members and
+                  internal utilities specific to the Solr indexing approach became deprecated, as those were needed
+                  for formatted Solr field keys using type suffixes.</justification>
               </item>
             </revapi.ignore>
           </analysisConfiguration>

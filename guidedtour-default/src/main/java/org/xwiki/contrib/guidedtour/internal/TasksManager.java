@@ -67,15 +67,17 @@ public class TasksManager
 
     private static final String TITLE_FILTER = "titleFilter";
 
-    private static final String GET_TASK_QUERY = String.format(
-        "select doc.fullName from XWikiDocument doc, BaseObject obj where doc.fullName = obj.name and obj.className ="
-            + " '%s' and doc.space = :space and doc.name = :taskName", TASK_CLASS);
+    private static final String CLASS_FILTER = "class";
 
-    private static final String GET_ALL_TASKS_QUERY = String.format(
-        "select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp "
-            + "where doc.fullName = obj.name and obj.className = '%s' and doc.space = :space "
-            + "and obj.id = orderProp.id.id and orderProp.id.name = 'order' "
-            + "and lower(doc.title) like lower(:titleFilter) order by orderProp.value asc", TASK_CLASS);
+    private static final String GET_TASK_QUERY = """
+        select doc.fullName from XWikiDocument doc, BaseObject obj where doc.translation = 0 and doc.fullName = \
+        obj.name and obj.className = :class and doc.space = :space and doc.name = :taskName""";
+
+    private static final String GET_ALL_TASKS_QUERY = """
+        select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp where doc.translation = \
+        0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space and obj.id = \
+        orderProp.id.id and orderProp.id.name = 'order' and lower(doc.title) like lower(:titleFilter) \
+        order by orderProp.value asc""";
 
     private static final String TASK_NOT_FOUND_ERROR = "Task with the given id [%s] does not exists.";
 
@@ -146,14 +148,15 @@ public class TasksManager
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        List<DocumentReference> results =
-            this.queryUtil.executeQuery(GET_TASK_QUERY, Map.of(SPACE_KEY, parentSpace, "taskName", taskId));
+        Map<String, Object> parameters = Map.of(SPACE_KEY, parentSpace, "taskName", taskId, CLASS_FILTER,
+            this.localSerializer.serialize(TASK_CLASS));
+        List<DocumentReference> results = this.queryUtil.executeQuery(GET_TASK_QUERY, parameters);
         if (results.isEmpty()) {
             throw new InvalidIdException(TASK_NOT_FOUND_ERROR, taskId);
         }
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
-        XWikiDocument doc = wiki.getDocument(results.get(0), wikiContext);
+        XWikiDocument doc = wiki.getDocument(results.getFirst(), wikiContext);
         return getTaskDTO(doc);
     }
 
@@ -173,12 +176,10 @@ public class TasksManager
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        Map<String, Object> bindValues = new HashMap<>(Map.of(SPACE_KEY, parentSpace, TITLE_FILTER, ""));
-        String titleFilter = "%%";
-        if (StringUtils.isNotBlank(filteredTitle)) {
-            titleFilter = String.format("%%%s%%", filteredTitle);
-        }
-        bindValues.put(TITLE_FILTER, titleFilter);
+        String titleFilter = String.format("%%%s%%", StringUtils.defaultIfBlank(filteredTitle, ""));
+        Map<String, Object> bindValues = new HashMap<>(
+            Map.of(SPACE_KEY, parentSpace, TITLE_FILTER, titleFilter, CLASS_FILTER,
+                this.localSerializer.serialize(TASK_CLASS)));
 
         List<DocumentReference> docRefs = this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY, bindValues);
         List<TaskDTO> tasks = new ArrayList<>(docRefs.size());

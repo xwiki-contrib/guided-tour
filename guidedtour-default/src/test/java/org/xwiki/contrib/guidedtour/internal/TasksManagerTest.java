@@ -75,15 +75,17 @@ class TasksManagerTest
 
     private static final String VALIDATED_TASK_ID2 = "validatedTaskId2";
 
+    private static final String SERIALIZED_CLASS = "XWiki.GuidedTour.TaskClass";
+
     private static final String GET_ALL_TASKS_QUERY =
         "select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp "
-            + "where doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TaskClass' "
+            + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class "
             + "and doc.space = :space and obj.id = orderProp.id.id and orderProp.id.name = 'order' "
             + "and lower(doc.title) like lower(:titleFilter) order by orderProp.value asc";
 
     private static final String GET_TASK_QUERY = "select doc.fullName from XWikiDocument doc, BaseObject obj "
-        + "where doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TaskClass' "
-        + "and doc.space = :space and doc.name = :taskName";
+        + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space "
+        + "and doc.name = :taskName";
 
     @InjectMockComponents
     private TasksManager tasksManager;
@@ -162,6 +164,7 @@ class TasksManagerTest
 
         when(this.tourReference.getLastSpaceReference()).thenReturn(this.spaceReference);
         when(this.localSerializer.serialize(this.spaceReference)).thenReturn("tourSpace");
+        when(this.localSerializer.serialize(TASK_CLASS)).thenReturn(SERIALIZED_CLASS);
 
         when(this.taskReference1.getName()).thenReturn(VALIDATED_TASK_ID1);
         when(this.taskReference2.getName()).thenReturn(VALIDATED_TASK_ID2);
@@ -171,7 +174,7 @@ class TasksManagerTest
         when(this.taskDocument2.getXObject(TASK_CLASS)).thenReturn(this.taskObject2);
 
         when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
-            Map.of("space", "tourSpace", "titleFilter", "%%"))).thenReturn(
+            Map.of("space", "tourSpace", "titleFilter", "%%", "class", SERIALIZED_CLASS))).thenReturn(
             List.of(this.taskReference1, this.taskReference2));
 
         when(this.taskObject1.getStringValue("title")).thenReturn(this.taskDTO1.getTitle());
@@ -225,7 +228,8 @@ class TasksManagerTest
     @Test
     void getTask() throws Exception
     {
-        when(this.queryUtil.executeQuery(GET_TASK_QUERY, Map.of("space", "tourSpace", "taskName", TASK_ID2))).thenReturn(
+        when(this.queryUtil.executeQuery(GET_TASK_QUERY,
+            Map.of("space", "tourSpace", "taskName", TASK_ID2, "class", SERIALIZED_CLASS))).thenReturn(
             List.of(this.taskReference2));
 
         TaskDTO result = this.tasksManager.getTask(TOUR_ID, TASK_ID2);
@@ -238,8 +242,8 @@ class TasksManagerTest
     @Test
     void getTaskInvalidId() throws Exception
     {
-        when(this.queryUtil.executeQuery(GET_TASK_QUERY, Map.of("space", "tourSpace", "taskName", TASK_ID2))).thenReturn(
-            List.of());
+        when(this.queryUtil.executeQuery(GET_TASK_QUERY,
+            Map.of("space", "tourSpace", "taskName", TASK_ID2, "class", SERIALIZED_CLASS))).thenReturn(List.of());
 
         InvalidIdException exception = assertThrows(InvalidIdException.class, () -> {
             this.tasksManager.getTask(TOUR_ID, TASK_ID2);
@@ -254,24 +258,24 @@ class TasksManagerTest
         List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID);
 
         assertEquals(2, tasks.size());
-        assertEquals(VALIDATED_TASK_ID1, tasks.get(0).getId());
-        assertEquals(this.taskDTO1.getTitle(), tasks.get(0).getTitle());
-        assertEquals(1, tasks.get(0).getOrder());
-        assertTrue(tasks.get(0).isActive());
-        assertTrue(tasks.get(0).getDependsOn().isEmpty());
+        assertEquals(VALIDATED_TASK_ID1, tasks.getFirst().getId());
+        assertEquals(this.taskDTO1.getTitle(), tasks.getFirst().getTitle());
+        assertEquals(1, tasks.getFirst().getOrder());
+        assertTrue(tasks.getFirst().isActive());
+        assertTrue(tasks.getFirst().getDependsOn().isEmpty());
 
         assertEquals(VALIDATED_TASK_ID2, tasks.get(1).getId());
         assertEquals(this.taskDTO2.getTitle(), tasks.get(1).getTitle());
         assertEquals(2, tasks.get(1).getOrder());
         assertFalse(tasks.get(1).isActive());
-        assertEquals(VALIDATED_TASK_ID1, tasks.get(1).getDependsOn().get(0));
+        assertEquals(VALIDATED_TASK_ID1, tasks.get(1).getDependsOn().getFirst());
     }
 
     @Test
     void getAllTasksFiltered() throws Exception
     {
         when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
-            Map.of("space", "tourSpace", "titleFilter", "%test%"))).thenReturn(
+            Map.of("space", "tourSpace", "titleFilter", "%test%", "class", SERIALIZED_CLASS))).thenReturn(
             List.of(this.taskReference1));
 
         List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID, "test");

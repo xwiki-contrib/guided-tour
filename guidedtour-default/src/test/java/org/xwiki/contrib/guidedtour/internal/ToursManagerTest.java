@@ -36,6 +36,7 @@ import org.xwiki.contrib.guidedtour.internal.util.QueryUtil;
 import org.xwiki.job.JobExecutor;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
+import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.model.reference.SpaceReference;
 import org.xwiki.refactoring.job.EntityRequest;
 import org.xwiki.refactoring.job.RefactoringJobs;
@@ -68,6 +69,8 @@ class ToursManagerTest
 {
     private static final String TOUR_ID = "tourId";
 
+    private static final String SERIALIZED_CLASS = "XWiki.GuidedTour.TourClass";
+
     private final TourDTO tourDTO = new TourDTO(TOUR_ID, "dto Title", true, "description");
 
     private final TourDTO tourDTOUpdated = new TourDTO(TOUR_ID, "updated title", false, "description");
@@ -93,6 +96,10 @@ class ToursManagerTest
 
     @MockComponent
     private RequestFactory requestFactory;
+
+    @MockComponent
+    @Named("local")
+    private EntityReferenceSerializer<String> localSerializer;
 
     @Mock
     private XWikiContext wikiContext;
@@ -150,9 +157,11 @@ class ToursManagerTest
     @Test
     void getAllTours() throws Exception
     {
+        when(this.localSerializer.serialize(TOUR_CLASS)).thenReturn(SERIALIZED_CLASS);
         when(this.queryUtil.executeQuery("select doc.fullName from XWikiDocument doc, BaseObject obj "
-            + "where doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TourClass' and doc.name <> "
-            + ":excludeName", Map.of("excludeName", "TourTemplate"))).thenReturn(List.of(this.documentReference));
+            + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class and doc.name <> "
+            + ":excludeName", Map.of("excludeName", "TourTemplate", "class", SERIALIZED_CLASS))).thenReturn(
+            List.of(this.documentReference));
         when(this.xwiki.getDocument(this.documentReference, this.wikiContext)).thenReturn(this.xwikiDocument);
         when(this.xwikiDocument.getXObject(TOUR_CLASS)).thenReturn(this.baseObject);
         when(this.baseObject.getStringValue("title")).thenReturn("tour title");
@@ -162,7 +171,7 @@ class ToursManagerTest
 
         List<TourDTO> tours = this.toursManager.getAllTours();
         assertEquals(1, tours.size());
-        assertEquals("tour title", tours.get(0).getTitle());
+        assertEquals("tour title", tours.getFirst().getTitle());
         assertTrue(tours.getFirst().isActive());
         assertEquals("tour description", tours.getFirst().getDescription());
         assertTrue(tours.getFirst().getTasksList().isEmpty());

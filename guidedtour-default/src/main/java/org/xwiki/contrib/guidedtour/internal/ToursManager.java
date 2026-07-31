@@ -39,6 +39,7 @@ import org.xwiki.job.JobExecutor;
 import org.xwiki.job.Request;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.DocumentReferenceResolver;
+import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.query.QueryException;
 import org.xwiki.refactoring.job.RefactoringJobs;
 import org.xwiki.refactoring.script.RequestFactory;
@@ -62,9 +63,9 @@ import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOU
 @Singleton
 public class ToursManager
 {
-    private static final String GET_ALL_TOURS_QUERY = String.format(
-        "select doc.fullName from XWikiDocument doc, BaseObject obj "
-            + "where doc.fullName = obj.name and obj.className = '%s' and doc.name <> :excludeName", TOUR_CLASS);
+    private static final String GET_ALL_TOURS_QUERY = """
+        select doc.fullName from XWikiDocument doc, BaseObject obj where doc.translation = 0 and doc.fullName = \
+        obj.name and obj.className = :class and doc.name <> :excludeName""";
 
     private static final String EXCLUDE_NAME = "TourTemplate";
 
@@ -86,6 +87,10 @@ public class ToursManager
 
     @Inject
     private RequestFactory requestFactory;
+
+    @Inject
+    @Named("local")
+    private EntityReferenceSerializer<String> localSerializer;
 
     /**
      * Creates a new tour based on the provided DTO. The tour is stored as an XWiki document with a TourClass object.
@@ -123,8 +128,9 @@ public class ToursManager
      */
     public List<TourDTO> getAllTours() throws QueryException, XWikiException, InvalidIdException
     {
-        List<DocumentReference> docRefs =
-            this.queryUtil.executeQuery(GET_ALL_TOURS_QUERY, Map.of("excludeName", EXCLUDE_NAME));
+        Map<String, Object> parameters =
+            Map.of("excludeName", EXCLUDE_NAME, "class", this.localSerializer.serialize(TOUR_CLASS));
+        List<DocumentReference> docRefs = this.queryUtil.executeQuery(GET_ALL_TOURS_QUERY, parameters);
         List<TourDTO> tours = new ArrayList<>(docRefs.size());
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();

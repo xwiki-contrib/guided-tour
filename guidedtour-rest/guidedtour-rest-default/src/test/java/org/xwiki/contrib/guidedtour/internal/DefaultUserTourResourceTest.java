@@ -35,7 +35,6 @@ import org.xwiki.contrib.guidedtour.api.dtos.UserTourStatusDTO;
 import org.xwiki.contrib.guidedtour.api.exceptions.DuplicatedIdException;
 import org.xwiki.contrib.guidedtour.api.exceptions.InvalidIdException;
 import org.xwiki.csrf.CSRFToken;
-import org.xwiki.rest.XWikiRestException;
 import org.xwiki.security.authorization.AccessDeniedException;
 import org.xwiki.security.authorization.ContextualAuthorizationManager;
 import org.xwiki.security.authorization.Right;
