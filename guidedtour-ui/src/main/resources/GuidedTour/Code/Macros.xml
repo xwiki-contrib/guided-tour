@@ -40,11 +40,12 @@
 #macro (deleteTaskModal)
   &lt;div class="modal fade" id="confirmDeleteTaskModal" tabindex="-1" role="dialog"
       aria-labelledby="confirmDeleteTaskModalLabel"&gt;
-    &lt;div class="modal-dialog" role="document"&gt;
+    &lt;div class="modal-dialog modal-sm" role="document"&gt;
       &lt;div class="modal-content"&gt;
         &lt;div class="cache-modal-content"&gt;
           &lt;div class="modal-header"&gt;
-            &lt;button type="button" class="close" data-dismiss="modal" aria-label="Close"&gt;
+            &lt;button type="button" class="close" data-dismiss="modal" aria-label="$escapetool.xml(
+                $services.localization.render('guidedtour.modal.task.close.label'))"&gt;
               &lt;span aria-hidden="true"&gt;&amp;times;&lt;/span&gt;&lt;/button&gt;
             &lt;div id="confirmDeleteTaskModalLabel" class="modal-title"&gt;
               $escapetool.xml($services.localization.render('guidedtour.modal.task.delete.title'))
@@ -72,7 +73,8 @@
       &lt;div class="modal-content"&gt;
         &lt;div class="cache-modal-content"&gt;
             &lt;div class="modal-header"&gt;
-              &lt;button type="button" class="close" data-dismiss="modal" aria-label="Close"&gt;
+              &lt;button type="button" class="close" data-dismiss="modal" aria-label="$escapetool.xml(
+                  $services.localization.render('guidedtour.modal.task.close.label'))"&gt;
                 &lt;span aria-hidden="true"&gt;&amp;times;&lt;/span&gt;&lt;/button&gt;
               &lt;div id="addTaskFormModalLabel" class="modal-title"&gt;
                 $escapetool.xml($services.localization.render('guidedtour.modal.task.add.title'))
@@ -88,7 +90,9 @@
                   &lt;p class="help-block"&gt;
                     $escapetool.xml($services.localization.render('XWiki.GuidedTour.TaskClass_title_hint'))
                   &lt;/p&gt;
-                  &lt;input type="text" class="form-control" id="taskTitle" name="title" placeholder="Enter task title"&gt;
+                  &lt;input type="text" class="form-control" id="taskTitle" name="title" placeholder="$escapetool.xml(
+                    $services.localization.render('guidedtour.modal.task.add.input.placeholder'))"
+                  &gt;
                 &lt;/div&gt;
                 &lt;br/&gt;
                 &lt;div&gt;

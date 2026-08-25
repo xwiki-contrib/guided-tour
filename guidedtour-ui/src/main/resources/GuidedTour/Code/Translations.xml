@@ -73,6 +73,7 @@ XWiki.GuidedTour.TaskClass_isActive_hint=Marks the task as active or not.
 
 ## Livedata tables
 
+guidedtour.tours.livedata.doc.title=Title
 guidedtour.tours.livedata.title=Title
 guidedtour.tours.livedata.isActive=Is active
 guidedtour.tours.livedata._actions=Actions
@@ -102,6 +103,8 @@ guidedtour.modal.task.delete.done=Task successfully deleted!
 guidedtour.modal.task.delete.inprogress=Deleting task and all its steps...
 guidedtour.modal.task.delete.message=You are about to delete task &lt;{0}&gt; and all associated steps!
 guidedtour.modal.task.delete.standardmessage=This action will delete the task and all associated steps!
+guidedtour.modal.task.close.label=Close
+guidedtour.modal.task.add.input.placeholder=Enter task title
 guidedtour.modal.task.add.title=Add Task
 guidedtour.modal.task.add.done=Task successfully created!
 guidedtour.modal.task.add.error=Failed to create task: [{0}]

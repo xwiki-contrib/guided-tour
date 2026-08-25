@@ -6,9 +6,6 @@ packages:
   - guidedtour-node-base/src/main/node/core/guidedtour/guidedtour-xwiki
   - guidedtour-node-base/src/main/node/dev/config
   - guidedtour-webjar/src/main/node
-allowBuilds:
-  esbuild: true
-  unrs-resolver: true
 catalog:
   "@jridgewell/remapping": 2.3.5
   "@microsoft/api-extractor": 7.58.7

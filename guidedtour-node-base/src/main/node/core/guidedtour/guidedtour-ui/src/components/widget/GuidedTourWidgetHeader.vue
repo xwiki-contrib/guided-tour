@@ -25,10 +25,10 @@
 -->
 
 <template>
-  <div class="header">
+  <div class="header" v-if="!isLoading">
     <div class="top-bar" @click="onCloseButtonClicked(false)">
       <span class="icon fa fa-compass" />
-      <div class="title">{{ l18n("guidedtour.widget.header.title") }}</div>
+      <div class="title">{{ i18n("guidedtour.widget.header.title") }}</div>
       <div class="right-group">
         <button
           id="widget-close"
@@ -61,7 +61,7 @@ const props = defineProps<{ progress: ComputedRef<number> }>();
 const progress = props.progress;
 
 const resolver = inject<Resolver>("GuidedTourResolver")!;
-const { t: l18n } = useI18nAdapter(resolver, {
+const { t: i18n, isLoading } = useI18nAdapter(resolver, {
   prefix: "guidedtour.widget.",
   keys: ["header.title"],
 });

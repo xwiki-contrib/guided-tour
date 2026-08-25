@@ -38,14 +38,13 @@
   <hidden>true</hidden>
   <content>{{include reference="GuidedTour.Code.Macros" /}}
 
-{{velocity ouptput="false"}}
+{{velocity output='false'}}
 #set ($discard = $xwiki.jsx.use('GuidedTour.Code.TourClassSheet'))
 #set ($isEdit = $xcontext.action == 'edit')
 #set ($tour = $doc.getObject('XWiki.GuidedTour.TourClass'))
 {{/velocity}}
 
 {{velocity}}
-## Translations should be added as part of GUIDEDTOUR-4: Make UI translated
 {{html clean='false'}}
   #addTaskModal($doc.getDocumentReference)
   #deleteTaskModal()
@@ -91,7 +90,7 @@
         {
           'id': 'delete',
           'description':
-            "${escapetool.xml($services.localization.render('guidedtour.tour.tasks.livedata._actions.delete.hint'))}"
+            "${$services.localization.render('guidedtour.tour.tasks.livedata._actions.delete.hint')}"
         }
       ]
       }

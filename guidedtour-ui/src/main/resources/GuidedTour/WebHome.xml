@@ -40,7 +40,7 @@
   id="tourClassList1"
   properties="doc.title,isActive,_actions"
   source="liveTable"
-  sourceParameters="className=XWiki.GuidedTour.TourClass&amp;translationPrefix=guidedtour.livetable."
+  sourceParameters="className=XWiki.GuidedTour.TourClass&amp;translationPrefix=guidedtour.livedata."
   meta='{"propertyDescriptors":[{"id":"isActive","filterable":true,"sortable":true},{"id":"_actions","displayer":{"id":"actions","actions":["edit","delete","consoleLog"]}}]}'
   layouts="table"}}
 {

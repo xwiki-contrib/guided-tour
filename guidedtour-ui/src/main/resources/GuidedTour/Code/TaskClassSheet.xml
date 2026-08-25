@@ -79,15 +79,16 @@
 ##makeTaskPropertyDisplay('title')
 &lt;/div&gt;
 
-== $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.steps')) ==
+== $services.rendering.escape($services.localization.render('guidedtour.tasks.sheet.title.steps'), 'xwiki/2.1') ==
 
 #if ($isEdit)
   &lt;button id='add-step-btn' class="btn btn-primary"&gt;
-    $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add'))
+    $services.rendering.escape($escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add'))
   &lt;/button&gt;
 #end
 
-&lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape($jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
+&lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape(
+      $jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
     &lt;div class="sidebar"&gt;
       &lt;h2 class="sidebar-title"&gt;
         $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.steps'))
@@ -97,7 +98,7 @@
           &lt;li class="item" data-id="$step.number"&gt;
             #if ("$!step.getValue('content')" == '')
               $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.count',
-                $escapetool.xml($services.rendering.escape($step.getValue('order'), 'xwiki/2.1'))))
+               [$step.getValue('order')]))
             #else
               $escapetool.xml($services.rendering.escape($step.getValue('content'), 'xwiki/2.1'))
             #end
