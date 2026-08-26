@@ -17,22 +17,15 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
-import { DefaultGuidedTourManager } from "./rest/DefaultGuidedTourManager";
-import { TourStore } from "./rest/TourStore";
-// @ts-expect-error this is a JavaScript file, it is expected to not have types.
-import { loadById } from "./services/require.js";
+import type { Resolver } from "@xwiki/platform-localization-api";
+import type { InjectionKey } from "vue";
 
 /**
- * The main API of the GuidedTour app.
- * @since 1.0
+ * Key under which the application provides the localization resolver used by the widget components to load their
+ * translations.
+ * @since 0.2
  * @beta
  */
-const guidedTourManager: Promise<DefaultGuidedTourManager> = loadById(
-  "xwiki-meta",
-  // @ts-expect-error this is a JavaScript file, it is expected to not have types.
-).then((xwikiMeta) => {
-  const sharedStore = new TourStore(xwikiMeta);
-  return new DefaultGuidedTourManager(xwikiMeta, sharedStore);
-});
-export { type DefaultGuidedTourManager, guidedTourManager };
+const RESOLVER: InjectionKey<Resolver> = Symbol("guidedtour.resolver");
+
+export { RESOLVER };

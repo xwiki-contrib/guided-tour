@@ -91,7 +91,7 @@
                     $escapetool.xml($services.localization.render('XWiki.GuidedTour.TaskClass_title_hint'))
                   &lt;/p&gt;
                   &lt;input type="text" class="form-control" id="taskTitle" name="title" placeholder="$escapetool.xml(
-                    $services.localization.render('guidedtour.modal.task.add.input.placeholder'))"
+                    $services.localization.render('guidedtour.modal.task.add.title.placeholder'))"
                   &gt;
                 &lt;/div&gt;
                 &lt;br/&gt;

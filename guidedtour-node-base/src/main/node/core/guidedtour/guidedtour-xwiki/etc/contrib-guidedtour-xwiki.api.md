@@ -6,8 +6,6 @@
 
 import { Driver } from 'driver.js';
 import { GuidedTourManager } from '@xwiki/contrib-guidedtour-api';
-import { I18n } from 'vue-i18n';
-import { Resolver } from '@xwiki/platform-localization-api';
 import { TourStep } from '@xwiki/contrib-guidedtour-api';
 import { TourTask } from '@xwiki/contrib-guidedtour-api';
 import { TourTaskStatus } from '@xwiki/contrib-guidedtour-api';
@@ -55,12 +53,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
 // @beta
 export const guidedTourManager: Promise<DefaultGuidedTourManager>;
-
-// @beta
-export function initTranslations(): {
-    resolver: Resolver;
-    i18n: I18n;
-};
 
 // (No @packageDocumentation comment for this package)
 

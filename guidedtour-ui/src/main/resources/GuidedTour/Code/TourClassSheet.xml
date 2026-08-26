@@ -89,8 +89,7 @@
       "actions": [
         {
           'id': 'delete',
-          'description':
-            "${$services.localization.render('guidedtour.tour.tasks.livedata._actions.delete.hint')}"
+          'description': "${services.localization.render('guidedtour.tour.tasks.livedata._actions.delete.hint')}"
         }
       ]
       }

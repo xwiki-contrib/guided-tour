@@ -8,12 +8,17 @@ import { ComponentOptionsMixin } from 'vue';
 import { ComponentProvideOptions } from 'vue';
 import { DefineComponent } from 'vue';
 import { GuidedTourManager } from '@xwiki/contrib-guidedtour-api';
+import { InjectionKey } from 'vue';
 import { PublicProps } from 'vue';
+import { Resolver } from '@xwiki/platform-localization-api';
 
 // Warning: (ae-forgotten-export) The symbol "__VLS_Props" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
 export const GuidedTourWidget: DefineComponent<__VLS_Props, {}, {}, {}, {}, ComponentOptionsMixin, ComponentOptionsMixin, {}, string, PublicProps, Readonly<__VLS_Props> & Readonly<{}>, {}, {}, {}, {}, string, ComponentProvideOptions, false, {}, HTMLDivElement>;
+
+// @beta
+export const RESOLVER: InjectionKey<Resolver>;
 
 // (No @packageDocumentation comment for this package)
 

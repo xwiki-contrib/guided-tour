@@ -20,11 +20,19 @@
 import { StorageManager } from "./StorageManager";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { driver } from "driver.js";
+// @ts-expect-error xwiki-platform-localization-webjar does not export types.
+// eslint-disable-next-line import/no-unresolved
+import { resolver } from "xwiki-platform-localization-webjar";
 import type { DefaultGuidedTourManager } from "./rest/DefaultGuidedTourManager";
 import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
 import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
 
 type StepDirection = "next" | "previous";
+const { translations } = await resolver.resolve({
+  prefix: "guidedtour.driver.",
+  keys: ["next", "previous", "skipAll", "loading", "error"],
+});
+
 const util = {
   /**
    * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
@@ -57,7 +65,7 @@ const util = {
     }
 
     customSkipAll.onclick = onSkipAll;
-    customSkipAll.innerHTML = "Skip All"; // TODO: Add translation.
+    customSkipAll.innerHTML = translations["guidedtour.driver.skipAll"]; // TODO: Add translation.
     return customSkipAll;
   },
   /**
@@ -215,8 +223,8 @@ function XWikiDriverConfig(
   console.log("Setting up", guidedTourTask);
   // Old code calls this variable `tour`.
   return {
-    nextBtnText: "Next >", // TODO: Add translation.
-    prevBtnText: "< Previous", // TODO: Add translation.
+    nextBtnText: translations["guidedtour.driver.next"],
+    prevBtnText: translations["guidedtour.driver.previous"],
     showProgress: true,
     showButtons: ["previous", "next", "close"],
     overlayOpacity: 0.3,
@@ -324,9 +332,8 @@ function wrapTask(
   const _drive = guidedTourTask.drive;
   // eslint-disable-next-line max-statements
   guidedTourTask.drive = async function (stepIndex: number = 0) {
-    // TODO: Add translation as part of GUIDEDTOUR-4.
     const loadingNotification = new XWiki.widgets.Notification(
-      "Loading task step...",
+      translations["guidedtour.driver.loading"],
       "inprogress",
     );
     const currentStepActiveIndex = guidedTourTask.getActiveIndex();
@@ -371,10 +378,9 @@ function wrapTask(
       }
       // We didn't find the element we wanted. Don't proceed with the task.
       console.error(e);
-      // TODO: Add translation as part of GUIDEDTOUR-4.
       loadingNotification.replace(
         new XWiki.widgets.Notification(
-          "Error while moving between task steps.",
+          translations["guidedtour.driver.error"],
           "error",
         ),
       );

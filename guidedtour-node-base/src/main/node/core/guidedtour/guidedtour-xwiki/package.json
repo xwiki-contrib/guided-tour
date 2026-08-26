@@ -40,8 +40,7 @@
   "dependencies": {
     "@xwiki/contrib-guidedtour-api": "workspace:*",
     "@xwiki/platform-model-api": "catalog:",
-    "driver.js": "catalog:",
-    "vue-i18n": "catalog:"
+    "driver.js": "catalog:"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "catalog:",
@@ -49,7 +48,6 @@
     "@types/sinon": "catalog:",
     "@xwiki/contrib-guidedtour-dev-config": "workspace:*",
     "@xwiki/platform-tool-apiextractorconfig": "catalog:",
-    "@xwiki/platform-localization-api": "catalog:",
     "@xwiki/platform-tool-tsconfig": "catalog:",
     "@xwiki/platform-tool-tsdocconfig": "catalog:",
     "@xwiki/platform-tool-viteconfig": "catalog:",
@@ -64,14 +62,8 @@
   "publishConfig": {
     "exports": {
       ".": {
-        "import": {
-          "types": "./dist/index.d.ts",
-          "default": "./dist/index.es.js"
-        },
-        "require": {
-          "types": "./dist/index.d.cts",
-          "default": "./dist/index.umd.js"
-        }
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.es.js"
       }
     },
     "main": "./dist/index.es.js",

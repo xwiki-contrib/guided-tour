@@ -40,7 +40,7 @@
 #set ($discard = $xwiki.jsx.use('GuidedTour.Tours.WebHome'))
   #set ($sourceParameters = $escapetool.url({
     'className': 'XWiki.GuidedTour.TourClass',
-    'translationPrefix': 'guidedtour.livedata.'
+    'translationPrefix': 'guidedtour.tours.livedata.'
   }))
   #set ($liveDataConfig = {
     "meta": {
@@ -50,9 +50,12 @@
         { 'id': '_actions', 'displayer': {'id': 'actions', 'actions': ['edit', 'delete', 'view']} }
       ],
       "actions": [
-        { 'id': 'edit', "description": "Edit tour" },
-        { 'id': 'delete', "description": "Delete tour" },
-        { 'id': 'view', "description": "View tour" }
+        { 'id': 'edit',
+          'description': $services.localization.render('guidedtour.tours.livedata._actions.edit.hint') },
+        { 'id': 'delete',
+          'description': $services.localization.render('guidedtour.tours.livedata._actions.delete.hint') },
+        { 'id': 'view',
+          'description': $services.localization.render('guidedtour.tours.livedata._actions.view.hint') }
       ]
     }
   })

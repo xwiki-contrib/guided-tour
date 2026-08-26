@@ -35,7 +35,12 @@ export default defineConfig({
         },
         sourcemap: true,
         rollupOptions: {
-            external: ["vue", "@xwiki/contrib-guidedtour-ui", "vue-i18n"],
+            external: [
+                "vue",
+                "@xwiki/contrib-guidedtour-ui",
+                "vue-i18n",
+                "xwiki-platform-localization-webjar",
+            ],
             output: {
                 globals: {
                     vue: "Vue",

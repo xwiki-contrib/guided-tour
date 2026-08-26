@@ -83,7 +83,7 @@
 
 #if ($isEdit)
   &lt;button id='add-step-btn' class="btn btn-primary"&gt;
-    $services.rendering.escape($escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add'))
+    $services.rendering.escape($escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add')), 'xwiki/2.1')
   &lt;/button&gt;
 #end
 
@@ -97,8 +97,8 @@
         #foreach ($step in $steps)
           &lt;li class="item" data-id="$step.number"&gt;
             #if ("$!step.getValue('content')" == '')
-              $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.count',
-               [$step.getValue('order')]))
+              $escapetool.xml($services.rendering.escape($services.localization.render('guidedtour.tasks.sheet.steps.count',
+               [$step.getValue('order')]), 'xwiki/2.1'))
             #else
               $escapetool.xml($services.rendering.escape($step.getValue('content'), 'xwiki/2.1'))
             #end

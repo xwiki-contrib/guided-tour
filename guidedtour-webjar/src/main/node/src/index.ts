@@ -18,17 +18,24 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import { guidedTourManager, initTranslations } from "@xwiki/contrib-guidedtour-xwiki";
-import { GuidedTourWidget } from "@xwiki/contrib-guidedtour-ui";
+import { guidedTourManager } from "@xwiki/contrib-guidedtour-xwiki";
+import { GuidedTourWidget, RESOLVER } from "@xwiki/contrib-guidedtour-ui";
 import { createApp } from "vue";
+import { createI18n } from "vue-i18n";
+// This module is resolved through the import map and does not ship type declarations.
+// @ts-expect-error xwiki-platform-localization-webjar does not export types.
+import { resolver } from "xwiki-platform-localization-webjar";
 
 async function init() {
-  const { resolver, i18n } = initTranslations();
+  // The locale of the wiki user interface, as exposed by the skin on the root element.
+  const locale = document.documentElement.getAttribute("lang");
+  // useI18nAdapter relies on the Composition API, which requires the legacy mode to be disabled.
+  const i18n = createI18n({ legacy: false, locale });
 
   const guidedTourManagerUnwrapped = await guidedTourManager;
   const app = createApp(GuidedTourWidget, { guidedTourManager: guidedTourManagerUnwrapped });
   app.use(i18n);
-  app.provide("GuidedTourResolver", resolver);
+  app.provide(RESOLVER, resolver);
   app.mount("#guidedtour-uix");
 }
 
