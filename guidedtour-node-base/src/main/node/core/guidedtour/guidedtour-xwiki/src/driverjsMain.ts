@@ -65,7 +65,7 @@ const util = {
     }
 
     customSkipAll.onclick = onSkipAll;
-    customSkipAll.innerHTML = translations["guidedtour.driver.skipAll"]; // TODO: Add translation.
+    customSkipAll.textContent = translations["guidedtour.driver.skipAll"];
     return customSkipAll;
   },
   /**

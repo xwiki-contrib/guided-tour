@@ -100,15 +100,15 @@ guidedtour.tasks.sheet.steps.button.add=Add step
 guidedtour.modal.task.delete.title=Delete task
 guidedtour.modal.task.delete.error=There was an error while attempting to delete the task!
 guidedtour.modal.task.delete.done=Task successfully deleted!
-guidedtour.modal.task.delete.inprogress=Deleting task and all its steps...
+guidedtour.modal.task.delete.inProgress=Deleting task and all its steps...
 guidedtour.modal.task.delete.message=You are about to delete task &lt;{0}&gt; and all associated steps!
-guidedtour.modal.task.delete.standardmessage=This action will delete the task and all associated steps!
+guidedtour.modal.task.delete.standardMessage=This action will delete the task and all associated steps!
 guidedtour.modal.task.close.label=Close
 guidedtour.modal.task.add.title.placeholder=Enter task title
 guidedtour.modal.task.add.title=Add task
 guidedtour.modal.task.add.done=Task successfully created!
 guidedtour.modal.task.add.error=Failed to create task: [{0}]
-guidedtour.modal.task.add.inprogress=Creating new task...</content>
+guidedtour.modal.task.add.inProgress=Creating new task...</content>
   <object>
     <name>GuidedTour.Code.Translations</name>
     <number>0</number>

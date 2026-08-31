@@ -57,13 +57,16 @@
     "sinon": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "vue-i18n": "catalog:"
   },
   "publishConfig": {
     "exports": {
       ".": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.es.js"
+        "import": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.es.js"
+        }
       }
     },
     "main": "./dist/index.es.js",

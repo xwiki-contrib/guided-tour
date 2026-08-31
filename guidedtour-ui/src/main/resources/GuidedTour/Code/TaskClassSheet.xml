@@ -79,7 +79,7 @@
 ##makeTaskPropertyDisplay('title')
 &lt;/div&gt;
 
-== $services.rendering.escape($services.localization.render('guidedtour.tasks.sheet.title.steps'), 'xwiki/2.1') ==
+== {{translation key='guidedtour.tasks.sheet.title.steps'/}} ==
 
 #if ($isEdit)
   &lt;button id='add-step-btn' class="btn btn-primary"&gt;

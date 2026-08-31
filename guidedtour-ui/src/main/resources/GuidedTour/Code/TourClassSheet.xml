@@ -89,14 +89,14 @@
       "actions": [
         {
           'id': 'delete',
-          'description': "${services.localization.render('guidedtour.tour.tasks.livedata._actions.delete.hint')}"
+          'description': $services.localization.render('guidedtour.tour.tasks.livedata._actions.delete.hint')
         }
       ]
       }
   })
   #set ($sourceParameters = $escapetool.url({
     'resultPage': 'GuidedTour.Code.TasksLiveTableResults',
-    'tourId': "${doc.getDocumentReference()}",
+    'tourId': $doc.getDocumentReference(),
     'translationPrefix': 'guidedtour.tour.tasks.livedata.'
   }))
 
@@ -199,11 +199,11 @@
   keys: [
     'delete.error',
     'delete.message',
-    'delete.inprogress',
+    'delete.inProgress',
     'delete.done',
     'add.done',
     'add.error',
-    'add.inprogress',
+    'add.inProgress',
   ]
 });
 
@@ -219,7 +219,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-tour-modals'], function(
       type: 'DELETE',
       beforeSend: function(xhr) {
         confirmBtn.prop('disabled', true);
-        notification = new XWiki.widgets.Notification(l10n.get('delete.inprogress'), 'inprogress');
+        notification = new XWiki.widgets.Notification(l10n.get('delete.inProgress'), 'inprogress');
       },
       success: function() {
         confirmBtn.prop('disabled', false);
@@ -291,7 +291,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-tour-modals'], function(
       data: JSON.stringify(formData),
       beforeSend: function() {
         confirmBtn.prop('disabled', true);
-        notification = new XWiki.widgets.Notification(l10n.get('add.inprogress'), 'inprogress');
+        notification = new XWiki.widgets.Notification(l10n.get('add.inProgress'), 'inprogress');
       },
       success: function(taskId) {
         form.trigger('reset');

@@ -52,7 +52,7 @@
             &lt;/div&gt;
           &lt;/div&gt;
           &lt;div class="modal-body"&gt;
-            $escapetool.xml($services.localization.render('guidedtour.modal.task.delete.standardmessage'))
+            $escapetool.xml($services.localization.render('guidedtour.modal.task.delete.standardMessage'))
           &lt;/div&gt;
           &lt;div class="modal-footer"&gt;
             &lt;button type="button" class="btn btn-danger"&gt;

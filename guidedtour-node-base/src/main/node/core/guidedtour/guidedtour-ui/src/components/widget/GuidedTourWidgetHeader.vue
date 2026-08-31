@@ -63,8 +63,8 @@ const progress = props.progress;
 
 const resolver = inject(RESOLVER)!;
 const { t, isLoading } = useI18nAdapter(resolver, {
-  prefix: "guidedtour.widget.",
-  keys: ["header.title"],
+  prefix: "guidedtour.widget.header.",
+  keys: ["title", "close"],
 });
 </script>
 
