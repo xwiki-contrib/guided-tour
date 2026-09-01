@@ -232,15 +232,15 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   async startTask(task: TourTask, remember = true): Promise<void> {
     // Fetch or get the cached steps.
     task.steps ??= await this.getSteps(task.tourId!, task.id);
-    let stepIndex = 0;
-    if (remember) {
-      stepIndex = Number.parseInt(
-        StorageManager.getStorageKey(
-          StorageManager.getTaskCurrentStepStorageKey(task),
-        ) ?? "0",
-      );
-    }
-    const driverTour = driver(getDriverConfigForSteps(task, this));
+    const stepIndex = remember
+      ? Number.parseInt(
+          StorageManager.getStorageKey(
+            StorageManager.getTaskCurrentStepStorageKey(task),
+          ) ?? "0",
+        )
+      : 0;
+    const { config, translations } = await getDriverConfigForSteps(task, this);
+    const driverTour = driver(config);
     StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
       StorageManager.getStorageKeyPrefix(task),
@@ -251,7 +251,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
 
     this.activeTask = task;
-    this.activeDriverTask = wrapTask(driverTour, this);
+    this.activeDriverTask = wrapTask(driverTour, this, translations);
     this.activeDriverTask.drive(stepIndex);
   }
 

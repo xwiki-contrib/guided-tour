@@ -19,9 +19,5 @@
  */
 
 import { generateConfig } from "@xwiki/contrib-guidedtour-dev-config/vite-config";
-import { mergeConfig } from "vite";
 
-export default mergeConfig(
-  generateConfig(import.meta.url),
-  { build: { lib: { formats: ["es"] }, rollupOptions: { external: ["xwiki-platform-localization-webjar"] } } },
-);
+export default generateConfig(import.meta.url);
