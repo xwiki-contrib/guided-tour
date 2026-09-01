@@ -83,7 +83,7 @@
 
 #if ($isEdit)
   &lt;button id='add-step-btn' class="btn btn-primary"&gt;
-    $services.rendering.escape($escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add')), 'xwiki/2.1')
+    {{translation key='guidedtour.tasks.sheet.steps.button.add'/}}
   &lt;/button&gt;
 #end
 
@@ -91,14 +91,13 @@
       $jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
     &lt;div class="sidebar"&gt;
       &lt;h2 class="sidebar-title"&gt;
-        $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.steps'))
+        {{translation key='guidedtour.tasks.sheet.title.steps'/}}
       &lt;/h2&gt;
       &lt;ul class="item-list"&gt;
         #foreach ($step in $steps)
           &lt;li class="item" data-id="$step.number"&gt;
             #if ("$!step.getValue('content')" == '')
-              $escapetool.xml($services.rendering.escape($services.localization.render('guidedtour.tasks.sheet.steps.count',
-               [$step.getValue('order')]), 'xwiki/2.1'))
+              {{translation key='guidedtour.tasks.sheet.steps.count' parameters="$step.getValue('order')"/}}
             #else
               $escapetool.xml($services.rendering.escape($step.getValue('content'), 'xwiki/2.1'))
             #end
@@ -109,7 +108,7 @@
 
     &lt;div class="content"&gt;
       &lt;h1 class="content-title"&gt;
-        $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.properties'))
+        {{translation key='guidedtour.tasks.sheet.title.properties'/}}
       &lt;/h1&gt;
       #foreach ($step in $steps)
         #set($xclass = $step.xWikiClass)
