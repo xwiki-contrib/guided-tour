@@ -81,7 +81,7 @@ class TasksManagerTest
         "select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp "
             + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class "
             + "and doc.space = :space and obj.id = orderProp.id.id and orderProp.id.name = 'order' "
-            + "and lower(doc.title) like lower(:titleFilter) order by orderProp.value asc";
+            + "and lower(doc.title) like lower(:titleFilter) escape '\\' order by orderProp.value asc";
 
     private static final String GET_TASK_QUERY = "select doc.fullName from XWikiDocument doc, BaseObject obj "
         + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space "

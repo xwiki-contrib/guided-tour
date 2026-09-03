@@ -76,7 +76,7 @@ public class TasksManager
     private static final String GET_ALL_TASKS_QUERY = """
         select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp where doc.translation = \
         0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space and obj.id = \
-        orderProp.id.id and orderProp.id.name = 'order' and lower(doc.title) like lower(:titleFilter) \
+        orderProp.id.id and orderProp.id.name = 'order' and lower(doc.title) like lower(:titleFilter) escape '\\' \
         order by orderProp.value asc""";
 
     private static final String TASK_NOT_FOUND_ERROR = "Task with the given id [%s] does not exists.";
@@ -176,7 +176,7 @@ public class TasksManager
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        String titleFilter = String.format("%%%s%%", StringUtils.defaultIfBlank(filteredTitle, ""));
+        String titleFilter = String.format("%%%s%%", escapeQueryParameter(filteredTitle));
         Map<String, Object> bindValues = new HashMap<>(
             Map.of(SPACE_KEY, parentSpace, TITLE_FILTER, titleFilter, CLASS_FILTER,
                 this.localSerializer.serialize(TASK_CLASS)));
@@ -253,6 +253,14 @@ public class TasksManager
         XWiki wiki = wikiContext.getWiki();
         wiki.deleteAllDocuments(wiki.getDocument(taskDocRef, wikiContext), wikiContext);
         updateRemainingTasks(existingTasks, targetTask, tourDocRef);
+    }
+
+    private String escapeQueryParameter(String parameter)
+    {
+        return StringUtils.defaultIfBlank(parameter, "")
+            .replace("\\", "\\\\")
+            .replace("%", "\\%")
+            .replace("_", "\\_");
     }
 
     private TaskDTO getTaskDTO(XWikiDocument doc)

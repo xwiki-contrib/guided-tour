@@ -53,16 +53,31 @@
         <artifactId>revapi-maven-plugin</artifactId>
         <configuration>
           <analysisConfiguration>
-            <revapi.ignore>
+            <revapi.differences>
+              <ignore>true</ignore>
+              <differences>
+                <item>
+                  <code>java.field.enumConstantOrderChanged</code>
+                  <classQualifiedName>org.xwiki.contrib.guidedtour.api.enums.TourProperty</classQualifiedName>
+                  <justification>Enum constants intentionally reordered as part of GUIDEDTOUR-13: Switch from Solr to
+                    HQL refactorization.</justification>
+                </item>
+                <item>
+                  <code>java.field.removed</code>
+                  <classQualifiedName>org.xwiki.contrib.guidedtour.api.enums.TourProperty</classQualifiedName>
+                  <justification>IS_ACTIVE_BOOL / IS_ACTIVE_INT removed as part of the GUIDEDTOUR-13: Switch from
+                    Solr to HQL, as the fields were specific to the Solr indexing approach.</justification>
+                </item>
               <item>
-                <regex>true</regex>
-                <code>java\..*</code>
-                <old>.*org\.xwiki\.contrib\.guidedtour\.api\.enums\.TourProperty.*</old>
-                <justification>As part of GUIDEDTOUR-13: Switch from Solr to HQL, by migrating to HQL, members and
-                  internal utilities specific to the Solr indexing approach became deprecated, as those were needed
-                  for formatted Solr field keys using type suffixes.</justification>
+                  <code>java.method.removed</code>
+                  <classQualifiedName>org.xwiki.contrib.guidedtour.api.enums.TourProperty</classQualifiedName>
+                  <justification>
+                    formKey(String) and getObjectKey() removed as part of the GUIDEDTOUR-13: Switch from Solr to HQL,
+                    as the methods were needed for formatted Solr field keys using type suffixes.
+                  </justification>
               </item>
-            </revapi.ignore>
+              </differences>
+            </revapi.differences>
           </analysisConfiguration>
         </configuration>
       </plugin>
