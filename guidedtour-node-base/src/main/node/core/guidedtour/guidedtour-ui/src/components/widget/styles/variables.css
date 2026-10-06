@@ -1,5 +1,8 @@
 
 :root {
-  --guidedtour-text-color: #b0b0b0;
-  --guidedtour-background-color-secondary: #f2f2f2;
+  --guidedtour-widget-text-color: var(--text-color);
+  --guidedtour-widget-text-color-muted: var(--text-muted);
+  --guidedtour-widget-background-color: var(--body-bg);
+  --guidedtour-widget-highlighted-background-color: var(--xwiki-background-secondary-color);
+  --guidedtour-widget-progress-bar-bg: var(--brand-primary, #7698ff);
 }

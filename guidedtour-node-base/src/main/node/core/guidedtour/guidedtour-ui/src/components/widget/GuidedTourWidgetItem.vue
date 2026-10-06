@@ -66,15 +66,15 @@ const props = defineProps<{
 .guidedtour-widget-item.loading {
   background: linear-gradient(
     to left,
-    var(--guidedtour-text-color) 0%,
-    var(--guidedtour-text-color) 25%,
-    var(--guidedtour-background-color-secondary) 30%,
-    var(--guidedtour-background-color-secondary) 35%,
-    var(--guidedtour-text-color) 40%,
-    var(--guidedtour-text-color) 75%,
-    var(--guidedtour-background-color-secondary) 80%,
-    var(--guidedtour-background-color-secondary) 85%,
-    var(--guidedtour-text-color) 90%
+    var(--guidedtour-widget-text-color) 0%,
+    var(--guidedtour-widget-text-color) 25%,
+    var(--guidedtour-widget-highlighted-background-color) 30%,
+    var(--guidedtour-widget-highlighted-background-color) 35%,
+    var(--guidedtour-widget-text-color) 40%,
+    var(--guidedtour-widget-text-color) 75%,
+    var(--guidedtour-widget-highlighted-background-color) 80%,
+    var(--guidedtour-widget-highlighted-background-color) 85%,
+    var(--guidedtour-widget-text-color) 90%
   );
   background-size: 200% 100%;
   animation: loading-shimmer 4s linear infinite;
@@ -102,7 +102,7 @@ const props = defineProps<{
 }
 
 .guidedtour-widget-item:hover {
-  background: var(--guidedtour-background-color-secondary) 100%;
+  background: var(--guidedtour-widget-highlighted-background-color) 100%;
 }
 
 .fa-circle-notch.transparent {
@@ -121,7 +121,7 @@ const props = defineProps<{
 .pre-btns *:not(.always-show),
 .post-btns *:not(.always-show) {
   text-decoration: none;
-  color: var(--guidedtour-text-color);
+  color: var(--guidedtour-widget-text-color-muted);
   flex-shrink: 0;
   background: none;
   border: none;
