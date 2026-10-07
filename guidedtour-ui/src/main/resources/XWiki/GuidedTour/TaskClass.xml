@@ -48,28 +48,31 @@
     <validationScript/>
     <dependsOn>
       <cache>0</cache>
+      <classname>XWiki.GuidedTour.TaskClass</classname>
       <customDisplay/>
       <defaultValue/>
       <disabled>0</disabled>
-      <displayType>select</displayType>
+      <displayType>input</displayType>
       <freeText/>
       <hint/>
+      <idField/>
       <largeStorage>0</largeStorage>
-      <multiSelect>0</multiSelect>
+      <multiSelect>1</multiSelect>
       <name>dependsOn</name>
-      <number>4</number>
+      <number>5</number>
       <picker>1</picker>
-      <prettyName>Depends on</prettyName>
+      <prettyName>Depends On</prettyName>
       <relationalStorage>0</relationalStorage>
       <separator> </separator>
-      <separators>|, </separators>
+      <separators/>
       <size>1</size>
       <sort/>
+      <sql/>
       <unmodifiable>0</unmodifiable>
       <validationMessage/>
       <validationRegExp/>
-      <values/>
-      <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      <valueField/>
+      <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
     </dependsOn>
     <isActive>
       <customDisplay/>

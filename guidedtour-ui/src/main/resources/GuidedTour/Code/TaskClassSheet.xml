@@ -521,7 +521,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       stepManager.showStep(objectIndex);
       item.focus();
     });
-    item.addEventListener('keydown', (event) => {
+    item.addEventListener('keydown', (event) =&gt; {
       if (['Space', 'Enter'].includes(event.code)) {
         event.preventDefault();
         stepManager.showStep(objectIndex);

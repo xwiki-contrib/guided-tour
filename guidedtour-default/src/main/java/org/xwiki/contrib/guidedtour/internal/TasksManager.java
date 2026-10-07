@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -42,7 +43,6 @@ import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.model.validation.EntityNameValidation;
 import org.xwiki.query.QueryException;
 
-import com.google.common.base.Splitter;
 import com.xpn.xwiki.XWiki;
 import com.xpn.xwiki.XWikiContext;
 import com.xpn.xwiki.XWikiException;
@@ -267,12 +267,14 @@ public class TasksManager
     {
         BaseObject taskObj = doc.getXObject(TASK_CLASS);
         String title = taskObj.getStringValue(TourProperty.TITLE.getBaseKey());
-        String dependsOn = taskObj.getStringValue(TourProperty.DEPENDS_ON.getBaseKey());
+        List<?> dependsOn = taskObj.getListValue(TourProperty.DEPENDS_ON.getBaseKey());
         int order = taskObj.getIntValue(TourProperty.ORDER.getBaseKey());
         boolean isActive = taskObj.getIntValue(TourProperty.IS_ACTIVE.getBaseKey()) == 1;
-
         return new TaskDTO(doc.getDocumentReference().getName(), title, order, isActive,
-            Splitter.on(',').omitEmptyStrings().splitToList(dependsOn));
+            dependsOn.stream().map(String::valueOf).map(documentReferenceResolver::resolve).filter(
+                    (DocumentReference dependentTaskDoc) -> dependentTaskDoc.getSpaceReferences()
+                        .equals(doc.getDocumentReference().getSpaceReferences())).map((DocumentReference::getName))
+                .collect(Collectors.toList()));
     }
 
     private String validateTaskId(TaskDTO taskDTO)
