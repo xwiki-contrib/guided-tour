@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.xwiki.component.annotation.Role;
 import org.xwiki.model.reference.DocumentReference;
+import org.xwiki.stability.Unstable;
 
 /**
  * Guided Tour configurations.
@@ -31,6 +32,7 @@ import org.xwiki.model.reference.DocumentReference;
  * @since 1.0
  */
 @Role
+@Unstable
 public interface GuidedTourConfiguration
 {
     /**
