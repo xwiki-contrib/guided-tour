@@ -97,9 +97,15 @@ guidedtour.tours.sheet.tasks.header=Tasks
 guidedtour.tours.sheet.tasks.button.add=Add task
 guidedtour.tasks.sheet.title.properties=Properties
 guidedtour.tasks.sheet.title.steps=Steps
-guidedtour.tasks.sheet.steps.count=Step #{0}
+guidedtour.tasks.sheet.steps.delete=Delete
 guidedtour.tasks.sheet.steps.button.add=Add step
-
+guidedtour.tasks.sheet.step.notification.inProgress=Creating step...
+guidedtour.tasks.sheet.step.notification.done=Done
+guidedtour.tasks.sheet.step.notification.error=Error creating task step.
+guidedtour.tasks.sheet.step.title.generic=Step #{0}
+guidedtour.tasks.sheet.step.title.sidebar.screenReaderDescription=Step {0} in sidebar, with description: "{1}"
+guidedtour.tasks.sheet.steps.keyboardHints.edit=You can navigate the steps by focusing the sidebar and pressing the arrow keys. Press Alt+Shift+N or Alt+Shift+A to add a new step, Alt+Shift+D or Alt+Shift+Delete to remove the currently selected step, and Alt+Shift+ArrowUp/Alt+Shift+ArrowDown to move the currently selected step.
+guidedtour.tasks.sheet.steps.keyboardHints=You can navigate the steps by focusing the sidebar and pressing the arrow keys.
 ## Modals
 
 guidedtour.modal.task.delete.title=Delete task

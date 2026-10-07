@@ -18,6 +18,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 import { StorageManager } from "../StorageManager";
+import { reactive } from "vue";
 import type {
   TourStep,
   TourTask,
@@ -32,7 +33,8 @@ import type {
  */
 export interface TourCache {
   tours: TourTour[];
-  toursMap: Map<string, TourTour>;
+  // Utility map from Tour id to index into tours array
+  toursMap: Map<string, number>;
 }
 
 /**
@@ -68,8 +70,11 @@ export class TourStore {
    */
   public updateTours(tours: TourTour[]) {
     this.populateTourTasks(tours);
-    this._cache.tours = tours;
-    this._cache.toursMap = new Map(tours.map((t) => [t.id, t]));
+    this.clearCache();
+    for (let i = 0; i < tours.length; i++) {
+      this._cache.tours.push(reactive(tours[i]));
+      this._cache.toursMap.set(tours[i].id, i);
+    }
   }
 
   /**
@@ -80,7 +85,10 @@ export class TourStore {
     // FIXME: What if we need to fetch the cache in this step? (i.e. a valid tour is not in the cache)
     // To fix as part of GUIDEDTOUR-23.
     // this.setupTasks(this.cache.toursMap.get(tourId)?.tasksList ?? [], tourId);
-    return this._cache.toursMap.get(tourId)?.tasksList ?? [];
+    const tourIndex = this._cache.toursMap.get(tourId);
+    return tourIndex !== undefined
+      ? (this._cache.tours[tourIndex].tasksList ?? [])
+      : [];
   }
 
   /**
@@ -90,8 +98,9 @@ export class TourStore {
    * @param tasks - The new task list.
    */
   public updateTourTasks(tourId: string, tasks: TourTask[]) {
-    const tour = this._cache.toursMap.get(tourId);
-    if (tour) {
+    const tourIndex = this._cache.toursMap.get(tourId);
+    if (tourIndex !== undefined) {
+      const tour = this._cache.tours[tourIndex];
       // Update the reference (since it's an object, it updates in the array too)
       this.setupTasks(tasks, tourId);
       tour.tasksList = tasks;
@@ -151,7 +160,9 @@ export class TourStore {
    * @returns The task if found, otherwise undefined.
    */
   private getTaskOrPurge(tourId: string, taskId: string): TourTask | undefined {
-    const tour = this._cache.toursMap.get(tourId);
+    const tourIndex = this._cache.toursMap.get(tourId);
+    const tour =
+      tourIndex !== undefined ? this._cache.tours[tourIndex] : undefined;
     const task = tour?.tasksList?.find((t) => t.id === taskId);
 
     if (!tour || !task) {
@@ -185,7 +196,8 @@ export class TourStore {
    * Empty the cache entirely.
    */
   public clearCache() {
-    this._cache.tours = [];
+    // Empty the tours array while maintaining the same array object.
+    this._cache.tours.splice(0);
     this._cache.toursMap.clear();
   }
 }

@@ -64,10 +64,13 @@ export class DefaultTourManagerApi implements TourManagerApi {
    */
   async getTour(tourId: string): Promise<TourTour | undefined> {
     if (this.sharedStore.cache.tours?.length == 0) {
+      // Populate the cache if it isn't already there.
       await this.getTours();
     }
-    const toursMap = this.sharedStore.cache.toursMap;
-    return toursMap!.get(tourId);
+    const tourIndex = this.sharedStore.cache.toursMap.get(tourId);
+    return tourIndex !== undefined
+      ? this.sharedStore.cache.tours[tourIndex]
+      : undefined;
   }
 
   /**
@@ -78,16 +81,25 @@ export class DefaultTourManagerApi implements TourManagerApi {
    */
   computeToursStatus(tours: TourTour[]) {
     for (const tour of tours) {
-      if (tour.tasksList?.length == 0) {
+      if (tour.tasksList === undefined) {
+        // The tasks weren't fetched yet, so do nothing.
+        continue;
+      }
+      // Only consider active tasks that are shown in the UI.
+      const consideredTaskList = tour.tasksList.filter(
+        (task: TourTask) => task.active == true,
+      );
+      if (consideredTaskList.length == 0) {
+        // Skip all tours with no active tasks.
         tour.status = TourTaskStatus.SKIPPED;
       } else if (
-        tour.tasksList!.find(
+        consideredTaskList.find(
           (t: TourTask) => t.status == TourTaskStatus.TODO,
         ) !== undefined
       ) {
         tour.status = TourTaskStatus.TODO;
       } else if (
-        tour.tasksList!.find(
+        consideredTaskList.find(
           (t: TourTask) => t.status == TourTaskStatus.SKIPPED,
         ) !== undefined
       ) {

@@ -26,22 +26,6 @@ import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
 
 type StepDirection = "next" | "previous";
 
-/**
- * Resolve the driver translations from the XWiki localization webjar.
- *
- * The webjar is only available at runtime in the XWiki environment, so it is loaded dynamically.
- * @returns the resolved translations, keyed by the full translation key.
- */
-async function getTranslations(): Promise<Record<string, string>> {
-  const webjarModule = "xwiki-platform-localization-webjar";
-  const { resolver } = await import(/* @vite-ignore */ webjarModule);
-  const { translations } = await resolver.resolve({
-    prefix: "guidedtour.driver.",
-    keys: ["next", "previous", "skipAll", "loading", "error"],
-  });
-  return translations;
-}
-
 const util = {
   /**
    * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
@@ -316,13 +300,13 @@ function convertToDriverStep(
 async function getDriverConfigForSteps(
   guidedTourTask: TourTask,
   guidedTourManager: DefaultGuidedTourManager,
-): Promise<{ config: Config; translations: Record<string, string> }> {
+  translations: Record<string, string>,
+): Promise<Config> {
   if (!guidedTourTask.steps) {
     console.error("Task has no steps:", guidedTourTask);
     throw "Task has no steps";
   }
   console.log(guidedTourTask.steps);
-  const translations = await getTranslations();
   const config = XWikiDriverConfig(
     guidedTourManager,
     guidedTourTask,
@@ -331,7 +315,7 @@ async function getDriverConfigForSteps(
   config.steps = guidedTourTask.steps!.map((step) =>
     convertToDriverStep(step, guidedTourTask),
   );
-  return { config, translations };
+  return config;
 }
 
 function wrapTask(

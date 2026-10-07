@@ -43,104 +43,136 @@
 
 #set ($steps = $doc.getObjects('XWiki.GuidedTour.StepClass'))
 #set ($task = $doc.getObject('XWiki.GuidedTour.TaskClass'))
-##set ($tour = $doc.parent.getObject('XWiki.GuidedTour.TourClass'))
 #set ($serializedSteps = [])
 #foreach ($step in $steps)
+  #set ($order = $step.getValue('order'))
+  #if (!$order)
+    #set ($order = $numbertool.toNumber(999999).longValue())
+  #end
   #set ($discard = $serializedSteps.add({
-    'element': $step.getValue('element'),
-    'order': $step.getValue('order'),
-    'placement': $step.getValue('placement'),
-    'reflex': $step.getValue('reflex'),
-    'targetPage': $step.getValue('targetPage'),
-    'targetAction': $step.getValue('targetAction'),
-    'queryParameters': $step.getValue('queryParameters')
+    'stepObject': $step,
+    'order': $order
   }))
 #end
+#set ($steps = $collectiontool.sort($serializedSteps, 'order'))
 
+## Show all properties of a step.
+#macro (_displayStepForm $step)
+  #set ($xclass = $step.xWikiClass)
+  #if ($isEdit)
+    #set ($viewMode = 'edit')
+  #else
+    #set ($viewMode = 'view')
+  #end
+  &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden'
+      role='tabpanel' aria-labelledby='step-tab-${step.number}'&gt;
+    #foreach ($property in $xclass.properties)
+      #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
+      #if ($property.name == 'order')
+        ## The order is automatically computed, so don't display it in the UI.
+        {{/html}}
+
+        $doc.display($property.name, 'hidden', $step)
+
+        {{html clean='false'}}
+      #else
+        &lt;dt&gt;
+          &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
+          &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
+        &lt;/dt&gt;
+        &lt;dd&gt;
+        #if ($property.name == 'content' &amp;&amp; !$isEdit)
+          ## Add an unique id to each element content, so `getStepTitle()` from js can compute the title in view mode.
+          &lt;span id="$!escapetool.xml($propertyId)"&gt;
+        #end
+        {{/html}}$doc.display($property.name, $viewMode, $step){{html clean='false'}}
+        #if ($property.name == 'content' &amp;&amp; !$isEdit)
+          &lt;/span&gt;
+        #end
+        &lt;/dd&gt;
+      #end
+    #end
+  &lt;/dl&gt;
+#end
 {{/velocity}}
 
 {{velocity}}
-{{html wiki="true"}}
-&lt;div class="taskSpecificProps"&gt;
-&lt;dl id="guidedtour-task-props"&gt;
-#set($xclass = $task.xWikiClass)
-#foreach($property in $xclass.properties)
-  #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
-  &lt;dt&gt;
-    &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
-    &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
-  &lt;/dt&gt;
-  &lt;dd&gt;
-    $doc.display($property.name, $task)
-  &lt;/dd&gt;
+{{html clean='false'}}
+#if ($xcontext.action == 'get')
+  ## Only render the form of the step with index objectIndex.
+  #set ($reqNewObjectNumber = $numbertool.toNumber($request.objectIndex))
+  #if ($reqNewObjectNumber)
+    #set ($isEdit = true)
+    #set ($step = $doc.newObject('XWiki.GuidedTour.StepClass'))
+    #set ($discard = $step.getXWikiObject().setNumber($reqNewObjectNumber))
+    #_displayStepForm($step)
+  #end
+  #stop
 #end
-&lt;/dl&gt;
-## This should be the page title directly, not a property.
-##makeTaskPropertyDisplay('title')
+## Input needed to be able to add/remove objects through the form.
+&lt;input type="hidden" name="objectPolicy" value="updateOrCreate" /&gt;
+&lt;div class="taskSpecificProps xform"&gt;
+  &lt;dl id="guidedtour-task-props"&gt;
+    #set ($xclass = $task.xWikiClass)
+    #foreach ($property in $xclass.properties)
+      #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
+      &lt;dt&gt;
+        &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
+        &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
+      &lt;/dt&gt;
+      &lt;dd&gt;
+        {{/html}}
+
+        $doc.display($property.name, $task)
+
+        {{html clean='false'}}
+      &lt;/dd&gt;
+    #end
+  &lt;/dl&gt;
+  &lt;p id="steps-keyboard-hints" class="xHint"&gt;
+    $escapetool.xml($services.localization.render("guidedtour.tasks.sheet.steps.keyboardHints#if ($isEdit).edit#end"))
+  &lt;/p&gt;
 &lt;/div&gt;
+{{/html}}
 
 == {{translation key='guidedtour.tasks.sheet.title.steps'/}} ==
 
+{{html clean='false'}}
+
 #if ($isEdit)
   &lt;button id='add-step-btn' class="btn btn-primary"&gt;
-    {{translation key='guidedtour.tasks.sheet.steps.button.add'/}}
+    $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.button.add'))
   &lt;/button&gt;
 #end
 
-&lt;div class="stepsListContainer" data-steps="$escapetool.xml($services.rendering.escape(
-      $jsontool.serialize($serializedSteps), 'xwiki/2.1'))"&gt;
+&lt;div class="stepsListContainer"&gt;
     &lt;div class="sidebar"&gt;
-      &lt;h2 class="sidebar-title"&gt;
-        {{translation key='guidedtour.tasks.sheet.title.steps'/}}
-      &lt;/h2&gt;
-      &lt;ul class="item-list"&gt;
-        #foreach ($step in $steps)
-          &lt;li class="item" data-id="$step.number"&gt;
-            #if ("$!step.getValue('content')" == '')
-              {{translation key='guidedtour.tasks.sheet.steps.count' parameters="$step.getValue('order')"/}}
-            #else
-              $escapetool.xml($services.rendering.escape($step.getValue('content'), 'xwiki/2.1'))
+      &lt;ul class="item-list" role="tablist" aria-orientation="vertical" tabindex="-1"
+        aria-label="$escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.steps'))"
+        aria-describedby="steps-keyboard-hints"
+        &gt;
+        ## This template will be used in javascript to populate the sidebar item list.
+        &lt;template id="step-item-template"&gt;
+          &lt;li class="item" role="tab" tabindex="-1" aria-selected="false"&gt;
+            &lt;span class="step-item-title" aria-hidden="true"&gt;&lt;/span&gt;
+            #if ($isEdit)
+              &lt;button type="button" class="btn btn-default btn-xs step-item-delete" tabindex="-1" aria-hidden="true"&gt;
+                $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.steps.delete', [$step.getValue('order')]))
+              &lt;/button&gt;
             #end
           &lt;/li&gt;
-        #end
+        &lt;/template&gt;
       &lt;/ul&gt;
     &lt;/div&gt;
 
-    &lt;div class="content"&gt;
-      &lt;h1 class="content-title"&gt;
-        {{translation key='guidedtour.tasks.sheet.title.properties'/}}
-      &lt;/h1&gt;
+    &lt;div class="content xform"&gt;
+      &lt;h2 class="content-title"&gt;
+        $escapetool.xml($services.localization.render('guidedtour.tasks.sheet.title.properties'))
+      &lt;/h2&gt;
       #foreach ($step in $steps)
-        #set($xclass = $step.xWikiClass)
-        &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden'&gt;
-          #foreach($property in $xclass.properties)
-            #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
-            &lt;dt&gt;
-              &lt;label for="$!escapetool.xml($propertyId)"&gt;
-                $escapetool.xml($services.rendering.escape($property.translatedPrettyName, 'xwiki/2.1'))
-              &lt;/label&gt;
-              &lt;span class="xHint"&gt;$!escapetool.xml($services.rendering.escape($property.hint, 'xwiki/2.1')) &lt;/span&gt;
-            &lt;/dt&gt;
-            &lt;dd&gt;
-              $doc.display($property.name, $step)
-            &lt;/dd&gt;
-          #end
-        &lt;/dl&gt;
+        #set ($step = $step.get('stepObject'))
+        #_displayStepForm($step)
       #end
-      ## Have a template prepared for any Steps that might get added.
-      #set ($nb = $doc.createNewObject('XWiki.GuidedTour.StepClass'))
-      #set ($step = $doc.getObject('XWiki.GuidedTour.StepClass', $nb))
-      #set ($xclass = $step.xWikiClass)
-      &lt;dl id='${xclass.name}_template' class='itemDisplay'&gt;
-      #foreach($property in $xclass.properties)
-        #set ($propertyId = "${xclass.name}_template_$property.name")
-        &lt;dt&gt;
-          &lt;label for="$!escapetool.xml($propertyId)"&gt; $escapetool.xml($services.rendering.escape($property.translatedPrettyName, 'xwiki/2.1'))&lt;/label&gt;
-          &lt;span class="xHint"&gt;$!escapetool.xml($services.rendering.escape($property.hint, 'xwiki/2.1')) &lt;/span&gt;
-        &lt;/dt&gt;
-        &lt;dd&gt;$doc.display($property.name, $step)&lt;/dd&gt;
-      #end
-      &lt;/dl&gt;
     &lt;/div&gt;
 &lt;/div&gt;
 {{/html}}
@@ -232,80 +264,403 @@
       <cache>forbid</cache>
     </property>
     <property type="LargeString">
-      <code>require.config({
-  paths: {
-    '@xwiki/contrib-guidedtour-xwiki': $jsontool.serialize($services.webjars.url('org.xwiki.contrib:guidedtour-node-ui', 'index.es.js'))
-  }
+      <code>define('guidedtour-task-sheet', {
+  prefix: 'guidedtour.tasks.sheet.step.',
+  keys: [
+    'notification.done',
+    'notification.inProgress',
+    'notification.error',
+    'title.generic',
+    'title.sidebar.screenReaderDescription'
+  ]
 });
 
-require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
-  console.info(gt);
-  // Simple interactivity: load properties when clicking sidebar items
-  const stepsListContainer = document.querySelector('.stepsListContainer');
-  console.warn(stepsListContainer.dataset.steps)
-  const steps = JSON.parse(stepsListContainer.dataset.steps);
-  const items = document.querySelectorAll('.item');
-  function loadItem(id) {
-    const data = steps[id];
-    if (!data) return;
-    document.querySelectorAll('.item').forEach(i =&gt; i.classList.toggle('active', i.dataset.id == String(id)));
-    document.querySelectorAll('.itemDisplay').forEach(i =&gt; i.classList.toggle('hidden', i.id != "XWiki.GuidedTour.StepClass_" + String(id)));
-  }
-
-  function reorderItems() {
-    const children = document.querySelectorAll('.item');
-    const itemList = document.querySelectorAll('.item-list');
-  }
-
-  items.forEach(i =&gt; i.addEventListener('click', () =&gt; loadItem(i.dataset.id)));
-  // load first item by default
-  loadItem(0);
-  //new FormData(formElement)
-  // Add listener for order changes, to reorder the steps in the UI XWiki.GuidedTour.StepClass_0_order
-  const addStepButton = document.querySelector('#add-step-btn');
-  const formKeyRegex = /^XWiki.GuidedTour.StepClass_(\d+)_(\S+)$/;
-  if (addStepButton) {
-    addStepButton.addEventListener('click', (e) =&gt; {
-      e.preventDefault();
-      // FIXME: This selector is brittle, but idk how else to get all the necessary data (and overwrite the actual save to not do any step updates)
-      let a = document.createElement('input');
-      a.id = 'addedObjects'
-      a.value = ['XWiki.GuiedTour.StepClass_1']
-      a.classList.add('hidden')
-      document.querySelector('form#inline').appendChild(a)
-      const formData = new FormData(document.querySelector('form#inline'));
-      console.info(steps)
-      for (let formKey of formData.keys()) {
-        const matches = formKey.match(formKeyRegex);
-        if (matches) {
-          const stepIdx = Number.parseInt(matches[1]);
-          const prop = matches[2];
-          if (stepIdx &gt;= steps.length) {
-            // This is a new added step.
-            steps.push({})
-          }
-          steps[stepIdx][prop] = formData.get(formKey)
-        }
-      }
-      console.info(steps)
-      // formData.set('addedObjects', 'XWiki.GuidedTour.StepClass_1'); // This doesn't work.
-      console.warn('clicked', e, formData);
+require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'], function ($, xm, l10n) {
+  function updateItems() {
+    sidebarContainer.querySelectorAll('.item').forEach((sidebarItem, index) =&gt; {
+      sidebarItem.setAttribute('aria-label', l10n.get(
+        'title.sidebar.screenReaderDescription',
+        (index + 1).toString(),
+        sidebarItem.title
+      ));
     });
   }
-  document.on('xwiki:actions:beforeSave', (e) =&gt; {
-    // e.preventDefault();
-    // request.set('addedObjects', ['XWiki.GuidedTour.StepClass_6'])
-    // request.set('deletedObjects', ['XWiki.GuidedTour.StepClass_6'])
-    console.error('before save', e);
+
+  class GuidedTourStepSheetManager {
+    stepElements = {};
+    // List of initial steps on the page, so we can compute a diff when the user saves.
+    initialStepObjects = [];
+    registerStep(objectIndex, form, sidebarItem) {
+      this.stepElements[objectIndex] = {
+        number: objectIndex,
+        form: form,
+        sidebarItem: sidebarItem,
+      }
+      if (!this.formContainer.contains(form)) {
+        this.formContainer.appendChild(form);
+      }
+      if (!this.sidebarContainer.contains(sidebarItem)) {
+        this.sidebarContainer.appendChild(sidebarItem);
+        updateItems();
+      }
+    }
+    constructor(formContainer, sidebarContainer) {
+      this.formContainer = formContainer;
+      this.sidebarContainer = sidebarContainer;
+      // The step forms should already be part of the page, so only add them to the sidebar and the state.
+      // Get all forms present in the page.
+      document.querySelectorAll('.itemDisplay').forEach((form) =&gt; {
+        const objectIndex = getObjectIndexFromId(form.id);
+        this.registerStep(objectIndex, form, createStepEntry(objectIndex, form));
+      });
+      // Store element data, for later diffing.
+      this.initialStepObjects = getStepObjectNumbers();
+      // Show first step.
+      if (this.initialStepObjects.length &gt; 0) {
+        this.showStep(this.initialStepObjects[0]);
+      }
+    }
+    async addStep(objectIndex) {
+      const notification = new XWiki.widgets.Notification(l10n['notification.inProgress'], 'inprogress');
+      try {
+        if (!objectIndex) {
+          objectIndex = getNextStepNumber();
+        }
+        const formElement = await createStepForm(objectIndex);
+        this.registerStep(objectIndex, formElement, createStepEntry(objectIndex, formElement));
+        this.showStep(objectIndex);
+        notification.replace(new XWiki.widgets.Notification(l10n['notification.done'], 'done'));
+      } catch (e) {
+        console.error(e);
+        notification.replace(new XWiki.widgets.Notification(l10n['notification.error'], 'error'));
+      }
+    };
+    removeStep(objectIndex) {
+      const currentStep = this.stepElements[objectIndex];
+      if (!currentStep) {
+        console.error("Tried to remove step with inexistent number:", currentStep);
+        return;
+      }
+
+      if (currentStep.sidebarItem.classList.contains('active')) {
+        if (currentStep.sidebarItem.previousElementSibling
+            &amp;&amp; currentStep.sidebarItem.previousElementSibling.classList.contains('item')) {
+          // If deleting current step, show the previous step once this one is deleted.
+          this.showStep(Number(currentStep.sidebarItem.previousElementSibling.dataset.id));
+        } else if (currentStep.sidebarItem.nextElementSibling
+            &amp;&amp; currentStep.sidebarItem.nextElementSibling.classList.contains('item')) {
+          this.showStep(Number(currentStep.sidebarItem.nextElementSibling.dataset.id));
+        }
+      }
+
+      // Remove stuff from DOM.
+      currentStep.form.remove();
+      currentStep.sidebarItem.remove();
+      delete this.stepElements[objectIndex];
+      updateItems();
+    }
+
+    /**
+     * Update the `order` field, and the `addedObjects` and `deletedObjects` hidden inputs, which are needed by the
+     * XWiki save function.
+     */
+    updateHiddenInputs() {
+      // Update the order field for all steps, to ensure that the order that is displayed is also the one that is stored
+      // in the page.
+      this.sidebarContainer.querySelectorAll('.item').forEach((childElement, index) =&gt; {
+        const objectIndex = childElement.dataset.id;
+        const orderInput = this.stepElements[objectIndex].form.querySelector(`[id="${getStepId(objectIndex)}_order"]`);
+        orderInput.value = index;
+      });
+      // Update the ObjectPolicy fields.
+      this.formContainer.querySelectorAll('input[data-guidedtour-managed="true"]').forEach((input) =&gt; input.remove());
+
+      const currentStepObjects = getStepObjectNumbers();
+      const initialSet = new Set(this.initialStepObjects);
+      const currentSet = new Set(currentStepObjects);
+      const addedObjects = currentSet.difference(initialSet);
+      const deletedObjects = initialSet.difference(currentSet);
+
+      addedObjects.forEach((stepNumber) =&gt; {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'addedObjects';
+        input.value = `${stepXClassName}_${stepNumber}`;
+        input.dataset.guidedtourManaged = 'true';
+        this.formContainer.appendChild(input);
+      });
+
+      deletedObjects.forEach((stepNumber) =&gt; {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'deletedObjects';
+        input.value = `${stepXClassName}_${stepNumber}`;
+        input.dataset.guidedtourManaged = 'true';
+        this.formContainer.appendChild(input);
+      });
+    }
+    reset() {
+      this.initialStepObjects = getStepObjectNumbers();
+    }
+    showStep(objectId) {
+      const selectedStep = this.stepElements[objectId];
+      if (!selectedStep) {
+        console.error("Couldn't find step with id ", objectId);
+        return;
+      }
+
+      Object.values(this.stepElements).forEach((currentStep) =&gt; {
+        const isSelected = currentStep.number === selectedStep.number;
+        currentStep.sidebarItem.classList.toggle('active', isSelected);
+        currentStep.sidebarItem.setAttribute('aria-selected', isSelected);
+        currentStep.sidebarItem.tabIndex = isSelected ? 0 : -1;
+        currentStep.form.classList.toggle('hidden', currentStep.number !== selectedStep.number);
+      });
+    }
+  }
+
+  const stepXClassName = 'XWiki.GuidedTour.StepClass';
+  const isEdit = xm.action === 'edit';
+  const stepsListContainer = document.querySelector('.stepsListContainer');
+  const sidebarContainer = stepsListContainer.querySelector('.sidebar .item-list');
+  const formContainer = stepsListContainer.querySelector('.content');
+  const sidebarItemTemplate = sidebarContainer.querySelector('#step-item-template');
+
+  // The sidebar is built as part of the GuidedTourStepSheetManager constructor.
+  const stepManager = new GuidedTourStepSheetManager(formContainer, sidebarContainer);
+
+  /**
+   * Get the object numbers of all steps currently present on the page.
+   * @returns A list of object numbers
+   */
+  function getStepObjectNumbers() {
+    return Array.from(sidebarContainer.querySelectorAll('.item')).map(item =&gt; Number(item.dataset.id));
+  }
+  /**
+   * Turn step XObject number into string id, for use in matching the form elements associated with the step.
+   * @param objectIndex the XObject number of the step you want to get
+   * @returns 
+   */
+  function getStepId(objectIndex) {
+    return `${stepXClassName}_${objectIndex}`;
+  }
+
+  /**
+   * Get the number of the XObject from a string id.
+   * @param stepId 
+   * @returns 
+   */
+  function getObjectIndexFromId(stepId) {
+    return stepId.substring(stepXClassName.length + 1);
+  }
+
+  /**
+   * Fetch the Step form from the 'get' endpoint on this task page, and insert it into the Step Content.
+   * @param objectIndex the object index of the newly added step (not to be confused with the step order)
+   */
+  async function createStepForm(objectIndex) {
+    const url = XWiki.currentDocument.getURL('get') + '?' + $.param({
+      'document': XWiki.currentDocument.getDocumentReference().toString(),
+      'objectIndex': objectIndex,
+      'xpage': 'plain',
+    });
+    const text = await fetch(url).then(response =&gt; response.text());
+    // const newElement = new DOMParser().parseFromString(text);
+    // FIXME: This isn't quite right. I should first parse the text, and then get what I need.
+    formContainer.insertAdjacentHTML('beforeend', text);
+    const form = formContainer.querySelector(`[id="${getStepId(objectIndex)}"]`);
+    // Ensure any pickers/editors are properly initialized.
+    $(document).trigger('xwiki:dom:updated', {
+      elements: [form],
+    });
+
+    return form;
+  };
+
+  /**
+   * Set up the step title to update as the content of a step is being edited.
+   */
+  function bindStepItemTitleUpdate(objectIndex, form, stepItem) {
+    // const form = document.querySelector(`[id="XWiki.GuidedTour.StepClass_${objectIndex}"]`);
+    // Update the step name in the UI when the description changes.
+    const descriptionField = form.querySelector(`[id="${getStepId(objectIndex)}_content"]`);
+    $(descriptionField).on('keyup change', () =&gt; {
+      stepItem.querySelector(`.step-item-title`).textContent = getStepTitle(objectIndex, form);
+      stepItem.title = getStepTitle(objectIndex, form);
+      updateItems();
+    });
+  }
+
+  function getStepTitle(objectIndex, form) {
+    const descriptionField = form.querySelector(`[id="${getStepId(objectIndex)}_content"]`);
+    if (descriptionField.value &amp;&amp; descriptionField.value.trim()) {
+      // Edit mode.
+      return descriptionField.value.trim();
+    } else if (descriptionField.textContent &amp;&amp; descriptionField.textContent.trim()) {
+      // View mode.
+      return descriptionField.textContent.trim();
+    } else {
+      const stepOrderIndex = 1 + Array.from(formContainer.querySelectorAll('.itemDisplay')).indexOf(form);
+      return l10n.get('title.generic', stepOrderIndex);
+    }
+  }
+
+  /**
+   * Create the step entry in the sidebar.
+   * @param objectIndex 
+   * @returns 
+   */
+  function createStepEntry(objectIndex, form) {
+    const item = document.importNode(sidebarItemTemplate.content, true).children[0];
+    item.dataset.id = objectIndex;
+    item.id = `step-tab-${objectIndex}`;
+    item.setAttribute('aria-controls', getStepId(objectIndex));
+    item.querySelector('.step-item-title').textContent = getStepTitle(objectIndex, form);
+    item.title = getStepTitle(objectIndex, form);
+    item.addEventListener('click', () =&gt; {
+      stepManager.showStep(objectIndex);
+      item.focus();
+    });
+    item.addEventListener('keydown', (event) => {
+      if (['Space', 'Enter'].includes(event.code)) {
+        event.preventDefault();
+        stepManager.showStep(objectIndex);
+      }
+    });
+
+    if (isEdit) {
+      const deleteButton = item.querySelector('.step-item-delete');
+      deleteButton.addEventListener('click', (event) =&gt; {
+        event.stopPropagation();
+        stepManager.removeStep(objectIndex);
+      });
+      // Update title dynamically depending on step content.
+      bindStepItemTitleUpdate(objectIndex, form, item);
+    }
+
+    return item;
+  }
+
+  /**
+   * This is used only to compute the object number for the backend, and shouldn't be used to get the order of
+   * the steps.
+   * @returns 
+   */
+  function getNextStepNumber() {
+    const usedNumbers = getStepObjectNumbers();
+    let nextNumber = 0;
+    while (usedNumbers.includes(nextNumber)) {
+      nextNumber++;
+    }
+    return nextNumber;
+  }
+
+  // Start building the steps UI.
+
+  // Bind keyboard-only navigation events.
+
+  const refocusElement = function () {
+    (sidebarContainer.querySelector('.item.active') || sidebarContainer).focus();
+  };
+
+  function getSelectedStepItem(event) {
+    return event.target.closest('.item') || sidebarContainer.querySelector('.item.active');
+  }
+
+  function maybeMoveStep(event, position) {
+    const stepItem = sidebarContainer.querySelector('.item[data-moving]') || getSelectedStepItem(event);
+    const sibling = position === 'before' ? stepItem?.previousElementSibling : stepItem?.nextElementSibling;
+    if (sibling?.classList.contains('item')) {
+      sidebarContainer.insertBefore(stepItem, position === 'before' ? sibling : sibling.nextSibling);
+      updateItems();
+      stepManager.showStep(Number(stepItem.dataset.id));
+      stepItem.focus();
+    }
+  }
+
+  sidebarContainer.addEventListener('keydown', (event) =&gt; {
+    const selectedItem = getSelectedStepItem(event);
+    const items = Array.from(sidebarContainer.querySelectorAll('.item'));
+    const index = items.indexOf(selectedItem);
+    if (isEdit &amp;&amp; event.altKey &amp;&amp; event.shiftKey) {
+      selectedItem?.setAttribute('data-moving', 'true');
+      if (['Delete', 'KeyD'].includes(event.code)) {
+        // Delete step (edit mode)
+        event.preventDefault();
+        sidebarContainer.querySelectorAll('.item[data-moving]').forEach(item =&gt; item.removeAttribute('data-moving'));
+        stepManager.removeStep(Number(selectedItem.dataset.id));
+        refocusElement();
+      } else if (['KeyA', 'KeyN'].includes(event.code)) {
+        // Add new step (edit mode)
+        event.preventDefault();
+        sidebarContainer.querySelectorAll('.item[data-moving]').forEach(item =&gt; item.removeAttribute('data-moving'));
+        stepManager.addStep().then(() =&gt; refocusElement());
+      } else if (['ArrowUp', 'ArrowDown'].includes(event.code)) {
+        event.preventDefault();
+      }
+    } else if (['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.code)) {
+      // Navigate between steps (view and edit mode)
+      const nextIndex = event.code === 'Home' ? 0 : event.code === 'End' ? items.length - 1 :
+        index + (event.code === 'ArrowUp' ? -1 : 1);
+      const nextItem = items[nextIndex];
+      if (nextItem) {
+        event.preventDefault();
+        stepManager.showStep(Number(nextItem.dataset.id));
+        refocusElement();
+      }
+    }
   });
-});
-</code>
+
+  sidebarContainer.addEventListener('keyup', (event) =&gt; {
+    const movingItem = sidebarContainer.querySelector('.item[data-moving]');
+    if (!event.altKey || !event.shiftKey) {
+      movingItem?.removeAttribute('data-moving');
+    } else if (event.code === 'ArrowUp') {
+      maybeMoveStep(event, 'before');
+    } else if (event.code === 'ArrowDown') {
+      maybeMoveStep(event, 'after');
+    }
+  });
+
+  $(document).on('xwiki:actions:beforeSave', () =&gt; {
+    stepManager.updateHiddenInputs();
+  });
+
+  $(document).on('xwiki:document:saved xwiki:actions:cancel', () =&gt; {
+    // TODO: Is there anything else to do here?
+    stepManager.reset();
+  });
+
+  if (xm.action === 'edit') {
+    // Set up the addStepButton.
+    const addStepButton = document.querySelector('#add-step-btn');
+    if (addStepButton) {
+      addStepButton.addEventListener('click', (event) =&gt; {
+        event.preventDefault();
+        stepManager.addStep();
+      });
+    }
+    // Auto-complete the title field with the page title.
+    const titleField = document.querySelector('[id="XWiki.GuidedTour.TaskClass_0_title"]');
+    if (titleField.value.empty()) {
+      titleField.value = XWiki.currentPage;
+    }
+    // Handle the order hidden input as part of the drag &amp; drop operation, if the page is in edit mode.
+    $('.sidebar .item-list').sortable({
+      items: '.item',
+      cursor: "grabbing",
+      update: function () {
+        updateItems();
+      }
+    });
+  }
+});</code>
     </property>
     <property type="String">
       <name/>
     </property>
     <property type="Integer">
-      <parse>1</parse>
+      <parse>0</parse>
     </property>
     <property type="String">
       <use>onDemand</use>
@@ -418,18 +773,12 @@ require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
     <property type="LargeString">
       <code>:root{
   --sidebar-w: 260px;
-  --bg: #f6f7fb;
-  --card: #ffffff;
-  --muted: #727272;
-  --accent: #2563eb;
-  --radius: 10px;
-  --gap: 20px;
-  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --accent: var(--brand-primary);
 }
 
 .stepsListContainer{
   display:flex;
-  gap:var(--gap);
+  gap:1em;
   align-items:flex-start;
   margin:0 auto;
   width:100%;
@@ -438,16 +787,16 @@ require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
 /* Sidebar */
 .stepsListContainer .sidebar{
   width:var(--sidebar-w);
-  border-radius:var(--radius);
+  border-radius:var(--border-radius-large);
   padding:16px;
   flex-shrink:0;
-  border: solid var(--muted);
+  border: solid var(--accent);
 }
 
 .stepsListContainer .sidebar-title{
   margin:0 0 12px 0;
   font-size:14px;
-  color:var(--muted);
+  color:var(--accent);
 }
 
 .stepsListContainer .item-list{
@@ -456,117 +805,56 @@ require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
   margin:0;
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:0.3em;
+}
+
+.item .step-item-title {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-wrap: nowrap;
+}
+
+.item[data-moving="true"] {
+  border: dashed var(--accent);
 }
 
 .stepsListContainer .item{
-  padding:10px 12px;
-  border-radius:8px;
+  padding:0.7em 1em;
+  border-radius:var(--border-radius-large);
   cursor:pointer;
-  background:transparent;
-  color:#0f172a;
   align-items:center;
   justify-content:space-between;
   transition:all .12s ease;
-  border:1px solid transparent;
-  max-width: 100%;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  display: block;
+  background: var(--xwiki-page-content-bg);
+  display: flex;
 }
 
-.stepsListContainer .item:hover{
-  transform:translateY(-2px);
-  box-shadow:0 4px 10px rgba(16,24,40,0.06);
+.stepsListContainer .item .step-item-delete {
+  flex-shrink: 0;
+}
+
+.stepsListContainer .item:hover, .stepsListContainer .item.active {
+  box-shadow: 0 0 5px 1px color-mix(in srgb,var(--accent) 50%,transparent);
 }
 
 .stepsListContainer .item.active{
-  background:linear-gradient(90deg, rgba(37,99,235,0.08), rgba(37,99,235,0.04));
-  border-color:rgba(37,99,235,0.18);
-  color:var(--accent);
-  font-weight:600;
+  background:var(--panel-header-bg);
+  color:var(--panel-header-text);
+  font-weight:var(--font-weight-semibold);
 }
 
 /* Content (form area) */
 .container .content{
   flex:1;
-  background:var(--card);
   padding:20px;
-  border-radius:var(--radius);
-  min-height:320px;
+  border-radius:var(--border-radius-large);
 }
 
-.container .content-title{
-  margin:0 0 16px 0;
-  font-size:18px;
-}
-
-.container .props-form{
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0,1fr));
-  gap:12px 20px;
-  align-items:start;
-}
-
-.container .field{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-.container .field label{
-  font-size:13px;
-  color:var(--muted);
-}
-
-.field input[type="text"],
-.field select,
-.field textarea{
-  padding:10px 12px;
-  border-radius:8px;
-  border:1px solid #e6e9ef;
-  background:#fff;
-  font-size:14px;
-  outline:none;
-  transition:border-color .12s ease, box-shadow .12s ease;
-}
-
-.field input[type="text"]:focus,
-.field select:focus,
-.field textarea:focus{
-  border-color:rgba(37,99,235,0.6);
-  box-shadow:0 4px 10px rgba(37,99,235,0.08);
-}
-
-.field input[type="checkbox"]{
-  width:18px;
-  height:18px;
-  transform:translateY(4px);
-}
-
-/* Make description span full width */
-.field textarea{
-  resize:vertical;
-  min-height:88px;
-  grid-column:1 / -1;
-}
-
-/* Actions row spans full width */
-.container .actions{
-  grid-column:1 / -1;
-  display:flex;
-  gap:10px;
-  justify-content:flex-start;
-  margin-top:6px;
-}
 /* Responsive */
 @media (max-width:880px){
   .container{flex-direction:column}
   .sidebar{width:100%}
-  .props-form{grid-template-columns:1fr}
-  .field textarea{grid-column:1/1}
-  .actions{justify-content:stretch}
 }
 </code>
     </property>
@@ -581,6 +869,146 @@ require(['@xwiki/contrib-guidedtour-xwiki'], function (gt) {
     </property>
     <property type="String">
       <use>onDemand</use>
+    </property>
+  </object>
+  <object>
+    <name>GuidedTour.Code.TaskClassSheet</name>
+    <number>0</number>
+    <className>XWiki.UIExtensionClass</className>
+    <guid>e979f542-66ce-4e24-b40e-6ee4a66a3d9e</guid>
+    <class>
+      <name>XWiki.UIExtensionClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <async_cached>
+        <defaultValue>0</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <name>async_cached</name>
+        <number>3</number>
+        <prettyName>Cached</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </async_cached>
+      <async_context>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>1</multiSelect>
+        <name>async_context</name>
+        <number>4</number>
+        <prettyName>Context elements</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator>, </separator>
+        <separators>|, </separators>
+        <size>5</size>
+        <unmodifiable>0</unmodifiable>
+        <values>action=Action|doc.reference=Document|doc.revision|icon.theme=Icon theme|locale=Language|rendering.defaultsyntax=Default syntax|rendering.restricted=Restricted|rendering.targetsyntax=Target syntax|request.base=Request base URL|request.cookies|request.headers|request.parameters=Request parameters|request.remoteAddr|request.session|request.url=Request URL|request.wiki=Request wiki|sheet|user=User|wiki=Wiki</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </async_context>
+      <async_enabled>
+        <defaultValue>0</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <name>async_enabled</name>
+        <number>2</number>
+        <prettyName>Asynchronous rendering</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </async_enabled>
+      <content>
+        <disabled>0</disabled>
+        <editor>Text</editor>
+        <name>content</name>
+        <number>1</number>
+        <prettyName>Executed Content</prettyName>
+        <rows>25</rows>
+        <size>120</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </content>
+      <extensionPointId>
+        <disabled>0</disabled>
+        <name>extensionPointId</name>
+        <number>5</number>
+        <prettyName>Extension Point ID</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </extensionPointId>
+      <name>
+        <disabled>0</disabled>
+        <name>name</name>
+        <number>6</number>
+        <prettyName>Extension ID</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </name>
+      <parameters>
+        <contenttype>PureText</contenttype>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <name>parameters</name>
+        <number>7</number>
+        <prettyName>Extension Parameters</prettyName>
+        <rows>10</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </parameters>
+      <scope>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>scope</name>
+        <number>8</number>
+        <prettyName>Extension Scope</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>wiki=Current Wiki|user=Current User|global=Global</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </scope>
+    </class>
+    <property type="Integer">
+      <async_cached>1</async_cached>
+    </property>
+    <property type="StringList">
+      <async_context/>
+    </property>
+    <property type="Integer">
+      <async_enabled>0</async_enabled>
+    </property>
+    <property type="LargeString">
+      <content/>
+    </property>
+    <property type="String">
+      <extensionPointId>org.xwiki.platform.requirejs.module</extensionPointId>
+    </property>
+    <property type="String">
+      <name>com.xwiki.contrib.guided-tour.xwiki.requirejs.module</name>
+    </property>
+    <property type="LargeString">
+      <parameters>id=@xwiki/contrib-guidedtour-xwiki
+path=$services.webjars.url('org.xwiki.contrib:guidedtour-node-ui', 'index.es.js')</parameters>
+    </property>
+    <property type="String">
+      <scope/>
     </property>
   </object>
 </xwikidoc>

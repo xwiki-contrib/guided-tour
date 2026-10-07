@@ -52,7 +52,7 @@
           <GuidedTourWidgetTour
             v-for="tour in state.tours"
             :key="tour.id"
-            :tour="ref(tour)"
+            :tour="tour"
             @toggleCollapseTour="
               (tour: TourTour) => {
                 tour.isCollapsed = !tour.isCollapsed;
@@ -90,30 +90,28 @@
 
 <script setup lang="ts">
 //import type { I18n } from "vue-i18n";
-// All the logic should live here (TODO: Maybe move most of it to a .ts file)
-// FIXME: This should be injected from somewhere else, but I have no idea from where.
 import GuidedTourWidgetHeader from "./GuidedTourWidgetHeader.vue";
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTour from "./GuidedTourWidgetTour.vue";
 import GuidedTourWidgetUsefulLink from "./GuidedTourWidgetUsefulLink.vue";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, onMounted, provide, reactive, ref } from "vue";
+import { computed, onMounted, provide, reactive } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
+import type { Reactive } from "vue";
 
 const { guidedTourManager } = defineProps<{
   guidedTourManager: GuidedTourManager;
 }>();
 
-provide<GuidedTourManager>("DefaultGuidedTourManager", guidedTourManager!);
+provide<GuidedTourManager>("GuidedTourManager", guidedTourManager!);
 
 const state = reactive({
-  guidedTourManager: guidedTourManager,
   isWidgetCollapsed: true,
-  tours: [] as TourTour[],
+  tours: [] as Reactive<TourTour>[],
   usefulLinks: [] as string[],
   isWidgetShown: true,
   toursLoadError: "",
@@ -132,8 +130,10 @@ onMounted(() => {
   guidedTourManager
     .getTours()
     .then((tours) => {
-      // In order for the progress to be reactive, we need to preserve the original tours array. Thus, the elements need to be pushed into the old array.
-      state.tours.push(...tours);
+      // The returned tour objects should be reactive, so the changes can be reflected in the UI.
+      state.tours = tours;
+      // initExistingTask() requires the cache to be already fetched by getTours().
+      guidedTourManager.initExistingTask();
       state.waitingLoadAsync++;
       return tours;
     })
@@ -154,7 +154,6 @@ onMounted(() => {
       console.error(e);
       state.waitingLoadAsync++;
     });
-  guidedTourManager.initExistingTask();
   // TODO: This should come from the localStorage
   // state.isWidgetShown = await guidedTourManager.isWidgetShown();
 });
