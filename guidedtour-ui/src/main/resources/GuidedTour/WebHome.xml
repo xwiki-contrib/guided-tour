@@ -31,38 +31,46 @@
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <version>1.1</version>
-  <title>GuidedTour</title>
+  <title>Guided Tour</title>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{liveData
-  id="tourClassList1"
-  properties="doc.title,isActive,_actions"
-  source="liveTable"
-  sourceParameters="className=XWiki.GuidedTour.TourClass&amp;translationPrefix=guidedtour.tours.livedata."
-  meta='{"propertyDescriptors":[{"id":"isActive","filterable":true,"sortable":true},{"id":"_actions","displayer":{"id":"actions","actions":["edit","delete","consoleLog"]}}]}'
-  layouts="table"}}
-{
-  "actions": {
-    "edit": {
-      "icon": "pencil",
-      "label": "Edit",
-      "action": "edit"
-    },
-    "delete": {
-      "icon": "trash",
-      "label": "Delete Space",
-      "action": "delete",
-      "confirm": "Are you sure you want to delete this entire space?"
-    },
-    "consoleLog": {
-      "icon": "console",
-      "label": "Log Tour",
-      "action": "custom",
-      "onclick": "console.log('Tour clicked:', this.row.data); return false;"
-    }
-  }
-}
-{{/liveData}}</content>
+  <content>{{velocity}}
+#set ($providerExists = $xwiki.exists('XWiki.GuidedTour.TourTemplateProvider'))
+#set ($sampleExists = $xwiki.exists('GuidedTour.Tours.GettingStarted.WebHome'))
+#set ($toursURL = $xwiki.getURL('GuidedTour.Tours.WebHome'))
+#set ($createURL = $xwiki.getURL('GuidedTour.Tours.WebHome', 'create'))
+#if ($providerExists)#set ($createURL = "${createURL}?templateProvider=XWiki.GuidedTour.TourTemplateProvider")#end
+#set ($tourCount = $services.query.hql("select count(doc.fullName) from XWikiDocument doc, BaseObject obj, IntegerProperty isActive where doc.translation = 0 and doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TourClass' and doc.fullName != 'XWiki.GuidedTour.TourTemplate' and isActive.id.id = obj.id and isActive.id.name = 'isActive' and isActive.value = 1").execute().get(0))
+#set ($totalCount = $services.query.hql("select count(doc.fullName) from XWikiDocument doc, BaseObject obj where doc.translation = 0 and doc.fullName = obj.name and obj.className = 'XWiki.GuidedTour.TourClass' and doc.fullName != 'XWiki.GuidedTour.TourTemplate'").execute().get(0))
+#set ($createLabel = $escapetool.xml($services.localization.render('guidedtour.home.create.button')))
+#set ($createTitle = $escapetool.xml($services.localization.render('guidedtour.home.create.buttonTitle')))
+#set ($manageLabel = $escapetool.xml($services.localization.render('guidedtour.home.manage.button')))
+#set ($manageTitle = $escapetool.xml($services.localization.render('guidedtour.home.manage.buttonTitle')))
+#set ($helperNone = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.none')))
+#set ($helperNoneDisabled = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.noneWithDisabled')))
+#set ($helperOne = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.one')))
+#set ($helperMany = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.many', [$!tourCount])))
+{{html}}&lt;div style="display: flex; gap: 0.5em; flex-wrap: wrap; align-items: center; margin: 1em 0;"&gt;&lt;a href="$createURL" class="btn btn-primary" title="$createTitle"&gt;&lt;span class="fa fa-plus" aria-hidden="true"&gt;&lt;/span&gt; $createLabel&lt;/a&gt; &lt;a href="$toursURL" class="btn btn-default" title="$manageTitle"&gt;&lt;span class="fa fa-list" aria-hidden="true"&gt;&lt;/span&gt; $manageLabel&lt;/a&gt; #if ($tourCount == 0)#if ($totalCount &gt; 0)&lt;span class="text-muted"&gt;$helperNoneDisabled&lt;/span&gt;#else&lt;span class="text-muted"&gt;$helperNone&lt;/span&gt;#end#elseif ($tourCount == 1)&lt;span class="text-muted"&gt;$helperOne&lt;/span&gt;#else&lt;span class="text-muted"&gt;$helperMany&lt;/span&gt;#end&lt;/div&gt;{{/html}}
+{{/velocity}}
+
+{{velocity}}
+#set ($howTitle = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.title')))
+#set ($howIntro = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.intro')))
+#set ($manageAnchor = "&lt;a href='$toursURL'&gt;$manageLabel&lt;/a&gt;")
+#set ($manageItem = $services.localization.render('guidedtour.home.howItWorks.manage').replace('{0}', $manageAnchor))
+#set ($sampleURL = $xwiki.getURL('GuidedTour.Tours.GettingStarted.WebHome'))
+#set ($sampleLabel = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.sampleLinkLabel')))
+#set ($sampleAnchor = "&lt;a href='$sampleURL'&gt;$sampleLabel&lt;/a&gt;")
+#set ($sampleItem = $services.localization.render('guidedtour.home.howItWorks.sample').replace('{0}', $sampleAnchor))
+#set ($docsLabel = $escapetool.xml($services.localization.render('guidedtour.home.docs.linkLabel')))
+#set ($docsAria = $escapetool.xml($services.localization.render('guidedtour.home.docs.linkAriaLabel')))
+#set ($docsAnchor = "&lt;a href='https://www.xwiki.org/xwiki/bin/view/documentation/extensions/user/guided-tour/' target='_blank' rel='noopener noreferrer' aria-label='$docsAria'&gt;$docsLabel&lt;/a&gt;")
+#set ($docsItem = $services.localization.render('guidedtour.home.docs').replace('{0}', $docsAnchor))
+{{html}}&lt;h2 id="howGuidedToursWork"&gt;$howTitle&lt;/h2&gt;
+&lt;p&gt;$howIntro&lt;/p&gt;
+&lt;ul&gt;#if ($totalCount &gt; 0)&lt;li&gt;$manageItem&lt;/li&gt;#end#if ($sampleExists)&lt;li&gt;$sampleItem&lt;/li&gt;#end&lt;/ul&gt;
+&lt;p&gt;$docsItem&lt;/p&gt;{{/html}}
+{{/velocity}}</content>
 </xwikidoc>
