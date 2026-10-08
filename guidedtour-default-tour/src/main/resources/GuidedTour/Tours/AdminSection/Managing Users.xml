@@ -221,13 +221,13 @@
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop/>
+      <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
       <content>This task will get you acquainted with the tools you will use to manage users as an Admin.</content>
     </property>
     <property type="String">
-      <element>#adminsearchmenu</element>
+      <element/>
     </property>
     <property type="Long">
       <order>0</order>
@@ -432,7 +432,7 @@
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop/>
+      <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
       <content>Use the Search menu to search for "users"</content>
@@ -643,7 +643,7 @@
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop/>
+      <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
       <content>Click on the Users tab.
@@ -663,7 +663,7 @@ You can also access this item without using the search function, by clicking {{c
       <queryParameters/>
     </property>
     <property type="Integer">
-      <reflex>0</reflex>
+      <reflex>1</reflex>
     </property>
     <property type="String">
       <targetAction/>
@@ -856,7 +856,7 @@ You can also access this item without using the search function, by clicking {{c
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop/>
+      <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
       <content>This is the users livedata, which will list all Users who are registered on this subwiki.
@@ -1069,7 +1069,7 @@ From here, you can visit each user's page, disable or delete users.</content>
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop/>
+      <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
       <content>You can also create new users by clicking this button.</content>
@@ -1280,7 +1280,7 @@ From here, you can visit each user's page, disable or delete users.</content>
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop/>
+      <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
       <content>All done!</content>

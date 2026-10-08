@@ -162,6 +162,7 @@ const util = {
     const stepOffset = direction == "next" ? 1 : -1;
     return guidedTourTask.steps?.[currentStepActiveIndex + stepOffset];
   },
+  // eslint-disable-next-line max-statements
   async moveToAdjacentStep(
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
@@ -199,6 +200,15 @@ const util = {
       StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
       adjacentStepIndex.toString(),
     );
+
+    // If the adjacent step is on another page, redirect to it. Reflex actions never redirect, since they might navigate
+    // on their own (e.g. "Save and view").
+    if (
+      !guidedTourManager.activeTask!.steps![currentStepActiveIndex].reflex &&
+      guidedTourManager.redirectToExpectedPage(adjacentStep)
+    ) {
+      return;
+    }
 
     // The `.drive()` method is overridden in xwiki to wait for elements to appear in the page, thus making it async (as
     // opposed to driver.js's default non-async method).
@@ -271,7 +281,14 @@ function XWikiDriverConfig(
         guidedTourManager.setTaskStatus(guidedTourTask, status);
       }
     },
-    onNextClick: async () => {
+    onNextClick: async (element, _step, options) => {
+      if (
+        guidedTourTask.steps![options.state.activeIndex!].reflex &&
+        element instanceof HTMLElement
+      ) {
+        element.click();
+        return;
+      }
       await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
     },
     onPrevClick: async () => {

@@ -669,7 +669,7 @@ Use the side panel, if you want.</content>
       <targetAction/>
     </property>
     <property type="String">
-      <targetPage>Sandbox</targetPage>
+      <targetPage>Sandbox.WebHome</targetPage>
     </property>
   </object>
   <object>

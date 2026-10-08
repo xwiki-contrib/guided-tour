@@ -109,6 +109,53 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
+  /**
+   * Check if the current page matches the one expected by the step, and redirect to it otherwise.
+   * @param adjacentStep - The step whose expected page to check.
+   * @returns true if the current page is not the expected one.
+   */
+  // eslint-disable-next-line max-statements
+  redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
+    if (adjacentStep === undefined) {
+      return false;
+    }
+    const currentDocumentReference = XWiki.currentDocument.documentReference;
+    const targetDocumentReference = adjacentStep.targetPage
+      ? XWiki.Model.resolve(
+          adjacentStep.targetPage,
+          XWiki.EntityType.DOCUMENT,
+          currentDocumentReference,
+        )
+      : currentDocumentReference;
+    // Check that every expected query parameter is present, with the expected value, in the current URL.
+    const currentPageQueryParams = new URLSearchParams(window.location.search);
+    let hasExpectedQueryParams = true;
+    new URLSearchParams(adjacentStep.queryParameters).forEach((value, name) => {
+      hasExpectedQueryParams &&= currentPageQueryParams
+        .getAll(name)
+        .includes(value);
+    });
+    const pageAction =
+      XWiki.contextaction == "view" && window.location.hash == "#edit"
+        ? "edit"
+        : XWiki.contextaction;
+    if (
+      XWiki.Model.serialize(targetDocumentReference) !=
+        XWiki.Model.serialize(currentDocumentReference) ||
+      (adjacentStep.targetAction &&
+        pageAction != adjacentStep.targetAction?.toLowerCase()) ||
+      !hasExpectedQueryParams
+    ) {
+      const redirectURL = new XWiki.Document(targetDocumentReference).getURL(
+        adjacentStep.targetAction?.toLowerCase(),
+        adjacentStep.queryParameters,
+      );
+      window.location = redirectURL;
+      return true;
+    }
+    return false;
+  }
+
   async getTours(): Promise<TourTour[]> {
     const tours = await this.defaultTourManagerApi.getTours();
 
@@ -230,6 +277,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * @param task - The task to start.
    * @param remember - Whether to resume from a saved step index.
    */
+  // eslint-disable-next-line max-statements
   async startTask(task: TourTask, remember = true): Promise<void> {
     // Fetch or get the cached steps.
     task.steps ??= await this.getSteps(task.tourId!, task.id);
@@ -250,6 +298,17 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getTaskStepStorageStorageKey(task),
       JSON.stringify(task.steps!),
     );
+    // Make sure the right storage parameters are set, in case we'll redirect.
+    StorageManager.setStorageKey(
+      StorageManager.getTaskCurrentStepStorageKey(task),
+      stepIndex.toString(),
+    );
+
+    // Only redirect when the task is started fresh, not when it's resumed on page load (`remember`). This avoids
+    // redirect loops, and doesn't interrupt reflex actions that navigate on their own (e.g. "Save and view").
+    if (!remember && this.redirectToExpectedPage(task.steps![stepIndex])) {
+      return;
+    }
 
     this.activeTask = task;
     this.activeDriverTask = wrapTask(driverTour, this, this.translations);
