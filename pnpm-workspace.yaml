@@ -17,7 +17,7 @@ catalog:
   "@xwiki/platform-localization-adapter-vue": 18.3.0
   "@xwiki/platform-localization-api": 18.3.0
   "@xwiki/platform-model-api": 18.3.0
-  "@xwiki/platform-tool-apiextractorconfig": 18.3.0
+  "@xwiki/platform-tool-apiextractorconfig": 18.4.6
   "@xwiki/platform-tool-eslintconfig": 18.3.0
   "@xwiki/platform-tool-tsconfig": 18.3.0
   "@xwiki/platform-tool-tsdocconfig": 18.3.0
