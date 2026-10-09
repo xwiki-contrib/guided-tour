@@ -18,25 +18,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import { TourTaskStatus } from "./tourTaskStatus";
-import { WidgetState } from "./userTourStatus";
-import type { GuidedTourManager } from "./rest/GuidedTourManager";
-import type { StepManagerApi } from "./rest/StepManagerApi";
-import type { TaskManagerApi } from "./rest/TaskManagerApi";
-import type { TourManagerApi } from "./rest/TourManagerApi";
-import type { TourStep, TourTask, TourTour } from "./tourData";
-import type { TourProgress, UserTourStatus } from "./userTourStatus";
-
-export type {
-  GuidedTourManager,
-  StepManagerApi,
-  TaskManagerApi,
-  TourManagerApi,
-  TourProgress,
-  TourStep,
-  TourTask,
-  TourTour,
-  UserTourStatus,
-};
-
-export { TourTaskStatus, WidgetState };
+/**
+ * Error thrown when a request fails, holding the HTTP status of the response.
+ * @since 1.0
+ * @beta
+ */
+export class RestError extends Error {
+  constructor(public readonly status: number) {
+    super(`HTTP Error: ${status}`);
+  }
+}

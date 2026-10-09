@@ -47,7 +47,7 @@ public class DefaultUserTourResource extends AbstractGuidedTourResource implemen
     public Response getUserTourStatus()
     {
         return execute("User tour status API: getting user tour status object.", () -> {
-            UserTourStatusDTO json = this.userStatusManager.getUserToursStatus();
+            UserTourStatusDTO json = this.userStatusManager.getUserTourStatus();
             return Response.ok(json).type(MediaType.APPLICATION_JSON_TYPE).build();
         });
     }
@@ -65,7 +65,10 @@ public class DefaultUserTourResource extends AbstractGuidedTourResource implemen
     public Response updateUserTourStatus(UserTourStatusDTO userTourStatus)
     {
         return execute("User tour status API: updating user tour status object.", () -> {
-            this.userStatusManager.updateUserTourStatus(userTourStatus);
+            boolean created = this.userStatusManager.saveUserTourStatus(userTourStatus);
+            if (created) {
+                return Response.status(Response.Status.CREATED).build();
+            }
             return Response.ok().build();
         });
     }

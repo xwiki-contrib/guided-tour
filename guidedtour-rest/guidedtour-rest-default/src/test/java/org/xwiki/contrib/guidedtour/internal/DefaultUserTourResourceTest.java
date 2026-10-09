@@ -62,7 +62,7 @@ class DefaultUserTourResourceTest
 {
     private static final String CSRF_VALUE = "csrfToken";
 
-    private final UserTourStatusDTO userTourStatus = new UserTourStatusDTO("hidden", true);
+    private final UserTourStatusDTO userTourStatus = new UserTourStatusDTO("hidden");
 
     @InjectMockComponents
     private DefaultUserTourResource userTourResource;
@@ -103,15 +103,30 @@ class DefaultUserTourResourceTest
     }
 
     @Test
-    void getUserTourStatus() throws XWikiException, InvalidIdException, JsonProcessingException
+    void getUserTourStatus() throws XWikiException, JsonProcessingException, InvalidIdException
     {
-        when(this.userStatusManager.getUserToursStatus()).thenReturn(this.userTourStatus);
+        when(this.userStatusManager.getUserTourStatus()).thenReturn(this.userTourStatus);
 
         Response response = this.userTourResource.getUserTourStatus();
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(this.userTourStatus, response.getEntity());
         assertEquals("Executing: User tour status API: getting user tour status object.",
             this.logCapture.getMessage(0));
+    }
+
+    @Test
+    void getUserTourStatusNotFound() throws XWikiException, JsonProcessingException, InvalidIdException
+    {
+        when(this.userStatusManager.getUserTourStatus()).thenThrow(new InvalidIdException("not found"));
+
+        WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
+            this.userTourResource.getUserTourStatus();
+        });
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getResponse().getStatus());
+        assertEquals("Executing: User tour status API: getting user tour status object.",
+            this.logCapture.getMessage(0));
+        assertEquals("Resource not found: User tour status API: getting user tour status object.",
+            this.logCapture.getMessage(1));
     }
 
     @Test
@@ -154,7 +169,7 @@ class DefaultUserTourResourceTest
     }
 
     @Test
-    void createTourDuplicated() throws XWikiException, DuplicatedIdException
+    void createTourDuplicated() throws XWikiException, DuplicatedIdException, JsonProcessingException
     {
         doThrow(new DuplicatedIdException("duplicate id")).when(this.userStatusManager).createUserTourStatus();
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
@@ -178,25 +193,36 @@ class DefaultUserTourResourceTest
     }
 
     @Test
-    void updateTourInvalidId() throws XWikiException, InvalidIdException, JsonProcessingException
+    void updateTourCreated() throws XWikiException, JsonProcessingException
     {
-        doThrow(new InvalidIdException("invalid id")).when(this.userStatusManager)
-            .updateUserTourStatus(this.userTourStatus);
+        when(this.userStatusManager.saveUserTourStatus(this.userTourStatus)).thenReturn(true);
+
+        Response response = this.userTourResource.updateUserTourStatus(this.userTourStatus);
+        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        assertEquals("Executing: User tour status API: updating user tour status object.",
+            this.logCapture.getMessage(0));
+    }
+
+    @Test
+    void updateTourGuest() throws XWikiException, JsonProcessingException
+    {
+        doThrow(new SecurityException("guest")).when(this.userStatusManager)
+            .saveUserTourStatus(this.userTourStatus);
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             this.userTourResource.updateUserTourStatus(this.userTourStatus);
         });
-        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), exception.getResponse().getStatus());
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), exception.getResponse().getStatus());
         assertEquals("Executing: User tour status API: updating user tour status object.",
             this.logCapture.getMessage(0));
-        assertEquals("Resource not found: User tour status API: updating user tour status object.",
+        assertEquals("Authorization error: User tour status API: updating user tour status object.",
             this.logCapture.getMessage(1));
     }
 
     @Test
-    void deleteTourError() throws XWikiException, InvalidIdException, JsonProcessingException
+    void deleteTourError() throws XWikiException, JsonProcessingException
     {
         doThrow(new RuntimeException("invalid id")).when(this.userStatusManager)
-            .updateUserTourStatus(this.userTourStatus);
+            .saveUserTourStatus(this.userTourStatus);
         WebApplicationException exception = assertThrows(WebApplicationException.class, () -> {
             this.userTourResource.updateUserTourStatus(this.userTourStatus);
         });

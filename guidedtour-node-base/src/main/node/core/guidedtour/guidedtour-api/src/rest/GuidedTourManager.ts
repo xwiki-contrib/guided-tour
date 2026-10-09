@@ -19,6 +19,7 @@
  */
 import type { TourStep, TourTask, TourTour } from "../tourData";
 import type { TourTaskStatus } from "../tourTaskStatus";
+import type { WidgetState } from "../userTourStatus";
 
 /**
  * Present the public API of the logic used inside the Guided Tour UI.
@@ -144,16 +145,34 @@ export interface GuidedTourManager {
   updateTask(tourId: string, taskId: string, taskData: TourTask): Promise<void>;
 
   /**
-   * Update the status of a task.
-   * @param tourId - The id of the tour the task belongs to.
-   * @param taskId - The id of the task to update the status of.
-   * @param status - The new status of the task.
+   * Get the state of the widget, as last saved by the user.
    */
-  saveTaskStatus(
-    tourId: string,
-    taskId: string,
-    status: TourTaskStatus,
-  ): Promise<void>;
+  getWidgetState(): Promise<WidgetState>;
+
+  /**
+   * Save the state of the widget, so that it is restored on the next page load.
+   * @param widgetState - The new state of the widget.
+   */
+  setWidgetState(widgetState: WidgetState): Promise<void>;
+
+  /**
+   * Reset all the tasks of a tour to TODO, and start the next task automatically again when a task is finished.
+   * The new status is saved at once, for all the tasks.
+   * @param tourId - The id of the tour to reset.
+   */
+  resetTour(tourId: string): Promise<void>;
+
+  /**
+   * Skip all the tasks of a tour. The new status is saved at once, for all the tasks.
+   * @param tourId - The id of the tour to skip.
+   */
+  skipTour(tourId: string): Promise<void>;
+
+  /**
+   * Skip a task, and stop starting the next tasks of its tour automatically. The new status is saved at once.
+   * @param task - The task to skip.
+   */
+  skipTask(task: TourTask): Promise<void>;
 
   /**
    * Auto-start a task which was in progress (eg. after redirecting to a new page during task steps)

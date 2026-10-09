@@ -94,7 +94,7 @@ import GuidedTourWidgetHeader from "./GuidedTourWidgetHeader.vue";
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTour from "./GuidedTourWidgetTour.vue";
 import GuidedTourWidgetUsefulLink from "./GuidedTourWidgetUsefulLink.vue";
-import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
+import { TourTaskStatus, WidgetState } from "@xwiki/contrib-guidedtour-api";
 import { computed, onMounted, provide, reactive } from "vue";
 import type {
   GuidedTourManager,
@@ -117,11 +117,20 @@ const state = reactive({
   toursLoadError: "",
   waitingLoadAsync: 0,
 });
+// Whether the user toggled the widget before the saved widget state was loaded, in which case the saved state
+// shouldn't override the user's choice. Only read once, when the saved state is loaded.
+let toggledBeforeLoad = false;
 function onCloseGuidedTourWidget(buttonClicked: boolean) {
   if (state.isWidgetCollapsed && buttonClicked) {
     state.isWidgetShown = false;
   } else {
     state.isWidgetCollapsed = !state.isWidgetCollapsed;
+    toggledBeforeLoad = true;
+    guidedTourManager
+      .setWidgetState(
+        state.isWidgetCollapsed ? WidgetState.COLLAPSED : WidgetState.OPEN,
+      )
+      .catch((e) => console.error(e));
   }
 }
 onMounted(() => {
@@ -154,8 +163,15 @@ onMounted(() => {
       console.error(e);
       state.waitingLoadAsync++;
     });
-  // TODO: This should come from the localStorage
-  // state.isWidgetShown = await guidedTourManager.isWidgetShown();
+  guidedTourManager
+    .getWidgetState()
+    .then((widgetState) => {
+      if (!toggledBeforeLoad) {
+        state.isWidgetCollapsed = widgetState === WidgetState.COLLAPSED;
+      }
+      return widgetState;
+    })
+    .catch((e) => console.error(e));
 });
 // FIXME: The .val property is a workaround, so vue doesn't auto-unwrap the progress, thus making it non-reactive.
 const progress = {

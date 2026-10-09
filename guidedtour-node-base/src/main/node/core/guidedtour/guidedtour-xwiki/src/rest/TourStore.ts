@@ -17,12 +17,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-import { StorageManager } from "../StorageManager";
 import { reactive } from "vue";
 import type {
+  TourProgress,
   TourStep,
   TourTask,
-  TourTaskStatus,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
 
@@ -51,6 +50,10 @@ export class TourStore {
     tours: [],
     toursMap: new Map(),
   };
+  /**
+   * The progress of the current user in each tour, keyed by tour id.
+   */
+  private userToursStatus: Record<string, TourProgress> = {};
 
   // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
   constructor(private readonly xm) {
@@ -62,6 +65,14 @@ export class TourStore {
    */
   public get cache(): Readonly<TourCache> {
     return this._cache;
+  }
+
+  /**
+   * Set the progress of the current user, applied to the tasks when they are added to the cache.
+   * @param userToursStatus - The progress of the user in each tour, keyed by tour id.
+   */
+  public setUserToursStatus(userToursStatus: Record<string, TourProgress>) {
+    this.userToursStatus = userToursStatus;
   }
 
   /**
@@ -125,33 +136,10 @@ export class TourStore {
    * Assign the tour id to each task so that tasks know their parent tour.
    */
   private setupTasks(tasks: TourTask[], tourId: string) {
-    const userTaskStatuses: Map<string, TourTaskStatus> =
-      this.getLocalUserTaskStatuses(this.currentUserReference);
     for (const task of tasks) {
       task.tourId = tourId;
-      // FIXME: Use this for guest users only. To be done as part of GUIDEDTOUR-2
       task.status =
-        userTaskStatuses.get(StorageManager.getStorageKeyPrefix(task)) ??
-        task.status;
-    }
-  }
-
-  private getLocalUserTaskStatuses(
-    userReference: string,
-  ): Map<string, TourTaskStatus> {
-    const userTaskStatusesStr = StorageManager.getStorageKey(
-      StorageManager.getUserTaskStatusesStorageKey(userReference),
-    );
-    if (!userTaskStatusesStr) {
-      console.warn("No task statuses in sessionStorage");
-      return new Map();
-    }
-    try {
-      return new Map<string, TourTaskStatus>(
-        Object.entries(JSON.parse(userTaskStatusesStr)),
-      );
-    } catch {
-      return new Map();
+        this.userToursStatus[tourId]?.tasksStatus[task.id] ?? task.status;
     }
   }
 

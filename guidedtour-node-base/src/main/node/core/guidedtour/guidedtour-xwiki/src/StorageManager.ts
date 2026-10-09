@@ -60,8 +60,12 @@ export class StorageManager {
     return this.getStorageKeyPrefix(task) + "_steps";
   }
 
-  static getUserTaskStatusesStorageKey(user: string): string {
-    return "userTaskStatuses_" + user;
+  /**
+   * Get the key holding the status (task progress and preferences) of guest users. Logged-in users keep it in their
+   * user profile instead.
+   */
+  static getGuestStatusStorageKey(): string {
+    return "guidedtour_guestStatus";
   }
 
   /**

@@ -65,9 +65,9 @@ public interface UserTourResource extends XWikiRestComponent
     /**
      * Update the user tour status.
      *
-     * @param userTourStatus 200 status code if the object has been updated successfully, 401 if the user lacks
-     *     rights or if the CSRF token is invalid, 404 if the object is not found and 500 if any other error occurs
-     * @return the response of the update
+     * @param userTourStatus the new user tour status
+     * @return 201 status code if the user tour status didn't exist and has been created, 200 if it has been updated,
+     *     401 if the user lacks rights or if the CSRF token is invalid and 500 if any other error occurs
      * @throws XWikiRestException if any error occurs during the update
      */
     @PUT

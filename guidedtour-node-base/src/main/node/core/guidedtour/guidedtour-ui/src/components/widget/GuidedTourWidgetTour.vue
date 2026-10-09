@@ -112,19 +112,11 @@ const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
 const tasks = ref<Reactive<TourTask>[]>([]);
 
 async function onSkipTour() {
-  await Promise.all(
-    tasks.value.map((task) =>
-      guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED),
-    ),
-  );
+  await guidedTourManager.skipTour(props.tour.id);
 }
 
 async function onResetTour() {
-  await Promise.all(
-    tasks.value.map((task) =>
-      guidedTourManager.setTaskStatus(task, TourTaskStatus.TODO),
-    ),
-  );
+  await guidedTourManager.resetTour(props.tour.id);
 }
 
 onMounted(async () => {

@@ -87,7 +87,8 @@ async function onResetTask() {
 
 async function onSkipTask() {
   isWaitingAsync.value = true;
-  await guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED);
+  // Skipping the task also stops starting the next tasks of its tour automatically.
+  await guidedTourManager.skipTask(task);
   isWaitingAsync.value = false;
 }
 

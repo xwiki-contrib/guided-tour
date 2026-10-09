@@ -54,8 +54,9 @@ const util = {
     const customSkipAll = document.createElement("a");
     customSkipAll.classList.add("driver-xwiki-skip-all-button");
 
-    function onSkipAll() {
-      guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
+    async function onSkipAll() {
+      // Skipping the task also stops starting the next tasks of its tour automatically.
+      await guidedTourManager.skipTask(guidedTourTask);
     }
 
     customSkipAll.onclick = onSkipAll;
@@ -264,11 +265,23 @@ function XWikiDriverConfig(
               StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
             ) ?? "-1",
           ) + 1;
-        const status =
-          currentStepIndex >= guidedTourTask.steps!.length
-            ? TourTaskStatus.DONE
-            : TourTaskStatus.SKIPPED;
-        guidedTourManager.setTaskStatus(guidedTourTask, status);
+        if (currentStepIndex >= guidedTourTask.steps!.length) {
+          guidedTourManager
+            .setTaskStatus(guidedTourTask, TourTaskStatus.DONE)
+            .catch((e) => console.error(e));
+        } else {
+          // The user closed the task before the end (close button or click outside): keep its status, but don't
+          // start the next tasks of its tour automatically anymore.
+          guidedTourManager
+            .disableCallToAction(guidedTourTask.tourId!)
+            .then(() =>
+              guidedTourManager.setTaskStatus(
+                guidedTourTask,
+                guidedTourTask.status,
+              ),
+            )
+            .catch((e) => console.error(e));
+        }
       }
     },
     onNextClick: async () => {

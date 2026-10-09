@@ -68,6 +68,21 @@
                   <new>method javax.ws.rs.core.Response org.xwiki.contrib.guidedtour.rest.TasksResource::getTourTasks(java.lang.String, java.lang.String) throws org.xwiki.rest.XWikiRestException</new>
                   <justification>Added a filter value</justification>
                 </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.method.removed</code>
+                  <classQualifiedName>org.xwiki.contrib.guidedtour.api.dtos.UserTourStatusDTO</classQualifiedName>
+                  <justification>The global call to action and task statuses were replaced by a progress per tour
+                    (getToursStatus / setToursStatus) as part of GUIDEDTOUR-2: Save progress in user
+                    profile.</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.method.numberOfParametersChanged</code>
+                  <classQualifiedName>org.xwiki.contrib.guidedtour.api.dtos.UserTourStatusDTO</classQualifiedName>
+                  <justification>The call to action parameter was removed from the constructor, as it is now set per
+                    tour, as part of GUIDEDTOUR-2: Save progress in user profile.</justification>
+                </item>
               </differences>
             </revapi.differences>
           </analysisConfiguration>
