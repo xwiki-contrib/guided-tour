@@ -28,13 +28,21 @@
     <div class="guidedtour-widget-item loading" />
   </template>
   <template v-else>
-    <div class="guidedtour-widget-item" :id="props.id" @click="props.onClick">
+    <div
+      class="guidedtour-widget-item"
+      :id="props.id"
+      :title="props.hint ?? ''"
+      @click="props.onClick"
+    >
       <span class="pre-btns">
         <slot name="pre-btns" />
       </span>
-      <span class="guidedtour-widget-item-title"
-        ><slot name="item-title"
-      /></span>
+      <span class="guidedtour-widget-item-text">
+        <span class="guidedtour-widget-item-title"
+          ><slot name="item-title"
+        /></span>
+        <span class="guidedtour-widget-item-hint">{{ props.hint ?? "" }}</span>
+      </span>
       <slot name="loading-icon">
         <i
           style="--fa-animation-timing: ease-in-out"
@@ -58,6 +66,7 @@ const props = defineProps<{
   loading?: boolean;
   waiting?: Ref<boolean>;
   id?: string;
+  hint?: string;
   onClick?: () => void;
 }>();
 </script>
@@ -101,16 +110,30 @@ const props = defineProps<{
   cursor: pointer;
 }
 
-.guidedtour-widget-item:hover {
-  background: var(--guidedtour-background-color-secondary) 100%;
-}
-
 .fa-circle-notch.transparent {
   opacity: 0;
 }
 .fa-circle-notch {
   opacity: 1;
   transition: opacity 0.15s ease;
+}
+
+.guidedtour-widget-item-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.guidedtour-widget-item-hint {
+  font-size: x-small;
+  contain: inline-size;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.guidedtour-widget-item:hover {
+  background: var(--guidedtour-background-color-secondary) 100%;
 }
 
 .guidedtour-widget-item:hover .pre-btns *:not(.always-show),

@@ -2,4 +2,5 @@
 :root {
   --guidedtour-text-color: #b0b0b0;
   --guidedtour-background-color-secondary: #f2f2f2;
+  --shake-magnitude: 0.4em;
 }

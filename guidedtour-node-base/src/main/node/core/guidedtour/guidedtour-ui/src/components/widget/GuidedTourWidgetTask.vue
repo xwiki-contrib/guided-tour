@@ -30,16 +30,21 @@
     :waiting="ref(isWaitingAsync)"
     v-bind:class="{
       ['task-' + task.status]: true,
+      'task-dependent': hasRemainingDependentTasks(),
       'guidedtour-task': true,
     }"
     :id="task.id"
+    :hint="getDependencyHint()"
     @click="onStartTask"
   >
     <template v-slot:pre-btns>
-      <!-- This is just for show, it shouldn't do anything. -->
-      <button>
-        <i class="fa fa-arrow-right" />
-      </button>
+      <!-- Icon to denote that a task has uncompleted dependencies. -->
+      <i
+        v-if="hasRemainingDependentTasks()"
+        ref="prebtns"
+        class="always-show fa-solid fa-table-cells-row-lock"
+      />
+      <i v-else class="fa fa-arrow-right" />
     </template>
     <template v-slot:item-title>
       {{ task.title }}
@@ -61,8 +66,10 @@
 
 <script setup lang="ts">
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
+// @ts-expect-error this is a JavaScript file, it is expected to not have types.
+import { XWiki } from "../../services/xwiki.js";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { inject, reactive, ref, toRefs } from "vue";
+import { inject, reactive, ref, toRefs, useTemplateRef } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
@@ -74,6 +81,7 @@ const { task, tourId } = defineProps<{
   tourId: string;
 }>();
 
+const prebtns = useTemplateRef("prebtns");
 const state = reactive({
   isWaitingAsync: false,
 });
@@ -85,6 +93,57 @@ async function onResetTask() {
   isWaitingAsync.value = false;
 }
 
+const dependentTasks: TourTask[] = task.dependsOn
+  ? (
+      await Promise.all(
+        task.dependsOn!.map(async (taskId: string) => {
+          return await guidedTourManager.getTask(task.tourId!, taskId);
+        }),
+      )
+    )
+      .filter((dep) => dep !== undefined)
+      .filter((dep) => dep.active && dep.id != task.id)
+  : [];
+
+function getRemainingDependentTasks(): TourTask[] {
+  return dependentTasks.filter(
+    (dep: TourTask) => dep.status !== TourTaskStatus.DONE,
+  );
+}
+
+function hasRemainingDependentTasks(): boolean {
+  return getRemainingDependentTasks().length > 0;
+}
+
+/**
+ * Get the tooltip/subtitle of this task, to tell the user which tasks were not completed.
+ */
+function getDependencyHint() {
+  if (dependentTasks.length == 0) {
+    // This task has no dependencies, so show no hint.
+    return "";
+  }
+  let uncompletedDeps: TourTask[] = getRemainingDependentTasks();
+  if (uncompletedDeps.length == 0) {
+    // TODO: Add translation strings.
+    return "All dependencies completed";
+  } else {
+    // TODO: Add translation strings.
+    return (
+      "Depends on: " +
+      uncompletedDeps.map((task: TourTask) => task.title).join(", ")
+    );
+  }
+}
+
+function playShakeAnimation(element: HTMLElement | null) {
+  if (element) {
+    element.classList.remove("shake-anim");
+    void element.offsetWidth; // force reflow
+    element.classList.add("shake-anim");
+  }
+}
+
 async function onSkipTask() {
   isWaitingAsync.value = true;
   await guidedTourManager.setTaskStatus(task, TourTaskStatus.SKIPPED);
@@ -92,6 +151,13 @@ async function onSkipTask() {
 }
 
 async function onStartTask() {
+  if (getRemainingDependentTasks().length > 0) {
+    // Short circuit if trying to start a task with uncompleted dependencies.
+    // The UI code above will handle displaying the warning.
+    playShakeAnimation(prebtns.value);
+    new XWiki.widgets.Notification(getDependencyHint(), "error");
+    return;
+  }
   // Fetch the steps manually, so we can show the loader nicely while waiting for the steps to be fetched.
   isWaitingAsync.value = true;
   await guidedTourManager.getSteps(tourId, task.id).finally(() => {
@@ -131,14 +197,44 @@ async function onStartTask() {
   background: var(--guidedtour-background-color-secondary) 100%;
 }
 
-.guidedtour-task.task-DONE {
+@keyframes shake {
+  10%,
+  90% {
+    transform: translateX(calc(var(--shake-magnitude) * -0.5));
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(calc(var(--shake-magnitude) * -1));
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(var(--shake-magnitude));
+  }
+}
+.shake-anim {
+  animation: shake 0.65s;
+}
+
+.guidedtour-task.task-DONE :deep(.guidedtour-widget-item-title) {
   text-decoration: line-through;
+}
+.guidedtour-task.task-DONE {
   color: var(
     --guidedtour-text-color
   ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */
 }
-
+.guidedtour-task.task-dependent {
+  background: var(--guidedtour-background-color-secondary) 100%;
+}
 .guidedtour-task.task-SKIPPED {
   color: var(--guidedtour-text-color);
+}
+
+/* TODO tasks with uncompleted dependencies cannot be skipped. (But you can reset a task with uncompleted dependencies) */
+.task-dependent.task-TODO .post-btn {
+  visibility: hidden;
 }
 </style>
