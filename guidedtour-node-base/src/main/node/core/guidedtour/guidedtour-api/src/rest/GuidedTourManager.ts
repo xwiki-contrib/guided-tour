@@ -146,12 +146,14 @@ export interface GuidedTourManager {
 
   /**
    * Get the state of the widget, as last saved by the user.
+   * @since 0.2
    */
   getWidgetState(): Promise<WidgetState>;
 
   /**
    * Save the state of the widget, so that it is restored on the next page load.
    * @param widgetState - The new state of the widget.
+   * @since 0.2
    */
   setWidgetState(widgetState: WidgetState): Promise<void>;
 
@@ -159,18 +161,21 @@ export interface GuidedTourManager {
    * Reset all the tasks of a tour to TODO, and start the next task automatically again when a task is finished.
    * The new status is saved at once, for all the tasks.
    * @param tourId - The id of the tour to reset.
+   * @since 0.2
    */
   resetTour(tourId: string): Promise<void>;
 
   /**
-   * Skip all the tasks of a tour. The new status is saved at once, for all the tasks.
+   * Skip all the TODO tasks of a tour. The new status is saved at once, for all the tasks.
    * @param tourId - The id of the tour to skip.
+   * @since 0.2
    */
   skipTour(tourId: string): Promise<void>;
 
   /**
    * Skip a task, and stop starting the next tasks of its tour automatically. The new status is saved at once.
    * @param task - The task to skip.
+   * @since 0.2
    */
   skipTask(task: TourTask): Promise<void>;
 

@@ -22,7 +22,7 @@ import type { TourTaskStatus } from "./tourTaskStatus";
 /**
  * All possible states of the Guided Tour widget.
  *
- * @since 1.0
+ * @since 0.2
  * @beta
  */
 enum WidgetState {
@@ -34,7 +34,7 @@ enum WidgetState {
 /**
  * The progress of a user in one tour.
  *
- * @since 1.0
+ * @since 0.2
  * @beta
  */
 interface TourProgress {
@@ -52,7 +52,7 @@ interface TourProgress {
 /**
  * The progress and preferences of a user regarding the guided tours.
  *
- * @since 1.0
+ * @since 0.2
  * @beta
  */
 interface UserTourStatus {

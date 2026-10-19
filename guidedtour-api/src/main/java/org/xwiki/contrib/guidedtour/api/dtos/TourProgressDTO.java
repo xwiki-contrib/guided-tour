@@ -30,7 +30,7 @@ import org.xwiki.stability.Unstable;
  * automatically.
  *
  * @version $Id$
- * @since 1.0
+ * @since 0.2
  */
 @Unstable
 public class TourProgressDTO

@@ -40,6 +40,13 @@ import type {
 import type { Driver } from "driver.js";
 
 /**
+ * Create the progress of a tour that the user never started.
+ */
+function createTourProgress(): TourProgress {
+  return { callToAction: true, tasksStatus: {} };
+}
+
+/**
  * Facade that implements {@link GuidedTourManager} by delegating to the three
  * Default*ManagerApi classes and orchestrating driver.js tour playback.
  *
@@ -102,11 +109,17 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * Get the progress and preferences of the current user, loading them on the first call.
    */
   private getUserStatus(): Promise<UserTourStatus> {
-    this.userStatus ??= this.userStatusApi.load().then((status) => {
-      this.sharedStore.setUserToursStatus(status.toursStatus);
-      return status;
-    });
+    this.userStatus ??= this.loadUserStatus();
     return this.userStatus;
+  }
+
+  /**
+   * Load the progress and preferences of the current user, and share the progress with the tasks cache.
+   */
+  private async loadUserStatus(): Promise<UserTourStatus> {
+    const status = await this.userStatusApi.load();
+    this.sharedStore.setUserToursStatus(status.toursStatus);
+    return status;
   }
 
   /**
@@ -115,13 +128,14 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   private async saveUserStatus() {
     const userStatus = await this.getUserStatus();
     // Update the progress of the tours loaded on this page. The tours that are not loaded here (e.g. tours from other
-    // wikis) keep their stored progress.
+    // wikis) keep their stored progress. The loop doesn't await, so that no other change can interleave with it.
     for (const tour of this.sharedStore.cache.tours) {
       if (tour.tasksList === undefined) {
         continue;
       }
-      const progress = this.getTourProgress(userStatus, tour.id);
-      // Replace the stored statuses of the tour instead of merging them, so that we always keep only the existing 
+      userStatus.toursStatus[tour.id] ??= createTourProgress();
+      const progress = userStatus.toursStatus[tour.id];
+      // Replace the stored statuses of the tour instead of merging them, so that we always keep only the existing
       // tasks of the tour, and not any tasks that were removed from the tour.
       progress.tasksStatus = Object.fromEntries(
         tour.tasksList.map((task) => [task.id, task.status]),
@@ -138,14 +152,18 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   }
 
   /**
-   * Get the progress of the user in a tour, creating it with the default values if the user has none yet.
+   * Set whether the next task of a tour should be started automatically when a task of the tour is finished.
+   * @param tourId - The id of the tour.
+   * @param callToAction - Whether to start the next task automatically.
    */
-  private getTourProgress(
-    userStatus: UserTourStatus,
+  private async setCallToAction(
     tourId: string,
-  ): TourProgress {
-    userStatus.toursStatus[tourId] ??= { callToAction: true, tasksStatus: {} };
-    return userStatus.toursStatus[tourId];
+    callToAction: boolean,
+  ): Promise<void> {
+    const userStatus = await this.getUserStatus();
+    // Update the progress right after getting it, so that a concurrent save can't replace it in the meantime.
+    userStatus.toursStatus[tourId] ??= createTourProgress();
+    userStatus.toursStatus[tourId].callToAction = callToAction;
   }
 
   /**
@@ -171,10 +189,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * Stop starting the next tasks of a tour automatically, because the user closed or skipped one of its tasks.
    * The change is saved along with the status of the task, by {@link setTaskStatus}.
    * @param tourId - The id of the tour.
+   * @since 0.2
    */
   async disableCallToAction(tourId: string): Promise<void> {
-    this.getTourProgress(await this.getUserStatus(), tourId).callToAction =
-      false;
+    await this.setCallToAction(tourId, false);
   }
 
   async skipTask(task: TourTask): Promise<void> {
@@ -184,8 +202,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
   async resetTour(tourId: string): Promise<void> {
     // Resetting an entire tour starts its next tasks automatically again.
-    this.getTourProgress(await this.getUserStatus(), tourId).callToAction =
-      true;
+    await this.setCallToAction(tourId, true);
     await this.setTourTasksStatus(tourId, TourTaskStatus.TODO, () => true);
   }
 

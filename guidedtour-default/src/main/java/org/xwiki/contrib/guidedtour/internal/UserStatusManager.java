@@ -102,7 +102,7 @@ public class UserStatusManager
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWikiDocument userDoc = getUserDocument();
         if (userDoc.getXObject(USER_TOUR_CLASS) == null) {
-            addUserTourStatus(new UserTourStatusDTO(WidgetState.OPEN.toString()), userDoc.clone());
+            addUserTourStatusObject(new UserTourStatusDTO(WidgetState.OPEN.toString()), userDoc.clone());
         } else {
             throw new DuplicatedIdException("User tour status already exists for user [%s]",
                 wikiContext.getUserReference());
@@ -126,7 +126,7 @@ public class UserStatusManager
         XWikiDocument userDoc = getUserDocument().clone();
         BaseObject userTourStatusObject = userDoc.getXObject(USER_TOUR_CLASS);
         if (userTourStatusObject == null) {
-            addUserTourStatus(userTourStatus, userDoc);
+            addUserTourStatusObject(userTourStatus, userDoc);
             return true;
         }
         setUserTourStatusValues(userTourStatus, userTourStatusObject);
@@ -134,7 +134,16 @@ public class UserStatusManager
         return false;
     }
 
-    private void addUserTourStatus(UserTourStatusDTO tourStatusDTO, XWikiDocument userDoc)
+    /**
+     * Adds a new user tour status object to the given user document, sets its values from the provided DTO and saves
+     * the document.
+     *
+     * @param tourStatusDTO the user tour status to store in the new object
+     * @param userDoc the (cloned) user document to add the object to
+     * @throws JsonProcessingException if there is an error while processing the JSON data
+     * @throws XWikiException if there is an error while saving the user document
+     */
+    private void addUserTourStatusObject(UserTourStatusDTO tourStatusDTO, XWikiDocument userDoc)
         throws JsonProcessingException, XWikiException
     {
         XWikiContext wikiContext = this.wikiContextProvider.get();

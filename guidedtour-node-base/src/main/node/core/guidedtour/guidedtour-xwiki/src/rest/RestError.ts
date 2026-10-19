@@ -20,7 +20,7 @@
 
 /**
  * Error thrown when a request fails, holding the HTTP status of the response.
- * @since 1.0
+ * @since 0.2
  * @beta
  */
 export class RestError extends Error {

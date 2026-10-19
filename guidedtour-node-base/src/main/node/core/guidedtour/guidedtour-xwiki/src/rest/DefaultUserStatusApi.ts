@@ -30,7 +30,7 @@ import type { UserTourStatus } from "@xwiki/contrib-guidedtour-api";
  * The status of logged-in users is kept in their user profile, through the REST API, so that it follows them across
  * browsers. Guest users don't have a profile, so their status is kept in the local storage of the browser.
  *
- * @since 1.0
+ * @since 0.2
  * @beta
  */
 export class DefaultUserStatusApi {
@@ -64,25 +64,40 @@ export class DefaultUserStatusApi {
    * Save the status of the current user.
    * @param status - The status to save.
    */
-  save(status: UserTourStatus): Promise<void> {
+  async save(status: UserTourStatus): Promise<void> {
     if (this.isGuest()) {
       StorageManager.setStorageKey(
         StorageManager.getGuestStatusStorageKey(),
         JSON.stringify(status),
       );
-      return Promise.resolve();
+      return;
     }
     if (this.saveDisabled) {
-      return Promise.resolve();
+      return;
     }
     // Send a copy, so that later changes don't alter a request that is waiting for its turn.
-    const body = structuredClone(status);
-    this.pendingSave = this.pendingSave
-      .catch(() => {
-        // The failure was already reported, don't block the next saves.
-      })
-      .then(() => this.restClient.request<void>(this.getUrl(), "PUT", body));
-    return this.pendingSave;
+    this.pendingSave = this.sendAfter(
+      this.pendingSave,
+      structuredClone(status),
+    );
+    await this.pendingSave;
+  }
+
+  /**
+   * Send the status to the user profile once the previous save is over, whether it succeeded or not.
+   * @param previousSave - The save to wait for.
+   * @param status - The status to send.
+   */
+  private async sendAfter(
+    previousSave: Promise<void>,
+    status: UserTourStatus,
+  ): Promise<void> {
+    try {
+      await previousSave;
+    } catch {
+      // The failure was already reported, don't block the next saves.
+    }
+    await this.restClient.request<void>(this.getUrl(), "PUT", status);
   }
 
   /**

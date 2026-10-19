@@ -29,7 +29,7 @@ import org.xwiki.stability.Unstable;
  * User tour status DTO used to represent the status of the user progress and preferences regarding the guided tour.
  *
  * @version $Id$
- * @since 1.0
+ * @since 0.1
  */
 @Unstable
 public class UserTourStatusDTO
@@ -50,6 +50,7 @@ public class UserTourStatusDTO
      * Constructor for UserTourStatusDTO.
      *
      * @param widgetState the state of the widget representing a value from the {@link WidgetState} enum
+     * @since 0.2
      */
     public UserTourStatusDTO(String widgetState)
     {
@@ -61,6 +62,7 @@ public class UserTourStatusDTO
      * Gets the progress of the user in each tour.
      *
      * @return a map containing the tour id as key and the progress of the user in that tour as value
+     * @since 0.2
      */
     public Map<String, TourProgressDTO> getToursStatus()
     {
@@ -71,6 +73,7 @@ public class UserTourStatusDTO
      * Sets the progress of the user in each tour.
      *
      * @param toursStatus a map containing the tour id as key and the progress of the user in that tour as value
+     * @since 0.2
      */
     public void setToursStatus(Map<String, TourProgressDTO> toursStatus)
     {

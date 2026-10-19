@@ -82,12 +82,14 @@
                   <justification>The global call to action and task statuses were replaced by a progress per tour
                     (getToursStatus / setToursStatus) as part of GUIDEDTOUR-2: Save progress in user
                     profile.</justification>
+                  <criticality>documented</criticality>
                 </item>
                 <item>
                   <code>java.method.numberOfParametersChanged</code>
                   <classQualifiedName>org.xwiki.contrib.guidedtour.api.dtos.UserTourStatusDTO</classQualifiedName>
                   <justification>The call to action parameter was removed from the constructor, as it is now set per
                     tour, as part of GUIDEDTOUR-2: Save progress in user profile.</justification>
+                  <criticality>documented</criticality>
                 </item>
               </differences>
             </revapi.differences>

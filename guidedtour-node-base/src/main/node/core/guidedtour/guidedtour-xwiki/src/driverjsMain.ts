@@ -252,7 +252,7 @@ function XWikiDriverConfig(
         activeIndex.toString(),
       );
     },
-    onDestroyed: function (_element, _step, _options) {
+    onDestroyed: async function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
       // The state provided by driver.js is empty when this function is called.
       if (guidedTourManager.activeTask === undefined) {
@@ -265,22 +265,23 @@ function XWikiDriverConfig(
               StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
             ) ?? "-1",
           ) + 1;
-        if (currentStepIndex >= guidedTourTask.steps!.length) {
-          guidedTourManager
-            .setTaskStatus(guidedTourTask, TourTaskStatus.DONE)
-            .catch((e) => console.error(e));
-        } else {
-          // The user closed the task before the end (close button or click outside): keep its status, but don't
-          // start the next tasks of its tour automatically anymore.
-          guidedTourManager
-            .disableCallToAction(guidedTourTask.tourId!)
-            .then(() =>
-              guidedTourManager.setTaskStatus(
-                guidedTourTask,
-                guidedTourTask.status,
-              ),
-            )
-            .catch((e) => console.error(e));
+        try {
+          if (currentStepIndex >= guidedTourTask.steps!.length) {
+            await guidedTourManager.setTaskStatus(
+              guidedTourTask,
+              TourTaskStatus.DONE,
+            );
+          } else {
+            // The user closed the task before the end (close button or click outside): keep its status, but don't
+            // start the next tasks of its tour automatically anymore.
+            await guidedTourManager.disableCallToAction(guidedTourTask.tourId!);
+            await guidedTourManager.setTaskStatus(
+              guidedTourTask,
+              guidedTourTask.status,
+            );
+          }
+        } catch (e) {
+          console.error(e);
         }
       }
     },

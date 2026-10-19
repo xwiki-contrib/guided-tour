@@ -120,17 +120,32 @@ const state = reactive({
 // Whether the user toggled the widget before the saved widget state was loaded, in which case the saved state
 // shouldn't override the user's choice. Only read once, when the saved state is loaded.
 let toggledBeforeLoad = false;
-function onCloseGuidedTourWidget(buttonClicked: boolean) {
+async function onCloseGuidedTourWidget(buttonClicked: boolean) {
   if (state.isWidgetCollapsed && buttonClicked) {
     state.isWidgetShown = false;
   } else {
     state.isWidgetCollapsed = !state.isWidgetCollapsed;
     toggledBeforeLoad = true;
-    guidedTourManager
-      .setWidgetState(
+    try {
+      await guidedTourManager.setWidgetState(
         state.isWidgetCollapsed ? WidgetState.COLLAPSED : WidgetState.OPEN,
-      )
-      .catch((e) => console.error(e));
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+/**
+ * Restore the widget state saved by the user, unless they already toggled the widget.
+ */
+async function loadWidgetState() {
+  try {
+    const widgetState = await guidedTourManager.getWidgetState();
+    if (!toggledBeforeLoad) {
+      state.isWidgetCollapsed = widgetState === WidgetState.COLLAPSED;
+    }
+  } catch (e) {
+    console.error(e);
   }
 }
 onMounted(() => {
@@ -163,15 +178,7 @@ onMounted(() => {
       console.error(e);
       state.waitingLoadAsync++;
     });
-  guidedTourManager
-    .getWidgetState()
-    .then((widgetState) => {
-      if (!toggledBeforeLoad) {
-        state.isWidgetCollapsed = widgetState === WidgetState.COLLAPSED;
-      }
-      return widgetState;
-    })
-    .catch((e) => console.error(e));
+  loadWidgetState();
 });
 // FIXME: The .val property is a workaround, so vue doesn't auto-unwrap the progress, thus making it non-reactive.
 const progress = {
