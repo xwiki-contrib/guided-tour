@@ -109,6 +109,109 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
   }
 
+  /**
+   * Check if the current page matches the one expected by the step, and redirect to it otherwise.
+   * @param adjacentStep - The step whose expected page to check.
+   * @returns true if the current page is not the expected one.
+   */
+  // eslint-disable-next-line max-statements
+  redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
+    if (adjacentStep === undefined) {
+      return false;
+    }
+    const targetDocumentReference = adjacentStep?.targetPage
+      ? XWiki.Model.resolve(
+          adjacentStep.targetPage,
+          XWiki.EntityType.DOCUMENT,
+          XWiki.currentDocument.documentReference,
+        )
+      : XWiki.currentDocument.documentReference;
+    const redirectURL = this.resolveStepRedirectURL(
+      adjacentStep,
+      targetDocumentReference,
+    );
+    if (
+      this.isOnExpectedPage(adjacentStep, redirectURL, targetDocumentReference)
+    ) {
+      return false;
+    }
+    const currentURL = new URL(window.location.href);
+    window.location.href = redirectURL.href;
+    // Set the URI fragment, so the comparison below doesn't take it into account.
+    currentURL.hash = redirectURL.hash;
+    if (redirectURL.hash != "" && currentURL.href == redirectURL.href) {
+      // Changing only the fragment doesn't reload the page, but the callers expect a reload to resume the task.
+      // Reloading in any other case would cancel the navigation started above.
+      window.location.reload();
+    }
+    return true;
+  }
+
+  /**
+   * Check if the current page matches the page, action, query parameters and fragment expected by the step.
+   * @param step - The step whose expected page to check.
+   * @param expectedURL - The url to check against.
+   * @param targetDocumentReference - The reference of the page expected by the step.
+   * @returns true if the current page is the expected one.
+   */
+  private isOnExpectedPage(
+    step: TourStep,
+    expectedURL: URL,
+    // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
+    targetDocumentReference,
+  ): boolean {
+    // Check that every expected query parameter is present, with the expected value, in the current URL.
+    const currentPageQueryParams = new URLSearchParams(window.location.search);
+    let hasExpectedQueryParams = true;
+    expectedURL.searchParams.forEach((value, name) => {
+      hasExpectedQueryParams &&= currentPageQueryParams
+        .getAll(name)
+        .includes(value);
+    });
+    // Check the expected fragment, if any, against the current one.
+    const hasExpectedFragment =
+      !expectedURL.hash || expectedURL.hash == window.location.hash;
+    let pageAction = XWiki.contextaction;
+    if (XWiki.contextaction == "view" && window.location.hash == "#edit") {
+      // Inplace WYSIWYG leads to an URL like `/view/page#edit` instead of `/edit/page`, so we need to include it as
+      // part of the EDIT pageAction.
+      pageAction = "edit";
+    }
+    return (
+      XWiki.Model.serialize(targetDocumentReference) ==
+        XWiki.Model.serialize(XWiki.currentDocument.documentReference) &&
+      (!step.targetAction || pageAction == step.targetAction.toLowerCase()) &&
+      hasExpectedQueryParams &&
+      hasExpectedFragment
+    );
+  }
+
+  /**
+   * Resolve the URL to redirect to in order to reach the page expected by the step.
+   * @param step - The step whose redirect URL to resolve.
+   * @param targetDocumentReference - The reference of the page expected by the step.
+   * @returns the redirect URL.
+   */
+  private resolveStepRedirectURL(
+    step: TourStep,
+    // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
+    targetDocumentReference,
+  ): URL {
+    const url = new URL(
+      new XWiki.Document(targetDocumentReference).getURL(
+        step.targetAction?.toLowerCase(),
+      ) +
+        "?" +
+        (step.queryParameters ?? "").replace(/^\?/, ""),
+      window.location.href,
+    );
+    if (!url.search) {
+      // Drop the dangling "?" left by empty query parameters, so the URL can be compared to the current one.
+      url.search = "";
+    }
+    return url;
+  }
+
   async getTours(): Promise<TourTour[]> {
     const tours = await this.defaultTourManagerApi.getTours();
 
@@ -230,6 +333,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * @param task - The task to start.
    * @param remember - Whether to resume from a saved step index.
    */
+  // eslint-disable-next-line max-statements
   async startTask(task: TourTask, remember = true): Promise<void> {
     // Fetch or get the cached steps.
     task.steps ??= await this.getSteps(task.tourId!, task.id);
@@ -250,6 +354,19 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getTaskStepStorageStorageKey(task),
       JSON.stringify(task.steps!),
     );
+    // Make sure the right storage parameters are set, in case we'll redirect.
+    StorageManager.setStorageKey(
+      StorageManager.getTaskCurrentStepStorageKey(task),
+      stepIndex.toString(),
+    );
+
+    // Only redirect when the task is started fresh, not when it's resumed on page load (`remember`). This avoids
+    // redirect loops, and doesn't interrupt reflex actions that navigate on their own (e.g. "Save and view").
+    if (!remember && this.redirectToExpectedPage(task.steps![stepIndex])) {
+      // Return before setting `activeTask`, since it only lives in memory and would be lost on navigation anyway.
+      // The new task is persisted through the storage keys set above, and `initExistingTask()` resumes it on page load.
+      return;
+    }
 
     this.activeTask = task;
     this.activeDriverTask = wrapTask(driverTour, this, this.translations);

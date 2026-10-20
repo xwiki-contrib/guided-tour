@@ -242,7 +242,7 @@
       <reflex>0</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>VIEW</targetAction>
     </property>
     <property type="String">
       <targetPage/>
@@ -453,7 +453,7 @@
       <reflex>1</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>VIEW</targetAction>
     </property>
     <property type="String">
       <targetPage/>
@@ -666,10 +666,10 @@ Use the side panel, if you want.</content>
       <reflex>0</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>VIEW</targetAction>
     </property>
     <property type="String">
-      <targetPage>Sandbox</targetPage>
+      <targetPage>Sandbox.WebHome</targetPage>
     </property>
   </object>
   <object>

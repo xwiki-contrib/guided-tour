@@ -111,8 +111,9 @@ export class DefaultStepManagerApi implements StepManagerApi {
         if (step.element == "") {
           step.element = undefined;
         }
-        step.path =
-          "" + step.targetPage + step.targetAction + step.queryParameters;
+        if (step.targetAction == "NOT_SET") {
+          step.targetAction = undefined;
+        }
       });
 
       this.sharedStore.updateTaskSteps(tourId, taskId, steps);
