@@ -119,7 +119,27 @@ guidedtour.modal.task.add.title.placeholder=Enter task title
 guidedtour.modal.task.add.title=Add task
 guidedtour.modal.task.add.done=Task successfully created!
 guidedtour.modal.task.add.error=Failed to create task: [{0}]
-guidedtour.modal.task.add.inProgress=Creating new task...</content>
+guidedtour.modal.task.add.inProgress=Creating new task...
+
+## Home page
+
+guidedtour.home.howItWorks.title=How guided tours work
+guidedtour.home.howItWorks.intro=Walk new users through key pages with on-screen tips. A tour holds tasks, and each task holds the steps shown on the page.
+guidedtour.home.create.button=Create Tour
+guidedtour.home.create.buttonTitle=Create a new tour
+guidedtour.home.manage.button=Manage Tours
+guidedtour.home.manage.buttonTitle=List, edit, or delete tours.
+guidedtour.home.manage.helper.none=No active tours yet.
+guidedtour.home.manage.helper.noneWithDisabled=No active tours yet. Disabled tours are still listed under Manage Tours.
+guidedtour.home.manage.helper.one=1 active tour.
+guidedtour.home.manage.helper.many={0} active tours.
+guidedtour.home.howItWorks.manage=Open {0} to view, edit, or delete a tour.
+guidedtour.home.howItWorks.sample=New here? Run the {0}, then adapt it for your wiki.
+guidedtour.home.howItWorks.sampleLinkLabel=Getting Started tour
+guidedtour.home.docs=The {0} explains how to point steps at pages and page elements, and bundle them into tasks.
+guidedtour.home.docs.linkLabel=Guided Tour documentation
+guidedtour.home.docs.linkAriaLabel=Guided Tour documentation (opens in a new tab)
+</content>
   <object>
     <name>GuidedTour.Code.Translations</name>
     <number>0</number>

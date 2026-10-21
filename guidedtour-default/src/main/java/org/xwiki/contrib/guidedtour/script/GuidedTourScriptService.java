@@ -27,8 +27,10 @@ import javax.inject.Singleton;
 
 import org.xwiki.component.annotation.Component;
 import org.xwiki.contrib.guidedtour.api.dtos.TaskDTO;
+import org.xwiki.contrib.guidedtour.api.dtos.TourDTO;
 import org.xwiki.contrib.guidedtour.api.exceptions.InvalidIdException;
 import org.xwiki.contrib.guidedtour.internal.TasksManager;
+import org.xwiki.contrib.guidedtour.internal.ToursManager;
 import org.xwiki.query.QueryException;
 import org.xwiki.script.service.ScriptService;
 import org.xwiki.stability.Unstable;
@@ -50,6 +52,9 @@ public class GuidedTourScriptService implements ScriptService
     @Inject
     private TasksManager tasksManager;
 
+    @Inject
+    private ToursManager toursManager;
+
     /**
      * Get the list of tasks for a given tour and filter them by the given title.
      *
@@ -64,5 +69,19 @@ public class GuidedTourScriptService implements ScriptService
         throws QueryException, XWikiException, InvalidIdException
     {
         return this.tasksManager.getAllTasks(tourId, searchedTitle);
+    }
+
+    /**
+     * Get all the tours the current user can view, excluding the tour template.
+     *
+     * @return the list of tours
+     * @throws QueryException if an error occurs while executing the query
+     * @throws XWikiException if there is an error while interacting with the XWiki API
+     * @throws InvalidIdException if a tour returned by the query has no tour object
+     * @since 0.2
+     */
+    public List<TourDTO> getAllTours() throws QueryException, XWikiException, InvalidIdException
+    {
+        return this.toursManager.getAllTours();
     }
 }

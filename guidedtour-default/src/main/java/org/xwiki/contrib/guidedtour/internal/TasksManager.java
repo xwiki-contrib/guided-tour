@@ -76,7 +76,7 @@ public class TasksManager
     private static final String GET_ALL_TASKS_QUERY = """
         select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp where doc.translation = \
         0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space and obj.id = \
-        orderProp.id.id and orderProp.id.name = 'order' and lower(doc.title) like lower(:titleFilter) escape '\\' \
+        orderProp.id.id and orderProp.id.name = 'order' and lower(doc.title) like lower(:titleFilter) escape '!' \
         order by orderProp.value asc""";
 
     private static final String TASK_NOT_FOUND_ERROR = "Task with the given id [%s] does not exists.";
@@ -257,10 +257,12 @@ public class TasksManager
 
     private String escapeQueryParameter(String parameter)
     {
+        // Note: '!' is used as the LIKE escape character (see the "escape '!'" clause in the queries above)
+        // instead of the default backslash because a backslash escape generates invalid SQL on MySQL.
         return StringUtils.defaultIfBlank(parameter, "")
-            .replace("\\", "\\\\")
-            .replace("%", "\\%")
-            .replace("_", "\\_");
+            .replace("!", "!!")
+            .replace("%", "!%")
+            .replace("_", "!_");
     }
 
     private TaskDTO getTaskDTO(XWikiDocument doc)

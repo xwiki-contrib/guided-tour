@@ -31,38 +31,208 @@
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <version>1.1</version>
-  <title>GuidedTour</title>
+  <title>Guided Tour</title>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>{{liveData
-  id="tourClassList1"
-  properties="doc.title,isActive,_actions"
-  source="liveTable"
-  sourceParameters="className=XWiki.GuidedTour.TourClass&amp;translationPrefix=guidedtour.tours.livedata."
-  meta='{"propertyDescriptors":[{"id":"isActive","filterable":true,"sortable":true},{"id":"_actions","displayer":{"id":"actions","actions":["edit","delete","consoleLog"]}}]}'
-  layouts="table"}}
-{
-  "actions": {
-    "edit": {
-      "icon": "pencil",
-      "label": "Edit",
-      "action": "edit"
-    },
-    "delete": {
-      "icon": "trash",
-      "label": "Delete Space",
-      "action": "delete",
-      "confirm": "Are you sure you want to delete this entire space?"
-    },
-    "consoleLog": {
-      "icon": "console",
-      "label": "Log Tour",
-      "action": "custom",
-      "onclick": "console.log('Tour clicked:', this.row.data); return false;"
-    }
-  }
+  <content>{{velocity}}
+#set ($discard = $xwiki.ssx.use('GuidedTour.WebHome'))
+#set ($providerExists = $xwiki.exists('XWiki.GuidedTour.TourTemplateProvider'))
+#set ($sampleExists = $xwiki.exists('GuidedTour.Tours.GettingStarted.WebHome'))
+#set ($toursURL = $xwiki.getURL('GuidedTour.Tours.WebHome'))
+#set ($createURL = $xwiki.getURL('GuidedTour.Tours.WebHome', 'create'))
+#if ($providerExists)
+  #set ($createURL = "${createURL}?templateProvider=XWiki.GuidedTour.TourTemplateProvider")
+#end
+#set ($tours = $services.guidedtour.getAllTours())
+#set ($totalCount = $tours.size())
+#set ($activeToursCount = 0)
+#foreach ($tour in $tours)
+  #if ($tour.isActive())
+    #set ($activeToursCount = $activeToursCount + 1)
+  #end
+#end
+#set ($createLabel = $escapetool.xml($services.localization.render('guidedtour.home.create.button')))
+#set ($createTitle = $escapetool.xml($services.localization.render('guidedtour.home.create.buttonTitle')))
+#set ($manageLabel = $escapetool.xml($services.localization.render('guidedtour.home.manage.button')))
+#set ($manageTitle = $escapetool.xml($services.localization.render('guidedtour.home.manage.buttonTitle')))
+#set ($helperNone = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.none')))
+#set ($helperNoneDisabled = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.noneWithDisabled')))
+#set ($helperOne = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.one')))
+#set ($helperMany = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.many', [$!activeToursCount])))
+#set ($howTitle = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.title')))
+#set ($howIntro = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.intro')))
+#set ($manageAnchor = "&lt;a href='$toursURL'&gt;$manageLabel&lt;/a&gt;")
+#set ($manageItem = $services.localization.render('guidedtour.home.howItWorks.manage').replace('{0}', $manageAnchor))
+#set ($sampleURL = $xwiki.getURL('GuidedTour.Tours.GettingStarted.WebHome'))
+#set ($sampleLabel = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.sampleLinkLabel')))
+#set ($sampleAnchor = "&lt;a href='$sampleURL'&gt;$sampleLabel&lt;/a&gt;")
+#set ($sampleItem = $services.localization.render('guidedtour.home.howItWorks.sample').replace('{0}', $sampleAnchor))
+#set ($docsURL = 'https://www.xwiki.org/xwiki/bin/view/documentation/extensions/user/guided-tour/')
+#set ($docsLabel = $escapetool.xml($services.localization.render('guidedtour.home.docs.linkLabel')))
+#set ($docsAria = $escapetool.xml($services.localization.render('guidedtour.home.docs.linkAriaLabel')))
+#set ($docsAttributes = "target='_blank' rel='noopener noreferrer' aria-label='$docsAria'")
+#set ($docsAnchor = "&lt;a href='$docsURL' $docsAttributes&gt;$docsLabel&lt;/a&gt;")
+#set ($docsItem = $services.localization.render('guidedtour.home.docs').replace('{0}', $docsAnchor))
+{{html}}
+  &lt;div class="guidedtour-home-actions"&gt;
+    &lt;a href="$createURL" class="btn btn-primary" title="$createTitle"&gt;
+      &lt;span class="fa fa-plus" aria-hidden="true"&gt;&lt;/span&gt; $createLabel
+    &lt;/a&gt;
+    &lt;a href="$toursURL" class="btn btn-default" title="$manageTitle"&gt;
+      &lt;span class="fa fa-list" aria-hidden="true"&gt;&lt;/span&gt; $manageLabel
+    &lt;/a&gt;
+    #if ($activeToursCount == 0)
+      #if ($totalCount &gt; 0)
+        &lt;span class="text-muted"&gt;$helperNoneDisabled&lt;/span&gt;
+      #else
+        &lt;span class="text-muted"&gt;$helperNone&lt;/span&gt;
+      #end
+    #elseif ($activeToursCount == 1)
+      &lt;span class="text-muted"&gt;$helperOne&lt;/span&gt;
+    #else
+      &lt;span class="text-muted"&gt;$helperMany&lt;/span&gt;
+    #end
+  &lt;/div&gt;
+  &lt;h2 id="howGuidedToursWork"&gt;$howTitle&lt;/h2&gt;
+  &lt;p&gt;$howIntro&lt;/p&gt;
+  &lt;ul&gt;
+    #if ($totalCount &gt; 0)
+      &lt;li&gt;$manageItem&lt;/li&gt;
+    #end
+    #if ($sampleExists)
+      &lt;li&gt;$sampleItem&lt;/li&gt;
+    #end
+  &lt;/ul&gt;
+  &lt;p&gt;$docsItem&lt;/p&gt;
+{{/html}}
+{{/velocity}}</content>
+  <object>
+    <name>GuidedTour.WebHome</name>
+    <number>0</number>
+    <className>XWiki.StyleSheetExtension</className>
+    <guid>d48aa581-6b28-4a67-9d2d-5b27e278fb02</guid>
+    <class>
+      <name>XWiki.StyleSheetExtension</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <cache>
+        <cache>0</cache>
+        <defaultValue>long</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>cache</name>
+        <number>5</number>
+        <prettyName>Caching policy</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>long|short|default|forbid</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </cache>
+      <code>
+        <contenttype>PureText</contenttype>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <name>code</name>
+        <number>2</number>
+        <prettyName>Code</prettyName>
+        <rows>20</rows>
+        <size>50</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </code>
+      <contentType>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>contentType</name>
+        <number>6</number>
+        <prettyName>Content Type</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>CSS|LESS</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </contentType>
+      <name>
+        <disabled>0</disabled>
+        <name>name</name>
+        <number>1</number>
+        <prettyName>Name</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </name>
+      <parse>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType>yesno</displayType>
+        <name>parse</name>
+        <number>4</number>
+        <prettyName>Parse content</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </parse>
+      <use>
+        <cache>0</cache>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>use</name>
+        <number>3</number>
+        <prettyName>Use this extension</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <unmodifiable>0</unmodifiable>
+        <values>currentPage|onDemand|always</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </use>
+    </class>
+    <property type="String">
+      <cache>forbid</cache>
+    </property>
+    <property type="LargeString">
+      <code>.guidedtour-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  margin: 1em 0;
 }
-{{/liveData}}</content>
+</code>
+    </property>
+    <property type="String">
+      <contentType>CSS</contentType>
+    </property>
+    <property type="String">
+      <name/>
+    </property>
+    <property type="Integer">
+      <parse>0</parse>
+    </property>
+    <property type="String">
+      <use>onDemand</use>
+    </property>
+  </object>
 </xwikidoc>
