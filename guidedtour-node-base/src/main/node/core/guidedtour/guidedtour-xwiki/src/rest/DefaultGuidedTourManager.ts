@@ -175,10 +175,19 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     );
   }
 
+  /**
+   * Get the state of the widget, as last saved by the current user.
+   * @since 0.2
+   */
   async getWidgetState(): Promise<WidgetState> {
     return (await this.getUserStatus()).widgetState;
   }
 
+  /**
+   * Save the state of the widget in the current user's status, so that it is restored on the next page load.
+   * @param widgetState - The new state of the widget.
+   * @since 0.2
+   */
   async setWidgetState(widgetState: WidgetState): Promise<void> {
     const userStatus = await this.getUserStatus();
     userStatus.widgetState = widgetState;
@@ -195,17 +204,34 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     await this.setCallToAction(tourId, false);
   }
 
+  /**
+   * Skip a task, and stop starting the next tasks of its tour automatically. The new status is saved at once.
+   * @param task - The task to skip.
+   * @since 0.2
+   */
   async skipTask(task: TourTask): Promise<void> {
     await this.disableCallToAction(task.tourId!);
     await this.setTaskStatus(task, TourTaskStatus.SKIPPED);
   }
 
+  /**
+   * Reset all the tasks of a tour to TODO, and start the next task automatically again when a task is finished.
+   * The new status is saved at once, for all the tasks.
+   * @param tourId - The id of the tour to reset.
+   * @since 0.2
+   */
   async resetTour(tourId: string): Promise<void> {
     // Resetting an entire tour starts its next tasks automatically again.
     await this.setCallToAction(tourId, true);
     await this.setTourTasksStatus(tourId, TourTaskStatus.TODO, () => true);
   }
 
+  /**
+   * Skip all the TODO tasks of a tour, keeping the ones already done or skipped. The new status is saved at once,
+   * for all the tasks.
+   * @param tourId - The id of the tour to skip.
+   * @since 0.2
+   */
   async skipTour(tourId: string): Promise<void> {
     // Only skip the tasks left to do, keep the ones already done or skipped.
     await this.setTourTasksStatus(
@@ -240,6 +266,9 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     await this.saveUserStatus();
   }
 
+  /**
+   * Get all the tours, with the status of their tasks set from the progress of the current user.
+   */
   async getTours(): Promise<TourTour[]> {
     // The user status is needed to set the status of the tasks.
     await this.getUserStatus();

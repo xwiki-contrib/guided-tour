@@ -24,6 +24,9 @@
  * @beta
  */
 export class RestError extends Error {
+  /**
+   * @param status - The HTTP status of the failed response.
+   */
   constructor(public readonly status: number) {
     super(`HTTP Error: ${status}`);
   }

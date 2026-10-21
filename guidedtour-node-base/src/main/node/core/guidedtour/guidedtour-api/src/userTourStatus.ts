@@ -26,8 +26,17 @@ import type { TourTaskStatus } from "./tourTaskStatus";
  * @beta
  */
 enum WidgetState {
+  /**
+   * The widget is not visible.
+   */
   HIDDEN = "HIDDEN",
+  /**
+   * The widget is expanded.
+   */
   OPEN = "OPEN",
+  /**
+   * The widget is minimized.
+   */
   COLLAPSED = "COLLAPSED",
 }
 

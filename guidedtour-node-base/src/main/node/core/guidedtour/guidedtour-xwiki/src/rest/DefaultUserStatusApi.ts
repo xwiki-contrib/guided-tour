@@ -44,6 +44,10 @@ export class DefaultUserStatusApi {
    */
   private saveDisabled = false;
 
+  /**
+   * @param restClient - The client used to load and save the status of logged-in users.
+   * @param userReference - The reference of the current user, or null for guest users.
+   */
   constructor(
     private readonly restClient: GuidedTourRestClient,
     private readonly userReference: string | null,

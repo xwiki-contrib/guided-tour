@@ -35,23 +35,17 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     getTask(tourId: string, taskId: string): Promise<TourTask | undefined>;
     // (undocumented)
     getTasks(tourId: string): Promise<TourTask[]>;
-    // (undocumented)
     getTours(): Promise<TourTour[]>;
     getUsefulLinks(): Promise<string[]>;
-    // (undocumented)
     getWidgetState(): Promise<WidgetState>;
     initExistingTask(): Promise<void>;
-    // (undocumented)
     resetTour(tourId: string): Promise<void>;
     setTaskStatus(task: TourTask, status: TourTaskStatus): Promise<void>;
     setupStep(step: TourStep): void;
-    // (undocumented)
     setWidgetState(widgetState: WidgetState): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "TourStore" needs to be exported by the entry point index.d.ts
     sharedStore: TourStore;
-    // (undocumented)
     skipTask(task: TourTask): Promise<void>;
-    // (undocumented)
     skipTour(tourId: string): Promise<void>;
     startTask(task: TourTask, remember?: boolean): Promise<void>;
     updateStep(tourId: string, taskId: string, stepId: number, stepData: TourStep): Promise<void>;

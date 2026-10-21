@@ -85,6 +85,9 @@ async function onResetTask() {
   isWaitingAsync.value = false;
 }
 
+/**
+ * Skip the task, and stop starting the next tasks of its tour automatically.
+ */
 async function onSkipTask() {
   isWaitingAsync.value = true;
   // Skipping the task also stops starting the next tasks of its tour automatically.

@@ -111,10 +111,16 @@ defineEmits(["toggleCollapseTour"]);
 const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
 const tasks = ref<Reactive<TourTask>[]>([]);
 
+/**
+ * Skip all the TODO tasks of the tour.
+ */
 async function onSkipTour() {
   await guidedTourManager.skipTour(props.tour.id);
 }
 
+/**
+ * Reset all the tasks of the tour to TODO, and start the next task automatically again when a task is finished.
+ */
 async function onResetTour() {
   await guidedTourManager.resetTour(props.tour.id);
 }

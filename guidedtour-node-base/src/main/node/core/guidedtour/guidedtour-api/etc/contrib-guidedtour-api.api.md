@@ -118,11 +118,8 @@ export interface UserTourStatus {
 
 // @beta
 export enum WidgetState {
-    // (undocumented)
     COLLAPSED = "COLLAPSED",
-    // (undocumented)
     HIDDEN = "HIDDEN",
-    // (undocumented)
     OPEN = "OPEN"
 }
 

@@ -120,6 +120,11 @@ const state = reactive({
 // Whether the user toggled the widget before the saved widget state was loaded, in which case the saved state
 // shouldn't override the user's choice. Only read once, when the saved state is loaded.
 let toggledBeforeLoad = false;
+/**
+ * Collapse or expand the widget, and save its new state. Hide the widget instead if it is already collapsed and the
+ * close button was clicked.
+ * @param buttonClicked - Whether the close button was clicked.
+ */
 async function onCloseGuidedTourWidget(buttonClicked: boolean) {
   if (state.isWidgetCollapsed && buttonClicked) {
     state.isWidgetShown = false;
