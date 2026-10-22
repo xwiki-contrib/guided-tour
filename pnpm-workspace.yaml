@@ -21,7 +21,7 @@ catalog:
   "@xwiki/platform-tool-eslintconfig": 18.3.0
   "@xwiki/platform-tool-tsconfig": 18.3.0
   "@xwiki/platform-tool-tsdocconfig": 18.3.0
-  "@xwiki/platform-tool-viteconfig": 18.3.0
+  "@xwiki/platform-tool-viteconfig": 18.8.0
   driver.js: 1.10.1
   eslint: 9.39.5
   eventemitter3: 5.0.4
