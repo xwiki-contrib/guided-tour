@@ -11,7 +11,7 @@ catalog:
   "@microsoft/api-extractor": 7.59.4
   "@types/jquery": 4.0.1
   "@types/node": 24.19.2
-  "@types/sinon": 22.0.0
+  "@types/sinon": 22.0.1
   "@vitejs/plugin-vue": 6.0.10
   "@vue/test-utils": 2.5.1
   "@xwiki/platform-localization-adapter-vue": 18.3.0
