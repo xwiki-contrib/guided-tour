@@ -43,7 +43,7 @@ catalog:
   vue: 3.5.44
   vue-i18n: 11.4.14
   vue-tippy: 6.8.0
-  vue-tsc: 3.3.13
+  vue-tsc: 3.3.14
   vuedraggable: 4.1.0
 
 catalogMode: strict
