@@ -183,7 +183,7 @@
       <unmodifiable>0</unmodifiable>
       <validationMessage/>
       <validationRegExp/>
-      <values>EDIT|VIEW|DELETE|CREATE|ADMIN|NOT_SET</values>
+      <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
       <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
     </targetAction>
     <targetPage>
