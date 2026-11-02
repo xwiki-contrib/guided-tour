@@ -71,7 +71,6 @@ export type TourStep = {
     placement?: string;
     backdrop?: boolean;
     reflex: boolean;
-    path?: string;
     targetClass?: string;
     targetPage?: string;
     targetAction?: string;

@@ -101,6 +101,15 @@ const util = {
     util.loadingNotification = undefined;
   },
   /**
+   * Figure out if the given step should be considered a reflex step.
+   *
+   * @param step - the TourStep to check
+   * @returns true if the step should be treated as a reflex step (advancing on click), false otherwise
+   */
+  isReflex(step: TourStep): boolean {
+    return step.reflex && !!step.element;
+  },
+  /**
    * Drive to the given step, showing a loading notification until the step is highlighted.
    */
   driveToStep(
@@ -127,7 +136,7 @@ const util = {
     guidedTourTask: TourTask,
     translations: Record<string, string>,
   ) {
-    if (step.reflex) {
+    if (util.isReflex(step)) {
       popDOM.footerButtons.removeChild(popDOM.nextButton);
       popDOM.footerButtons.removeChild(popDOM.previousButton);
     } else {
@@ -150,7 +159,8 @@ const util = {
     const stepOffset = direction == "next" ? 1 : -1;
     return guidedTourTask.steps?.[currentStepActiveIndex + stepOffset];
   },
-  moveToAdjacentStep(
+  // eslint-disable-next-line max-statements
+  async moveToAdjacentStep(
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
     direction: StepDirection,
@@ -179,6 +189,15 @@ const util = {
       StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
       adjacentStepIndex.toString(),
     );
+
+    // If the adjacent step is on another page, redirect to it. Reflex actions never redirect, since they might navigate
+    // on their own (e.g. "Save and view").
+    if (
+      !guidedTourTask.steps![currentStepActiveIndex].reflex &&
+      guidedTourManager.redirectToExpectedPage(adjacentStep)
+    ) {
+      return;
+    }
 
     util.driveToStep(
       guidedTourManager.activeDriverTask!,

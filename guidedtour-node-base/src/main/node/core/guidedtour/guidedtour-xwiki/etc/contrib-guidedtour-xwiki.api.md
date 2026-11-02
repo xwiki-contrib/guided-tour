@@ -39,6 +39,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     getUsefulLinks(): Promise<string[]>;
     getWidgetState(): Promise<WidgetState>;
     initExistingTask(): Promise<void>;
+    redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean;
     resetTour(tourId: string): Promise<void>;
     setTaskStatus(task: TourTask, status: TourTaskStatus): Promise<void>;
     setupStep(step: TourStep): void;

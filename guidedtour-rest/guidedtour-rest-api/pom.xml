@@ -85,6 +85,15 @@
                     tour, as part of GUIDEDTOUR-2: Save progress in user profile.</justification>
                   <criticality>documented</criticality>
                 </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.field.removed</code>
+                  <old>field org.xwiki.contrib.guidedtour.api.enums.ActionType.COMMENT</old>
+                  <justification>As part of GUIDEDTOUR-20: Redirect to expected page when starting a task, the allowed
+                    action types have been modified. If you want to enforce the comment action, you should now instead
+                    add the URI fragment as part of the query parameter.</justification>
+                  <criticality>documented</criticality>
+                </item>
               </differences>
             </revapi.differences>
           </analysisConfiguration>

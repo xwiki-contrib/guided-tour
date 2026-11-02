@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.xwiki.contrib.guidedtour.api.dtos.StepDTO;
+import org.xwiki.contrib.guidedtour.api.enums.ActionType;
 import org.xwiki.contrib.guidedtour.api.enums.Placement;
 import org.xwiki.contrib.guidedtour.api.enums.TourProperty;
 import org.xwiki.contrib.guidedtour.api.exceptions.DuplicatedIdException;
@@ -146,7 +147,7 @@ class StepsManagerTest
         when(this.stepObject3.getStringValue(TourProperty.TARGET_PAGE.getBaseKey())).thenReturn("");
 
         when(this.stepObject1.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("");
-        when(this.stepObject2.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("");
+        when(this.stepObject2.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("invalid");
         when(this.stepObject3.getStringValue(TourProperty.TARGET_ACTION.getBaseKey())).thenReturn("view");
 
         when(this.stepObject1.getStringValue(TourProperty.QUERY_PARAMETERS.getBaseKey())).thenReturn("param=value");
@@ -172,6 +173,9 @@ class StepsManagerTest
         assertEquals("content for step 1", steps.get(0).getContent());
         assertEquals("element2", steps.get(1).getElement());
         assertEquals(Placement.LEFT_CENTER, steps.get(2).getPlacement());
+        assertEquals(ActionType.NOT_SET, steps.get(0).getTargetAction());
+        assertEquals(ActionType.NOT_SET, steps.get(1).getTargetAction());
+        assertEquals(ActionType.VIEW, steps.get(2).getTargetAction());
     }
 
     @Test
@@ -200,12 +204,25 @@ class StepsManagerTest
     void createStep() throws XWikiException, DuplicatedIdException, InvalidIdException
     {
         this.stepDTO.setOrder(-1);
+        this.stepDTO.setTargetAction("");
         this.stepsManager.createStep("testTour", "testTask", this.stepDTO);
         verify(this.stepObject1, times(1)).set(TourProperty.PLACEMENT.getBaseKey(), Placement.RIGHT_END,
+            this.xwikiContext);
+        verify(this.stepObject1, times(1)).set(TourProperty.TARGET_ACTION.getBaseKey(), ActionType.NOT_SET,
             this.xwikiContext);
         verify(this.stepObject1, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, this.xwikiContext);
         verify(this.stepObject1, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, this.xwikiContext);
         verify(this.stepObject1, times(1)).set(TourProperty.ORDER.getBaseKey(), 4, this.xwikiContext);
+    }
+
+    @Test
+    void createStepWithoutTargetAction() throws XWikiException, DuplicatedIdException, InvalidIdException
+    {
+        StepDTO step = new StepDTO();
+        step.setOrder(-1);
+        this.stepsManager.createStep("testTour", "testTask", step);
+        verify(this.stepObject1, times(1)).set(TourProperty.TARGET_ACTION.getBaseKey(), ActionType.NOT_SET,
+            this.xwikiContext);
     }
 
     @Test
@@ -226,6 +243,8 @@ class StepsManagerTest
             this.xwikiContext);
         verify(this.stepObject3, times(1)).set(TourProperty.BACKDROP.getBaseKey(), 1, this.xwikiContext);
         verify(this.stepObject3, times(1)).set(TourProperty.REFLEX.getBaseKey(), 0, this.xwikiContext);
+        verify(this.stepObject3, times(1)).set(TourProperty.TARGET_ACTION.getBaseKey(), ActionType.EDIT,
+            this.xwikiContext);
     }
 
     @Test

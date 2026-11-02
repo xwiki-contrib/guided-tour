@@ -18,11 +18,13 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import { wrapTask } from "../../driverjsMain";
 import { DefaultGuidedTourManager } from "../DefaultGuidedTourManager";
 import { TourStore } from "../TourStore";
 import { TourTaskStatus, WidgetState } from "@xwiki/contrib-guidedtour-api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+  TourStep,
   TourTask,
   TourTour,
   UserTourStatus,
@@ -118,6 +120,40 @@ async function activateTask(tourId: string, taskId: string) {
   manager.activeDriverTask = { destroy: vi.fn() } as unknown as Driver;
 }
 
+/**
+ * Fake the current page, always Main.WebHome, so that the navigation can be checked without happy-dom performing it.
+ * @param action - The current action.
+ * @param suffix - The query string and fragment of the current URL.
+ * @returns the fake location.
+ */
+function setCurrentPage(action: string, suffix = "") {
+  vi.stubGlobal("XWiki", {
+    contextaction: action,
+    EntityType: { DOCUMENT: "document" },
+    currentDocument: { documentReference: "Main.WebHome" },
+    Model: {
+      resolve: (reference: string) => reference,
+      serialize: (reference: string) => reference,
+    },
+    Document: function (reference: string) {
+      return {
+        getURL: (urlAction = "view") =>
+          `/xwiki/bin/${urlAction}/${reference.replace(".", "/")}`,
+      };
+    },
+  });
+  const location = Object.assign(
+    new URL(`http://localhost/xwiki/bin/${action}/Main/WebHome${suffix}`),
+    { reload: vi.fn() },
+  );
+  vi.stubGlobal("location", location);
+  return location;
+}
+
+function createStep(step: Partial<TourStep> = {}): TourStep {
+  return { order: 0, content: "", reflex: false, ...step };
+}
+
 async function loadManager(userStatus: UserTourStatus) {
   mocks.loadStatus.mockResolvedValue(userStatus);
   const xm = { userReference: "xwiki:XWiki.Alice" };
@@ -138,6 +174,7 @@ describe("DefaultGuidedTourManager", () => {
   afterEach(() => {
     sessionStorage.clear();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   describe("user progress", () => {
@@ -293,6 +330,150 @@ describe("DefaultGuidedTourManager", () => {
     await manager.setTaskStatus(await getTask("tour1", "task1"), DONE);
 
     expect(startTask).not.toHaveBeenCalled();
+  });
+
+  describe("redirect to the expected page", () => {
+    beforeEach(async () => {
+      await loadManager(createUserStatus());
+    });
+
+    it("stays on the current page when it matches the step", () => {
+      const location = setCurrentPage("edit", "?editor=wiki&other=1#H1");
+
+      expect(
+        manager.redirectToExpectedPage(
+          createStep({
+            targetPage: "Main.WebHome",
+            targetAction: "EDIT",
+            // The leading "?" is optional, and other query parameters or fragment are allowed.
+            queryParameters: "?editor=wiki",
+          }),
+        ),
+      ).toBe(false);
+      expect(location.href).toBe(
+        "http://localhost/xwiki/bin/edit/Main/WebHome?editor=wiki&other=1#H1",
+      );
+    });
+
+    it("accepts any action when the step doesn't expect one", () => {
+      setCurrentPage("edit");
+
+      expect(manager.redirectToExpectedPage(createStep())).toBe(false);
+    });
+
+    it("considers the in-place editor as the edit action", () => {
+      setCurrentPage("view", "#edit");
+
+      expect(
+        manager.redirectToExpectedPage(createStep({ targetAction: "EDIT" })),
+      ).toBe(false);
+    });
+
+    it("doesn't redirect without a step", () => {
+      setCurrentPage("view");
+
+      expect(manager.redirectToExpectedPage(undefined)).toBe(false);
+    });
+
+    it.each([
+      [
+        "another page",
+        { targetPage: "Sandbox.WebHome" },
+        "/xwiki/bin/view/Sandbox/WebHome",
+      ],
+      [
+        "another action",
+        { targetAction: "EDIT" },
+        "/xwiki/bin/edit/Main/WebHome",
+      ],
+      [
+        "other query parameters",
+        { queryParameters: "editor=wiki" },
+        "/xwiki/bin/view/Main/WebHome?editor=wiki",
+      ],
+    ])("redirects when the step expects %s", (_, step, expectedPath) => {
+      const location = setCurrentPage("view", "?editor=wysiwyg");
+
+      expect(manager.redirectToExpectedPage(createStep(step))).toBe(true);
+      expect(location.href).toBe("http://localhost" + expectedPath);
+      expect(location.reload).not.toHaveBeenCalled();
+    });
+
+    it("reloads the page when only the fragment changes", () => {
+      const location = setCurrentPage("view");
+
+      expect(
+        manager.redirectToExpectedPage(
+          createStep({ queryParameters: "#Comments" }),
+        ),
+      ).toBe(true);
+      expect(location.href).toBe(
+        "http://localhost/xwiki/bin/view/Main/WebHome#Comments",
+      );
+      expect(location.reload).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe("starting a task", () => {
+    const drive = vi.fn();
+    let task: TourTask;
+
+    beforeEach(async () => {
+      await loadManager(createUserStatus());
+      vi.mocked(wrapTask).mockReturnValue({ drive } as unknown as Driver);
+      task = {
+        ...createTask("task1", 1),
+        tourId: "tour1",
+        steps: [
+          createStep({ targetPage: "Sandbox.WebHome" }),
+          createStep({ order: 1, targetAction: "EDIT" }),
+        ],
+      };
+    });
+
+    it("redirects to the page of the first step before starting the task", async () => {
+      const location = setCurrentPage("view");
+
+      await manager.startTask(task, false);
+
+      expect(location.href).toBe(
+        "http://localhost/xwiki/bin/view/Sandbox/WebHome",
+      );
+      expect(manager.activeTask).toBeUndefined();
+      expect(drive).not.toHaveBeenCalled();
+      // The task is resumed from the storage once on the expected page.
+      expect(sessionStorage.getItem("guidedtour_activeTask")).toBe(
+        "guidedtour_tour1__task1",
+      );
+      expect(
+        sessionStorage.getItem("guidedtour_tour1__task1_currentStep"),
+      ).toBe("0");
+    });
+
+    it("doesn't redirect when resuming a task", async () => {
+      const location = setCurrentPage("view");
+      sessionStorage.setItem("guidedtour_tour1__task1_currentStep", "1");
+
+      await manager.startTask(task);
+
+      expect(location.href).toBe(
+        "http://localhost/xwiki/bin/view/Main/WebHome",
+      );
+      expect(manager.activeTask).toBe(task);
+      expect(drive).toHaveBeenCalledExactlyOnceWith(1);
+    });
+  });
+
+  it("ignores the target action of the steps that don't set one", async () => {
+    await loadManager(createUserStatus());
+    mocks.request.mockResolvedValueOnce([
+      createStep({ targetAction: "NOT_SET" }),
+      createStep({ order: 1, targetAction: "EDIT" }),
+    ]);
+
+    const steps = await manager.getSteps("tour1", "task1");
+
+    expect(steps.map((step) => step.targetAction)).toEqual([undefined, "EDIT"]);
   });
 
   it("gets and saves the widget state", async () => {

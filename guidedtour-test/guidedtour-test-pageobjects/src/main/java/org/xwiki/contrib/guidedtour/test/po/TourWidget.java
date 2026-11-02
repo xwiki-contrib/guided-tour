@@ -123,8 +123,10 @@ public class TourWidget extends ViewPage
 
     public void clickTask(String taskId)
     {
-        widget.findElement(
-            By.xpath(".//div[contains(@class,'guidedtour-task') and @id=" + escapeXPathString(taskId) + "]")).click();
+        By task = By.xpath("//div[contains(@class,'guidedtour-task') and @id=" + escapeXPathString(taskId) + "]");
+        // The tasks are loaded asynchronously.
+        getDriver().waitUntilElementIsVisible(task);
+        getDriver().findElement(task).click();
     }
 
     public void skipTask(String taskId)

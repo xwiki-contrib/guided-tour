@@ -242,10 +242,10 @@
       <reflex>0</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>VIEW</targetAction>
     </property>
     <property type="String">
-      <targetPage/>
+      <targetPage>Sandbox.WebHome</targetPage>
     </property>
   </object>
   <object>
@@ -453,7 +453,7 @@
       <reflex>1</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>VIEW</targetAction>
     </property>
     <property type="String">
       <targetPage/>
@@ -649,7 +649,7 @@
       <content>You can write stuff now!</content>
     </property>
     <property type="String">
-      <element>#xwikieditcontent,#xwikicontent.cke_editable</element>
+      <element>#xwikieditcontent:not(.inplace-editing-buttons),#xwikicontent.cke_editable</element>
     </property>
     <property type="Long">
       <order>2</order>
@@ -857,10 +857,10 @@
       <backdrop/>
     </property>
     <property type="LargeString">
-      <content>YeahHA!!!!aAAA</content>
+      <content>Now, press this button to finish editing and go back to viewing the page.</content>
     </property>
     <property type="String">
-      <element>.realtime-action-done</element>
+      <element>.realtime-action-done,.bottombuttons .btn[name="action_save"]</element>
     </property>
     <property type="Long">
       <order>3</order>

@@ -242,7 +242,7 @@
       <reflex>0</reflex>
     </property>
     <property type="String">
-      <targetAction/>
+      <targetAction>NOT_SET</targetAction>
     </property>
     <property type="String">
       <targetPage/>
