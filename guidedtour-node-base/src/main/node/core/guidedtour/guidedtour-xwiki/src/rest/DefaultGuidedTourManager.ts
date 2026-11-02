@@ -24,12 +24,7 @@ import { DefaultTourManagerApi } from "./DefaultTourManagerApi";
 import { DefaultUserStatusApi } from "./DefaultUserStatusApi";
 import { GuidedTourRestClient } from "./GuidedTourRestClient";
 import { StorageManager } from "../StorageManager";
-import {
-  driveToStep,
-  driver,
-  getDriverConfigForSteps,
-  hideLoadingNotification,
-} from "../driverjsMain";
+import { driver, getDriverConfigForSteps, wrapTask } from "../driverjsMain";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { DocumentReference } from "@xwiki/platform-model-api";
 import type { TourStore } from "./TourStore";
@@ -483,8 +478,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
   /**
    * Start a guided tour task.
-   * Fetches the steps, creates a driver.js instance, and begins the tour at
-   * the remembered or first step.
+   * Fetches the steps, creates a driver.js instance, wraps it for session
+   * persistence, and begins the tour at the remembered or first step.
    * @param task - The task to start.
    * @param remember - Whether to resume from a saved step index.
    */
@@ -500,6 +495,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         )
       : 0;
     const config = await getDriverConfigForSteps(task, this, this.translations);
+    const driverTour = driver(config);
     StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
       StorageManager.getStorageKeyPrefix(task),
@@ -523,8 +519,8 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     }
 
     this.activeTask = task;
-    this.activeDriverTask = driver(config);
-    driveToStep(this.activeDriverTask, stepIndex, this.translations);
+    this.activeDriverTask = wrapTask(driverTour, this.translations);
+    this.activeDriverTask.drive(stepIndex);
   }
 
   /**
@@ -634,8 +630,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // this.activeTask is used as a flag to tell `onDestroy()` to not re-compute the task status.
     this.activeDriverTask?.destroy();
     this.activeDriverTask = undefined;
-    // driver.js doesn't call `onDestroyed()` if it was still waiting for the first step's element.
-    hideLoadingNotification();
     // Update the storage keys last, since they could be used in `onDestroy()` to compute the task status.
     StorageManager.setStorageKey(currentStepKey, undefined);
     StorageManager.setStorageKey(stepStorageKey, undefined);

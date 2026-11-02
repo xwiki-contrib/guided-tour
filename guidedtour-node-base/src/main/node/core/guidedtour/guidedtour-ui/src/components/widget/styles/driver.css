@@ -6,8 +6,10 @@
   pointer-events: auto;
 }
 
-/* Re-applied after the rule above, which would otherwise also match the overlay. */
-.driver-active .driver-overlay {
+/* Re-applied after the rule above, which would otherwise also match the overlay, and the full-screen layer that
+   Driver.js adds when the highlighted element is inside an open <dialog>. */
+.driver-active .driver-overlay,
+.driver-active .driver-layer {
   pointer-events: none;
 }
 

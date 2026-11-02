@@ -26,16 +26,6 @@ import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
 
 type StepDirection = "next" | "previous";
 
-/**
- * How long (in ms) driver.js waits for a step's element to become visible before giving up on the task.
- */
-const WAIT_FOR_ELEMENT_TIMEOUT = 3000;
-
-/**
- * How long (in ms) a reflex step on a text input waits after the click, to let the user type, before moving on.
- */
-const TEXT_INPUT_REFLEX_DELAY = 5000;
-
 const util = {
   /**
    * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
@@ -82,23 +72,30 @@ const util = {
     return customSkipAll;
   },
   /**
+   * For use in `findVisibleElement` below.
+   *
+   * @param element - The element to check
+   * @returns true if the element is visible on the page, false otherwise.
+   */
+  isElementVisible(element: Element): boolean {
+    const style = globalThis.getComputedStyle(element);
+    if (style.display == "none") {
+      return false;
+    } else {
+      return true;
+    }
+  },
+  /**
    * @param selector - css selector for the element to find (should be compatible with document.querySelector)
    * @returns the element, if it exists and is visible on the page
    */
   findVisibleElement(selector: string): Element | undefined {
     const queriedElement = document.querySelector(selector);
-    if (
-      queriedElement &&
-      globalThis.getComputedStyle(queriedElement).display != "none"
-    ) {
+    if (queriedElement && util.isElementVisible(queriedElement)) {
       return queriedElement;
     } else {
       return undefined;
     }
-  },
-  hideLoadingNotification() {
-    util.loadingNotification?.hide();
-    util.loadingNotification = undefined;
   },
   /**
    * Figure out if the given step should be considered a reflex step.
@@ -109,20 +106,9 @@ const util = {
   isReflex(step: TourStep): boolean {
     return step.reflex && !!step.element;
   },
-  /**
-   * Drive to the given step, showing a loading notification until the step is highlighted.
-   */
-  driveToStep(
-    driverTask: Driver,
-    stepIndex: number,
-    translations: Record<string, string>,
-  ) {
-    util.hideLoadingNotification();
-    util.loadingNotification = new XWiki.widgets.Notification(
-      translations["guidedtour.driver.loading"],
-      "inprogress",
-    );
-    driverTask.drive(stepIndex);
+  hideLoadingNotification() {
+    util.loadingNotification?.hide();
+    util.loadingNotification = undefined;
   },
   /**
    * Decides which buttons should be visible in the modal, and updates the DOM.
@@ -164,12 +150,20 @@ const util = {
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
     direction: StepDirection,
-    translations: Record<string, string>,
   ) {
+    /*
+     * Things to consider:
+     * - Is the current step the one I expect?
+     * - Am I in the last step?
+     * - Am I expecting a redirect?
+     * - Wait for element to appear
+     */
     if (util.pageUnloadingFlag) {
       // Don't do anything if the page is currently in the process of redirecting.
       return;
     }
+    // Cache the current step index, so we can check later (after async operations) if we are in the same step
+    // we started in.
     const currentStepActiveIndex =
       guidedTourManager.activeDriverTask!.getActiveIndex()!;
     const adjacentStep = util.getAdjacentStep(
@@ -199,11 +193,9 @@ const util = {
       return;
     }
 
-    util.driveToStep(
-      guidedTourManager.activeDriverTask!,
-      adjacentStepIndex,
-      translations,
-    );
+    // The `.drive()` method is overridden in xwiki to show a loading notification while driver.js waits for the step's
+    // element to appear in the page.
+    guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
   },
 };
 
@@ -225,20 +217,22 @@ function XWikiDriverConfig(
     showProgress: true,
     showButtons: ["previous", "next", "close"],
     overlayOpacity: 0.3,
-    waitForElement: WAIT_FOR_ELEMENT_TIMEOUT,
-    onHighlightStarted: (element, step) => {
+    // How long (in ms) to wait for the step's element to be visible (see `convertToDriverStep`) before giving up.
+    waitForElement: 3000,
+    onHighlightStarted: (element, step, options) => {
       util.hideLoadingNotification();
+      const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
       if (element === undefined && step.element !== undefined) {
-        // driver.js gave up waiting for the step's targeted element. Skip the task, don't proceed with it.
-        console.error("Element not found for step:", step);
+        // We didn't find the element we wanted. Don't proceed with the task.
+        console.error("Failed to find the element of the step:", xwikiStep);
         new XWiki.widgets.Notification(
           translations["guidedtour.driver.error"],
           "error",
         );
-        void guidedTourManager.setTaskStatus(
-          guidedTourTask,
-          TourTaskStatus.SKIPPED,
-        );
+        // Skip the task since we didn't find the step's targeted element in the page.
+        guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
+      } else {
+        bindReflexEvents(element, xwikiStep, guidedTourManager);
       }
     },
     onPopoverRender: (popDOM, options) => {
@@ -272,6 +266,7 @@ function XWikiDriverConfig(
      * Set the status of the task when it is closed: DONE if the user reached the end, otherwise keep its status and
      * stop starting the next tasks of its tour automatically.
      */
+    // eslint-disable-next-line max-statements
     onDestroyed: async function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
       util.hideLoadingNotification();
@@ -305,36 +300,23 @@ function XWikiDriverConfig(
         }
       }
     },
-    // Also called by driver.js when the targeted element of a reflex step is clicked (see `advanceOnClick`).
-    onNextClick: async (element, step, options) => {
+    onNextClick: async (element, _step, options) => {
+      const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
       if (
-        step.advanceOnClick &&
-        element instanceof HTMLInputElement &&
-        element.type == "text"
+        util.isReflex(xwikiStep) &&
+        element instanceof HTMLElement &&
+        element.id !== "driver-dummy-element"
       ) {
-        // Special case for text inputs: wait before continuing, to allow the user to type stuff.
-        // TODO: Maybe add a 'match text' setting for advancing the step.
-        await new Promise((resolve) =>
-          setTimeout(resolve, TEXT_INPUT_REFLEX_DELAY),
-        );
-        if (options.driver.getActiveIndex() !== options.index) {
-          // The active step changed in the meantime.
-          return;
-        }
+        element.click();
+        return;
       }
-      util.moveToAdjacentStep(
-        guidedTourTask,
-        guidedTourManager,
-        "next",
-        translations,
-      );
+      await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
     },
-    onPrevClick: () => {
-      util.moveToAdjacentStep(
+    onPrevClick: async () => {
+      await util.moveToAdjacentStep(
         guidedTourTask,
         guidedTourManager,
         "previous",
-        translations,
       );
     },
   };
@@ -346,11 +328,10 @@ function convertToDriverStep(
 ): DriveStep {
   const selector = step.element;
   return {
-    // driver.js waits (see `waitForElement`) while this returns nothing, so only hidden elements are waited for too.
+    // driver.js waits (see `waitForElement`) while this returns nothing, so hidden elements are waited for too.
     element: selector
       ? ((() => util.findVisibleElement(selector)) as () => Element)
       : undefined,
-    advanceOnClick: step.reflex,
     popover: {
       title: step.title ?? guidedTourTask.title,
       description: step.content,
@@ -379,15 +360,95 @@ async function getDriverConfigForSteps(
   return config;
 }
 
-const { driveToStep, hideLoadingNotification } = util;
+function wrapTask(
+  guidedTourTask: Driver,
+  translations: Record<string, string>,
+): Driver {
+  const _drive = guidedTourTask.drive;
+  guidedTourTask.drive = function (stepIndex: number = 0) {
+    util.hideLoadingNotification();
+    util.loadingNotification = new XWiki.widgets.Notification(
+      translations["guidedtour.driver.loading"],
+      "inprogress",
+    );
+    _drive(stepIndex);
+  };
+  const _destroy = guidedTourTask.destroy;
+  guidedTourTask.destroy = function () {
+    // driver.js doesn't call `onDestroyed()` if it was still waiting for the first step's element.
+    util.hideLoadingNotification();
+    _destroy();
+  };
+  return guidedTourTask;
+}
 
-export {
-  XWikiDriverConfig,
-  driveToStep,
-  driver,
-  getDriverConfigForSteps,
-  hideLoadingNotification,
-};
+export { XWikiDriverConfig, driver, getDriverConfigForSteps, wrapTask };
+
+/**
+ * Adds a callback that triggers when the HTML element is interacted with.
+ *
+ * @param element - The element which should be interacted with in order to proceed.
+ * @param step - The current step. Used to confirm that the active step is the expected one.
+ * @param guidedTourManager - The guidedTourManager Api instance.
+ * @param callbackFn - A callback to execute once the element is interacted with.
+ */
+function bindReflexEvents(
+  element: Element | undefined,
+  step: TourStep,
+  guidedTourManager: DefaultGuidedTourManager,
+  callbackFn: () => void = () => {
+    const activeIndex = guidedTourManager.activeDriverTask?.getActiveIndex();
+    if (activeIndex === undefined) {
+      return;
+    }
+    // Always move to the next step on reflex click.
+    void util.moveToAdjacentStep(
+      guidedTourManager.activeTask!,
+      guidedTourManager,
+      "next",
+    );
+  },
+) {
+  console.debug("Doing reflex bind");
+  if (!util.isReflex(step)) {
+    if (step.reflex && element === undefined) {
+      console.warn("WARNING: reflex step with empty element:", step);
+    }
+    return;
+  }
+  const triggerCallback = () => {
+    console.debug("Removing reflex listener on ", element);
+    element!.removeEventListener("click", callback);
+    callbackFn();
+  };
+  const callback = (event: Event) => {
+    console.debug(event);
+    if (
+      event.target instanceof HTMLInputElement &&
+      event.target.type == "text"
+    ) {
+      // Special case for text inputs.
+      // Right now, the text input awaits for 5s before continuing, to allow the user to type stuff.
+      // TODO: Maybe add a 'match text' setting for advancing the step.
+      const msTimeout = 5000;
+      new Promise((resolve) => setTimeout(resolve, msTimeout))
+        .then(() => {
+          console.debug("sloip awoked");
+          if (
+            step.order == guidedTourManager.activeDriverTask?.getActiveIndex()
+          ) {
+            triggerCallback();
+          }
+          return;
+        })
+        .catch(console.error);
+    } else {
+      triggerCallback();
+    }
+  };
+  console.debug("Adding reflex listener on ", element);
+  element!.addEventListener("click", callback);
+}
 
 // FIXME: From old TourJS.xml
 /*
