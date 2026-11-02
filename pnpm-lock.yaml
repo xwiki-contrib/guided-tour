@@ -52,8 +52,8 @@ catalogs:
       specifier: 18.3.0
       version: 18.3.0
     driver.js:
-      specifier: 1.10.1
-      version: 1.10.1
+      specifier: 1.10.2
+      version: 1.10.2
     eslint:
       specifier: 9.39.5
       version: 9.39.5
@@ -147,10 +147,6 @@ importers:
         version: 0.3.25
 
   guidedtour-node-base/src/main/node/core/guidedtour/guidedtour-api:
-    dependencies:
-      driver.js:
-        specifier: 'catalog:'
-        version: 1.10.1
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -202,7 +198,7 @@ importers:
         version: 18.3.0
       driver.js:
         specifier: 'catalog:'
-        version: 1.10.1
+        version: 1.10.2
       eventemitter3:
         specifier: 'catalog:'
         version: 5.0.4
@@ -293,7 +289,7 @@ importers:
         version: 18.3.0
       driver.js:
         specifier: 'catalog:'
-        version: 1.10.1
+        version: 1.10.2
     devDependencies:
       '@microsoft/api-extractor':
         specifier: 'catalog:'
@@ -1654,8 +1650,8 @@ packages:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
 
-  driver.js@1.10.1:
-    resolution: {integrity: sha512-mpcJ15eIRWnGMykeIWjr0CdQF00/JzImFOEXy/VponYgMbP/y46t24MPBDO3PV/rH6CjdSe3T7WQ9cP3GvEPdQ==}
+  driver.js@1.10.2:
+    resolution: {integrity: sha512-L/EMTriJPAmg+5kIFmrjzt3TI+1NblhHOV/UZkfpgU/uxhSflGheynMBxk5oImDSy6seAEkIl6MzNOc0zdoKtg==}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -4094,7 +4090,7 @@ snapshots:
     dependencies:
       esutils: 2.0.3
 
-  driver.js@1.10.1: {}
+  driver.js@1.10.2: {}
 
   dunder-proto@1.0.1:
     dependencies:
