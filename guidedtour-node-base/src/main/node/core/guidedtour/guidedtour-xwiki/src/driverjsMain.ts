@@ -197,8 +197,6 @@ const util = {
       return;
     }
 
-    // The `.drive()` method is overridden in xwiki to show a loading notification while driver.js waits for the step's
-    // element to appear in the page.
     guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
   },
 };
@@ -221,7 +219,7 @@ function XWikiDriverConfig(
     showProgress: true,
     showButtons: ["previous", "next", "close"],
     overlayOpacity: 0.3,
-    // How long (in ms) to wait for the step's element to be visible (see `convertToDriverStep`) before giving up.
+    // How long (in ms) to wait for the step's element to be visible before giving up.
     waitForElement: 3000,
     onHighlightStarted: (element, step, options) => {
       util.hideLoadingNotification();

@@ -1,7 +1,8 @@
 /* Driver.js styles, plus the XWiki overrides below. */
 @import "driver.js/dist/driver.css";
 
-/* Keep the page interactive during a task, since reflex steps need the user to click on it. */
+/* During a tour, Driver.js only lets the highlighted element and the popover be clicked. Keep the whole page usable
+   instead (e.g. the guided tour widget). */
 .driver-active:has(.driver-overlay) * {
   pointer-events: auto;
 }
