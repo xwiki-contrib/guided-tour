@@ -22,7 +22,14 @@ import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { driver } from "driver.js";
 import type { DefaultGuidedTourManager } from "./rest/DefaultGuidedTourManager";
 import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
-import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
+import type {
+  Alignment,
+  Config,
+  DriveStep,
+  Driver,
+  PopoverDOM,
+  Side,
+} from "driver.js";
 
 type StepDirection = "next" | "previous";
 
@@ -338,11 +345,18 @@ function convertToDriverStep(
   step: TourStep,
   guidedTourTask: TourTask,
 ): DriveStep {
+  // The XWiki placement is `<SIDE>_<ALIGNMENT>` (e.g. `BOTTOM_START`), which driver.js takes separately.
+  const [side, align] = (step.placement?.toLowerCase().split("_") ?? []) as [
+    Side?,
+    Alignment?,
+  ];
   return {
     element: step.element,
     popover: {
       title: step.title ?? guidedTourTask.title,
       description: step.content,
+      side,
+      align,
     },
   };
 }

@@ -110,7 +110,7 @@
     <placement>
       <cache>0</cache>
       <customDisplay/>
-      <defaultValue>Top center</defaultValue>
+      <defaultValue>Bottom start</defaultValue>
       <disabled>0</disabled>
       <displayType>select</displayType>
       <freeText/>
