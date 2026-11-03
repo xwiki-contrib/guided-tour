@@ -37,6 +37,10 @@ const util = {
    */
   loadingNotification: undefined as { hide(): void } | undefined,
   /**
+   * Aborting it removes the reflex listener of the active step (see `bindReflexEvents`).
+   */
+  reflexListenerController: undefined as AbortController | undefined,
+  /**
    * Add listener so `pageUnloadingFlag` is set to true on `beforeunload` event trigger.
    */
   addPageUnloadingListener() {
@@ -307,7 +311,11 @@ function XWikiDriverConfig(
         element instanceof HTMLElement &&
         element.id !== "driver-dummy-element"
       ) {
-        element.click();
+        // Click only until the reflex action is done (or the step is changed): driver.js keeps the step active while it
+        // waits for the element of the step being driven to, so the arrow key can be pressed again in the meantime.
+        if (!util.reflexListenerController?.signal.aborted) {
+          element.click();
+        }
         return;
       }
       await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
@@ -366,6 +374,9 @@ function wrapTask(
 ): Driver {
   const _drive = guidedTourTask.drive;
   guidedTourTask.drive = function (stepIndex: number = 0) {
+    // The active step changed: stop listening for its reflex action, even while driver.js waits for the element of the
+    // step being driven to (it keeps the old active step in the meantime).
+    util.reflexListenerController?.abort();
     util.hideLoadingNotification();
     util.loadingNotification = new XWiki.widgets.Notification(
       translations["guidedtour.driver.loading"],
@@ -377,6 +388,7 @@ function wrapTask(
   guidedTourTask.destroy = function () {
     // driver.js doesn't call `onDestroyed()` if it was still waiting for the first step's element.
     util.hideLoadingNotification();
+    util.reflexListenerController?.abort();
     _destroy();
   };
   return guidedTourTask;
@@ -392,6 +404,7 @@ export { XWikiDriverConfig, driver, getDriverConfigForSteps, wrapTask };
  * @param guidedTourManager - The guidedTourManager Api instance.
  * @param callbackFn - A callback to execute once the element is interacted with.
  */
+// eslint-disable-next-line max-statements
 function bindReflexEvents(
   element: Element | undefined,
   step: TourStep,
@@ -410,15 +423,20 @@ function bindReflexEvents(
   },
 ) {
   console.debug("Doing reflex bind");
+  // Only the active step listens for its reflex action: stop listening on the element of the previous step, in case
+  // it was left without triggering the reflex (e.g. by moving back to the previous step).
+  util.reflexListenerController?.abort();
   if (!util.isReflex(step)) {
     if (step.reflex && element === undefined) {
       console.warn("WARNING: reflex step with empty element:", step);
     }
     return;
   }
+  const controller = new AbortController();
+  util.reflexListenerController = controller;
   const triggerCallback = () => {
     console.debug("Removing reflex listener on ", element);
-    element!.removeEventListener("click", callback);
+    controller.abort();
     callbackFn();
   };
   const callback = (event: Event) => {
@@ -434,9 +452,8 @@ function bindReflexEvents(
       new Promise((resolve) => setTimeout(resolve, msTimeout))
         .then(() => {
           console.debug("sloip awoked");
-          if (
-            step.order == guidedTourManager.activeDriverTask?.getActiveIndex()
-          ) {
+          // Don't proceed if the step was changed in the meantime, even if it's active again.
+          if (!controller.signal.aborted) {
             triggerCallback();
           }
           return;
@@ -447,7 +464,7 @@ function bindReflexEvents(
     }
   };
   console.debug("Adding reflex listener on ", element);
-  element!.addEventListener("click", callback);
+  element!.addEventListener("click", callback, { signal: controller.signal });
 }
 
 // FIXME: From old TourJS.xml
