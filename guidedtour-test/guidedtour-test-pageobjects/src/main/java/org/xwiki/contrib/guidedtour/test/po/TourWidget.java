@@ -27,22 +27,42 @@ import java.util.stream.Collectors;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.NotFoundException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.xwiki.test.ui.po.ViewPage;
 
+/**
+ * The guided tour widget, displayed on every page, listing the tours and their tasks.
+ *
+ * @version $Id$
+ * @since 0.1
+ */
 public class TourWidget extends ViewPage
 {
-
     private static final Pattern PROGRESS_STYLE_WIDTH_PATTERN = Pattern.compile("width:\\s*(\\d+(?:\\.\\d+)?)%.*");
 
     private static final String COLLAPSED = "collapsed";
+
+    private static final By HEADER = By.cssSelector(".guidedtour-widget .header");
+
+    private static final By TOP_BAR = By.cssSelector(".guidedtour-widget .top-bar");
+
+    private static final String TASK_STATUS_PREFIX = "task-";
+
+    private static final String TOUR_STATUS_PREFIX = "tour-";
+
+    private static final String SKIP_ICON = "fa-solid fa-x";
+
+    private static final String RESET_ICON = "fa fa-rotate-right";
 
     @FindBy(css = ".guidedtour-widget")
     private WebElement widget;
 
     /**
-     * @return the ids of the tours currently visible in the widget.
+     * @return the ids of the tours currently visible in the widget
      */
     public List<String> getTourIds()
     {
@@ -53,25 +73,8 @@ public class TourWidget extends ViewPage
     }
 
     /**
-     * @return the ids of all visible tasks for every visible tour.
-     */
-    public List<String> getVisibleTaskIds()
-    {
-        if (isWidgetCollapsed()) {
-            return List.of();
-        }
-
-        return widget.findElements(By.cssSelector("section.guidedtour-tour")).stream()
-            .filter(this::isTourExpanded)
-            .flatMap(tour -> tour.findElements(By.cssSelector(".guidedtour-task")).stream())
-            .filter(WebElement::isDisplayed)
-            .map(this::getElementId)
-            .toList();
-    }
-
-    /**
      * @param tourId the tour id
-     * @return the ids of all visible tasks for the requested tour.
+     * @return the ids of all visible tasks for the requested tour
      */
     public List<String> getVisibleTaskIds(String tourId)
     {
@@ -80,10 +83,8 @@ public class TourWidget extends ViewPage
         }
 
         try {
-            WebElement tour = widget.findElement(
-                By.xpath(
-                    ".//section[contains(@class,'guidedtour-tour') and @id=%s]".formatted(escapeXPathString(tourId))));
-            if (!isTourVisible(tour) || tour.getAttribute("class").contains(COLLAPSED)) {
+            WebElement tour = widget.findElement(getTourLocator(tourId));
+            if (!isTourVisible(tour) || tour.getAttribute(ATTRIBUTE_CLASS).contains(COLLAPSED)) {
                 return List.of();
             }
 
@@ -96,59 +97,111 @@ public class TourWidget extends ViewPage
         }
     }
 
-    public boolean isWidgetCollapsed()
+    /**
+     * @param tourId the id of the tour (its serialized document reference)
+     * @return the title of the tour, as displayed in the widget
+     * @since 0.2
+     */
+    public String getTourTitle(String tourId)
     {
-        return widget.getAttribute("class").contains(COLLAPSED);
+        return getDriver().findElementWithoutWaitingWithoutScrolling(getTourHeaderLocator(tourId))
+            .findElement(By.className("tour-title")).getText();
     }
 
-    public void toggleWidgetCollapsed()
+    /**
+     * @param taskId the id of the task (the name of its page)
+     * @return the title of the task, as displayed in the widget
+     * @since 0.2
+     */
+    public String getTaskTitle(String taskId)
     {
-        widget.findElement(By.cssSelector("button#widget-close")).click();
+        return getDriver().findElementWithoutWaitingWithoutScrolling(getTaskLocator(taskId))
+            .findElement(By.className("guidedtour-widget-item-title")).getText();
     }
 
-    public boolean isTourCollapsed(String tourId)
+    /**
+     * Check whether the widget gets expanded within the given delay. The widget is collapsed until the state saved by
+     * the user is loaded, and expanded by default, so this is used to verify that a collapsed state was restored, which
+     * can't be observed otherwise.
+     *
+     * @param timeout the delay, in seconds
+     * @return {@code true} if the widget was expanded before the delay expired
+     * @since 0.2
+     */
+    public boolean isExpandedWithin(int timeout)
     {
+        waitUntilLoaded();
         try {
-            WebElement tour = getTourElement(tourId);
-            return tour.getAttribute("class").contains(COLLAPSED);
-        } catch (NoSuchElementException e) {
+            getDriver().waitUntilCondition(driver -> !isWidgetCollapsed(), timeout);
+            return true;
+        } catch (TimeoutException e) {
             return false;
         }
     }
 
-    public void toggleTourCollapsed(String tourId)
+    /**
+     * @return {@code true} if the widget is collapsed, i.e. only its top bar is displayed
+     */
+    public boolean isWidgetCollapsed()
     {
-        getTourHeader(tourId).click();
+        return widget.getAttribute(ATTRIBUTE_CLASS).contains(COLLAPSED);
     }
 
+    /**
+     * Start a task, by clicking it in the widget.
+     *
+     * @param taskId the id of the task (the name of its page)
+     */
     public void clickTask(String taskId)
     {
-        By task = By.xpath("//div[contains(@class,'guidedtour-task') and @id=" + escapeXPathString(taskId) + "]");
         // The tasks are loaded asynchronously.
-        getDriver().waitUntilElementIsVisible(task);
-        getDriver().findElement(task).click();
+        waitUntilTaskIsDisplayed(taskId);
+        getDriver().findElement(getTaskLocator(taskId)).click();
     }
 
+    /**
+     * Skip a task, with its button in the widget.
+     *
+     * @param taskId the id of the task (the name of its page)
+     */
     public void skipTask(String taskId)
     {
-        clickTaskButton(taskId, "fa-solid fa-x");
+        clickButton(getTaskLocator(taskId), SKIP_ICON);
     }
 
+    /**
+     * Reset a task to do, with its button in the widget.
+     *
+     * @param taskId the id of the task (the name of its page)
+     */
     public void resetTask(String taskId)
     {
-        clickTaskButton(taskId, "fa fa-rotate-right");
+        clickButton(getTaskLocator(taskId), RESET_ICON);
     }
 
+    /**
+     * Skip all the tasks of a tour, with its button in the widget.
+     *
+     * @param tourId the id of the tour (its serialized document reference)
+     */
     public void skipTour(String tourId)
     {
-        clickTourButton(tourId, "fa-solid fa-x");
+        clickButton(getTourHeaderLocator(tourId), SKIP_ICON);
     }
 
+    /**
+     * Reset all the tasks of a tour to do, with its button in the widget.
+     *
+     * @param tourId the id of the tour (its serialized document reference)
+     */
     public void resetTour(String tourId)
     {
-        clickTourButton(tourId, "fa fa-rotate-right");
+        clickButton(getTourHeaderLocator(tourId), RESET_ICON);
     }
 
+    /**
+     * @return the progress displayed by the widget, between 0 and 1
+     */
     public float getProgress()
     {
         String style = widget.findElement(By.cssSelector(".completeness-progress")).getAttribute("style");
@@ -160,48 +213,176 @@ public class TourWidget extends ViewPage
         return 0.0f;
     }
 
-    private WebElement getTourElement(String tourId)
+    /**
+     * Wait for the widget to be loaded. The widget is a Vue application mounted asynchronously on every page.
+     *
+     * @return this widget
+     * @since 0.2
+     */
+    public TourWidget waitUntilLoaded()
     {
-        return widget.findElement(
-            By.xpath(".//section[contains(@class,'guidedtour-tour') and @id=" + escapeXPathString(tourId) + "]"));
+        getDriver().waitUntilCondition(driver -> !getDriver().findElementsWithoutWaiting(HEADER).isEmpty());
+        return this;
     }
 
-    private WebElement getTourHeader(String tourId)
+    /**
+     * Collapse the widget, if it's not already collapsed.
+     *
+     * @return this widget
+     * @since 0.2
+     */
+    public TourWidget collapse()
     {
-        return widget.findElement(By.xpath(
-            ".//section[contains(@class,'guidedtour-tour') and @id=" + escapeXPathString(tourId)
-                + "]//div[contains(@class,'guidedtour-tour-header')]"));
+        return setCollapsed(true);
     }
 
-    private void clickTaskButton(String taskId, String iconClass)
+    /**
+     * Expand the widget, if it's not already expanded.
+     *
+     * @return this widget
+     * @since 0.2
+     */
+    public TourWidget expand()
     {
-        widget.findElement(By.xpath(".//div[contains(@class,'guidedtour-task') and @id=" + escapeXPathString(taskId)
-                + "]//button[contains(@class,'post-btn')]//i[contains(@class,'" + iconClass + "')]/.."))
+        return setCollapsed(false);
+    }
+
+    /**
+     * Wait until the given task is displayed. The tasks of each tour are loaded asynchronously.
+     *
+     * @param taskId the id of the task (the name of its page)
+     * @return this widget
+     * @since 0.2
+     */
+    public TourWidget waitUntilTaskIsDisplayed(String taskId)
+    {
+        getDriver().waitUntilElementIsVisible(getTaskLocator(taskId));
+        return this;
+    }
+
+    /**
+     * @param taskId the id of the task (the name of its page)
+     * @return the status of the given task, as displayed in the widget
+     * @since 0.2
+     */
+    public TourTaskStatus getTaskStatus(String taskId)
+    {
+        return readStatus(getTaskLocator(taskId), TASK_STATUS_PREFIX);
+    }
+
+    /**
+     * Wait until the given task has the expected status.
+     *
+     * @param taskId the id of the task (the name of its page)
+     * @param status the expected status
+     * @return this widget
+     * @since 0.2
+     */
+    public TourWidget waitUntilTaskStatus(String taskId, TourTaskStatus status)
+    {
+        By task = getTaskLocator(taskId);
+        getDriver().waitUntilCondition(driver -> hasStatus(task, TASK_STATUS_PREFIX, status));
+        return this;
+    }
+
+    /**
+     * @param tourId the id of the tour (its serialized document reference)
+     * @return the status of the given tour, computed from the status of its active tasks
+     * @since 0.2
+     */
+    public TourTaskStatus getTourStatus(String tourId)
+    {
+        return readStatus(getTourLocator(tourId), TOUR_STATUS_PREFIX);
+    }
+
+    /**
+     * Wait until the given tour has the expected status.
+     *
+     * @param tourId the id of the tour (its serialized document reference)
+     * @param status the expected status
+     * @return this widget
+     * @since 0.2
+     */
+    public TourWidget waitUntilTourStatus(String tourId, TourTaskStatus status)
+    {
+        By tour = getTourLocator(tourId);
+        getDriver().waitUntilCondition(driver -> hasStatus(tour, TOUR_STATUS_PREFIX, status));
+        return this;
+    }
+
+    private TourWidget setCollapsed(boolean collapsed)
+    {
+        waitUntilLoaded();
+        if (isWidgetCollapsed() != collapsed) {
+            // Clicking the top bar toggles the widget (the close button can only collapse it).
+            getDriver().findElement(TOP_BAR).click();
+            getDriver().waitUntilCondition(driver -> isWidgetCollapsed() == collapsed);
+        }
+        return this;
+    }
+
+    private void clickButton(By container, String iconClass)
+    {
+        getDriver().findElement(container)
+            .findElement(By.xpath(".//button[contains(@class,'post-btn')]//i[contains(@class,'" + iconClass + "')]/.."))
             .click();
     }
 
-    private void clickTourButton(String tourId, String iconClass)
+    private boolean hasStatus(By locator, String prefix, TourTaskStatus status)
     {
-        widget.findElement(By.xpath(".//section[contains(@class,'guidedtour-tour') and @id=" + escapeXPathString(tourId)
-                + "]//button[contains(@class,'post-btn')]//i[contains(@class,'" + iconClass + "')]/.."))
-            .click();
+        try {
+            return status == readStatus(locator, prefix);
+        } catch (NotFoundException | StaleElementReferenceException | IllegalArgumentException e) {
+            // Not rendered yet, being re-rendered, or status not computed yet.
+            return false;
+        }
+    }
+
+    private TourTaskStatus readStatus(By locator, String prefix)
+    {
+        String classes = getDriver().findElementWithoutWaitingWithoutScrolling(locator).getAttribute(ATTRIBUTE_CLASS);
+        String status = Arrays.stream(classes.split("\\s+"))
+            .filter(cssClass -> cssClass.startsWith(prefix) && !cssClass.equals(prefix + "title"))
+            .map(cssClass -> cssClass.substring(prefix.length())).findFirst().orElse("");
+        return TourTaskStatus.fromString(status);
     }
 
     private boolean isTourVisible(WebElement tourElement)
     {
-        String cssClass = tourElement.getAttribute("class");
+        String cssClass = tourElement.getAttribute(ATTRIBUTE_CLASS);
         return cssClass != null && !cssClass.contains("hidden");
-    }
-
-    private boolean isTourExpanded(WebElement tourElement)
-    {
-        String cssClass = tourElement.getAttribute("class");
-        return cssClass != null && !cssClass.contains(COLLAPSED);
     }
 
     private String getElementId(WebElement element)
     {
-        return element.getAttribute("id");
+        return element.getAttribute(ATTRIBUTE_ID);
+    }
+
+    private static By getTaskLocator(String taskId)
+    {
+        return By.xpath("//div[contains(concat(' ', normalize-space(@class), ' '), ' guidedtour-task ') and @id="
+            + escapeXPathString(taskId) + "]");
+    }
+
+    private static By getTourLocator(String tourId)
+    {
+        return By.xpath(getTourXPath(tourId));
+    }
+
+    /**
+     * The header of a tour holds the buttons of the tour itself, while the whole tour section also holds the buttons
+     * of its tasks.
+     */
+    private static By getTourHeaderLocator(String tourId)
+    {
+        return By.xpath(getTourXPath(tourId)
+            + "//*[contains(concat(' ', normalize-space(@class), ' '), ' guidedtour-tour-header ')]");
+    }
+
+    private static String getTourXPath(String tourId)
+    {
+        return "//section[contains(concat(' ', normalize-space(@class), ' '), ' guidedtour-tour ') and @id="
+            + escapeXPathString(tourId) + "]";
     }
 
     private static String escapeXPathString(String value)

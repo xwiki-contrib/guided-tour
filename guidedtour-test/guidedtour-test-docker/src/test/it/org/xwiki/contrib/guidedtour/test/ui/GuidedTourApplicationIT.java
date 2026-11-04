@@ -25,6 +25,9 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture.Step;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture.Task;
+import org.xwiki.contrib.guidedtour.test.po.TourPage;
 import org.xwiki.contrib.guidedtour.test.po.TourStepPopover;
 import org.xwiki.contrib.guidedtour.test.po.TourWidget;
 import org.xwiki.model.reference.DocumentReference;
@@ -34,6 +37,9 @@ import org.xwiki.test.docker.junit5.UITest;
 import org.xwiki.test.ui.TestUtils;
 import org.xwiki.test.ui.po.ViewPage;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,20 +51,55 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @UITest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class GuidedTourApplicationIT
+class GuidedTourApplicationIT extends AbstractGuidedTourIT
 {
-    private static final String STEP_CLASS = "XWiki.GuidedTour.StepClass";
+    private static final String GETTING_STARTED_TOUR_ID = "xwiki:GuidedTour.Tours.GettingStarted.WebHome";
 
     /**
-     * The displayed tours should not include inactive tours, or tours which the user has no rights to view.
+     * The widget displays the default tour and the active tours with tasks, but not inactive tours, tours without
+     * tasks, inactive tasks, or tours and tasks the user isn't allowed to view.
      */
     @Test
     @Order(1)
-    void tourVisibility(TestUtils testUtils, TestReference testReference)
+    void inactiveEmptyAndRestrictedToursAndTasks(TestUtils setup, TestReference testReference) throws Exception
     {
-        testUtils.gotoPage(testReference);
-        TourWidget tourWidget = new TourWidget();
-        assertEquals(List.of("xwiki:GuidedTour.Tours.GettingStarted.WebHome"), tourWidget.getTourIds());
+        String userName = "GuidedTourVisibilityUser";
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "", "Visibility");
+
+        DocumentReference visibleTour = this.fixture.createTour(space, "VisibleTour", "Visible tour", true);
+        this.fixture.createTask(visibleTour, "visibilityActiveTask", "Active task", 0, true);
+        this.fixture.createTask(visibleTour, "visibilityInactiveTask", "Inactive task", 1, false);
+        DocumentReference restrictedTask =
+            this.fixture.createTask(visibleTour, "visibilityRestrictedTask", "Restricted task", 2, true);
+        this.fixture.denyView(restrictedTask, userName);
+
+        DocumentReference inactiveTour = this.fixture.createTour(space, "InactiveTour", "Inactive tour", false);
+        this.fixture.createTask(inactiveTour, "visibilityTaskOfInactiveTour", "Task of inactive tour", 0, true);
+
+        this.fixture.createTour(space, "EmptyTour", "Empty tour", true);
+
+        DocumentReference restrictedTour = this.fixture.createTour(space, "RestrictedTour", "Restricted tour", true);
+        this.fixture.createTask(restrictedTour, "visibilityTaskOfRestrictedTour", "Task of restricted tour", 0, true);
+        this.fixture.denyView(restrictedTour, userName);
+
+        String visibleTourId = this.fixture.getTourId(visibleTour);
+        String restrictedTourId = this.fixture.getTourId(restrictedTour);
+        this.fixture.createUserAndLogin(userName);
+        setup.gotoPage(page);
+
+        TourWidget widget = new TourWidget().waitUntilTaskIsDisplayed("visibilityActiveTask");
+        assertThat(widget.getTourIds(), containsInAnyOrder(GETTING_STARTED_TOUR_ID, visibleTourId));
+        assertEquals(List.of("visibilityActiveTask"), widget.getVisibleTaskIds(visibleTourId));
+
+        // A user allowed to view the restricted tour and task sees them, but still not the inactive ones.
+        setup.loginAsSuperAdmin();
+        setup.gotoPage(page);
+        widget = new TourWidget().waitUntilTaskIsDisplayed("visibilityRestrictedTask")
+            .waitUntilTaskIsDisplayed("visibilityTaskOfRestrictedTour");
+        assertEquals(List.of("visibilityActiveTask", "visibilityRestrictedTask"),
+            widget.getVisibleTaskIds(visibleTourId));
+        assertThat(widget.getTourIds(), hasItem(restrictedTourId));
     }
 
     /**
@@ -67,36 +108,31 @@ class GuidedTourApplicationIT
      */
     @Test
     @Order(2)
-    void redirectToTheExpectedPage(TestUtils setup, TestReference testReference)
+    void redirectToTheExpectedPage(TestUtils setup, TestReference testReference) throws Exception
     {
-        setup.loginAsSuperAdmin();
         SpaceReference space = testReference.getLastSpaceReference();
         DocumentReference pageA = new DocumentReference("PageA", space);
         DocumentReference pageB = new DocumentReference("PageB", space);
         String pageAReference = setup.serializeLocalReference(pageA);
         String pageBReference = setup.serializeLocalReference(pageB);
-        setup.createPage(pageA, "Page A");
-        setup.createPage(pageB, "[[Go to page A>>doc:%s||id=\"goToPageA\"]]".formatted(pageAReference));
+        this.fixture.createPage(pageA, "Page A", "Page A");
+        this.fixture.createPage(pageB, "[[Go to page A>>doc:%s||id=\"goToPageA\"]]".formatted(pageAReference),
+            "Page B");
 
-        DocumentReference tour = new DocumentReference("WebHome", new SpaceReference("Tour", space));
-        setup.createPage(tour, "", "Redirect tour");
-        setup.addObject(tour, "XWiki.GuidedTour.TourClass", "title", "Redirect tour", "isActive", 1);
-        DocumentReference task = new DocumentReference("RedirectTask", tour.getLastSpaceReference());
-        setup.createPage(task, "", "Redirect task");
-        setup.addObject(task, "XWiki.GuidedTour.TaskClass", "title", "Redirect task", "isActive", 1, "order", 0);
-        setup.addObject(task, STEP_CLASS, "order", 0, "content", "Start on page A", "targetPage", pageAReference);
-        // A reflex step without element behaves like a regular step.
-        setup.addObject(task, STEP_CLASS, "order", 1, "content", "Continue on page B", "targetPage", pageBReference,
-            "queryParameters", "foo=bar", "reflex", 1);
-        setup.addObject(task, STEP_CLASS, "order", 2, "content", "Click the link", "targetPage", pageBReference,
-            "element", "#goToPageA", "reflex", 1);
-        setup.addObject(task, STEP_CLASS, "order", 3, "content", "Back on page A", "targetPage", pageAReference);
+        DocumentReference tour = this.fixture.createTour(space, "Tour", "Redirect tour", true);
+        DocumentReference task = this.fixture.createTask(tour, "redirectTask", "Redirect task", 0, true);
+        this.fixture.addSteps(task,
+            Step.withContent("Start on page A").targetPage(pageAReference),
+            // A reflex step without element behaves like a regular step.
+            Step.withContent("Continue on page B").targetPage(pageBReference).queryParameters("foo=bar").reflex(),
+            Step.withContent("Click the link").targetPage(pageBReference).element("#goToPageA").reflex(),
+            Step.withContent("Back on page A").targetPage(pageAReference));
 
-        setup.createUserAndLogin("GuidedTourUser", "pa$$word");
+        this.fixture.createUserAndLogin("GuidedTourRedirectUser");
         setup.gotoPage(pageB);
 
         // Starting the task redirects to the page of its first step.
-        new TourWidget().clickTask("RedirectTask");
+        new TourWidget().clickTask("redirectTask");
         TourStepPopover popover = new TourStepPopover().waitForStep("Start on page A");
         assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
 
@@ -115,5 +151,52 @@ class GuidedTourApplicationIT
         popover.pressNextKeyAndWaitForPageReload();
         popover.waitForStep("Back on page A");
         assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
+    }
+
+    /**
+     * Deleting a task moves up the next tasks of the tour, removes it from the dependencies of the other tasks, and
+     * from the widget.
+     */
+    @Test
+    @Order(3)
+    void deleteTask(TestUtils setup, TestReference testReference) throws Exception
+    {
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference tour = this.fixture.createTour(space, "Tour", "Dependencies tour", true);
+        DocumentReference firstTask = this.fixture.createTask(tour, "dependencyFirstTask", "First task", 0, true);
+        this.fixture.addSteps(firstTask, Step.withContent("First task, only step"));
+        DocumentReference secondTask =
+            this.fixture.createTask(tour, "dependencySecondTask", "Second task", 1, true, "dependencyFirstTask");
+        this.fixture.addSteps(secondTask, Step.withContent("Second task, only step"));
+        DocumentReference thirdTask =
+            this.fixture.createTask(tour, "dependencyThirdTask", "Third task", 2, true, "dependencySecondTask");
+        String tourId = this.fixture.getTourId(tour);
+
+        setup.loginAsSuperAdmin();
+        TourPage tourPage = TourPage.gotoPage(tour);
+        TourWidget widget = new TourWidget().expand().waitUntilTaskIsDisplayed("dependencyThirdTask");
+        assertEquals(List.of("dependencyFirstTask", "dependencySecondTask", "dependencyThirdTask"),
+            widget.getVisibleTaskIds(tourId));
+        // Make sure the widget doesn't cover the list of tasks.
+        widget.collapse();
+        assertEquals(List.of("First task", "Second task", "Third task"), tourPage.getTaskTitles());
+
+        tourPage.deleteTask("First task");
+        assertEquals(List.of("Second task", "Third task"), tourPage.getTaskTitles());
+        assertFalse(this.fixture.exists(firstTask));
+
+        // The remaining tasks, as the application reads them.
+        Task second = this.fixture.getTask(secondTask);
+        assertEquals(0, second.getOrder(), second::toString);
+        assertEquals(List.of(), second.getDependsOn(), second::toString);
+
+        Task third = this.fixture.getTask(thirdTask);
+        assertEquals(1, third.getOrder(), third::toString);
+        assertEquals(List.of("dependencySecondTask"), third.getDependsOn(), third::toString);
+
+        // The widget doesn't list the deleted task anymore, once reloaded.
+        tourPage.reloadPage();
+        widget = new TourWidget().expand().waitUntilTaskIsDisplayed("dependencyThirdTask");
+        assertEquals(List.of("dependencySecondTask", "dependencyThirdTask"), widget.getVisibleTaskIds(tourId));
     }
 }

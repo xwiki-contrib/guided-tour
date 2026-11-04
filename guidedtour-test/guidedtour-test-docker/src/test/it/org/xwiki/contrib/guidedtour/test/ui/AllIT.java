@@ -34,4 +34,19 @@ class AllIT
     class NestedGuidedTourApplicationIT extends GuidedTourApplicationIT
     {
     }
+
+    @Nested
+    class NestedTaskProgressionIT extends TaskProgressionIT
+    {
+    }
+
+    @Nested
+    class NestedTourWidgetIT extends TourWidgetIT
+    {
+    }
+
+    @Nested
+    class NestedTourAdministrationIT extends TourAdministrationIT
+    {
+    }
 }
