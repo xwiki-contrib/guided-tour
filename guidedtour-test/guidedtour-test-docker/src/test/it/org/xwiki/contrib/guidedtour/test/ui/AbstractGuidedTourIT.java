@@ -22,37 +22,36 @@ package org.xwiki.contrib.guidedtour.test.ui;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourTestUtils;
 import org.xwiki.test.integration.junit.LogCaptureConfiguration;
 import org.xwiki.test.ui.TestUtils;
 
 /**
- * Common setup of the guided tour functional tests: each test creates its own tours and user, and removes its tours
- * afterwards, so that they don't show up in the widget of the next tests.
+ * Common setup of the guided tour functional tests: each test creates its own tours, and removes them afterwards, so
+ * that they don't show up in the widget of the next tests. The browser storage is cleared after each test too, so
+ * that no task left active is resumed on the next page load.
  *
  * @version $Id$
  */
 abstract class AbstractGuidedTourIT
 {
-    protected GuidedTourFixture fixture;
+    protected GuidedTourTestUtils guidedTour;
 
     @BeforeAll
     void registerExpectedLogs(LogCaptureConfiguration logCaptureConfiguration)
     {
-        GuidedTourFixture.registerExpectedLogs(logCaptureConfiguration);
+        GuidedTourTestUtils.registerExpectedLogs(logCaptureConfiguration);
     }
 
     @BeforeEach
-    void createFixture(TestUtils setup)
+    void setUp(TestUtils setup)
     {
-        this.fixture = new GuidedTourFixture(setup);
-        // A previous test may have left a task active, which would be resumed on the next page load and block the page.
-        this.fixture.clearBrowserStorage();
+        this.guidedTour = new GuidedTourTestUtils(setup);
     }
 
     @AfterEach
-    void cleanUpFixture() throws Exception
+    void cleanUp() throws Exception
     {
-        this.fixture.cleanUp();
+        this.guidedTour.cleanUp();
     }
 }

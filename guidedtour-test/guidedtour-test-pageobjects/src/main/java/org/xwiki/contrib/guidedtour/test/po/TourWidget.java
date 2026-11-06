@@ -26,13 +26,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.NotFoundException;
 import org.openqa.selenium.StaleElementReferenceException;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.xwiki.test.ui.po.ViewPage;
+import org.xwiki.test.ui.po.BaseElement;
 
 /**
  * The guided tour widget, displayed on every page, listing the tours and their tasks.
@@ -40,7 +38,7 @@ import org.xwiki.test.ui.po.ViewPage;
  * @version $Id$
  * @since 0.1
  */
-public class TourWidget extends ViewPage
+public class TourWidget extends BaseElement
 {
     private static final Pattern PROGRESS_STYLE_WIDTH_PATTERN = Pattern.compile("width:\\s*(\\d+(?:\\.\\d+)?)%.*");
 
@@ -49,6 +47,8 @@ public class TourWidget extends ViewPage
     private static final By HEADER = By.cssSelector(".guidedtour-widget .header");
 
     private static final By TOP_BAR = By.cssSelector(".guidedtour-widget .top-bar");
+
+    private static final By TOURS = By.cssSelector(".guidedtour-widget section.guidedtour-tour");
 
     private static final String TASK_STATUS_PREFIX = "task-";
 
@@ -78,23 +78,23 @@ public class TourWidget extends ViewPage
      */
     public List<String> getVisibleTaskIds(String tourId)
     {
-        if (isWidgetCollapsed()) {
+        if (isCollapsedWithoutWaiting()) {
             return List.of();
         }
 
-        try {
-            WebElement tour = widget.findElement(getTourLocator(tourId));
-            if (!isTourVisible(tour) || tour.getAttribute(ATTRIBUTE_CLASS).contains(COLLAPSED)) {
-                return List.of();
-            }
-
-            return tour.findElements(By.cssSelector(".guidedtour-task")).stream()
-                .filter(WebElement::isDisplayed)
-                .map(this::getElementId)
-                .toList();
-        } catch (NoSuchElementException e) {
+        List<WebElement> tours = getDriver().findElementsWithoutWaiting(widget, getTourLocator(tourId));
+        if (tours.isEmpty()) {
             return List.of();
         }
+        WebElement tour = tours.get(0);
+        if (!isTourVisible(tour) || tour.getAttribute(ATTRIBUTE_CLASS).contains(COLLAPSED)) {
+            return List.of();
+        }
+
+        return getDriver().findElementsWithoutWaiting(tour, By.cssSelector(".guidedtour-task")).stream()
+            .filter(WebElement::isDisplayed)
+            .map(this::getElementId)
+            .toList();
     }
 
     /**
@@ -120,29 +120,18 @@ public class TourWidget extends ViewPage
     }
 
     /**
-     * Check whether the widget gets expanded within the given delay. The widget is collapsed until the state saved by
-     * the user is loaded, and expanded by default, so this is used to verify that a collapsed state was restored, which
-     * can't be observed otherwise.
+     * Wait for the widget to be loaded, then tell whether it's collapsed. The widget starts collapsed until the state
+     * saved by the user is loaded, so once loaded, this tells which state was restored.
      *
-     * @param timeout the delay, in seconds
-     * @return {@code true} if the widget was expanded before the delay expired
-     * @since 0.2
-     */
-    public boolean isExpandedWithin(int timeout)
-    {
-        waitUntilLoaded();
-        try {
-            getDriver().waitUntilCondition(driver -> !isWidgetCollapsed(), timeout);
-            return true;
-        } catch (TimeoutException e) {
-            return false;
-        }
-    }
-
-    /**
      * @return {@code true} if the widget is collapsed, i.e. only its top bar is displayed
      */
     public boolean isWidgetCollapsed()
+    {
+        waitUntilLoaded();
+        return isCollapsedWithoutWaiting();
+    }
+
+    private boolean isCollapsedWithoutWaiting()
     {
         return widget.getAttribute(ATTRIBUTE_CLASS).contains(COLLAPSED);
     }
@@ -160,43 +149,53 @@ public class TourWidget extends ViewPage
     }
 
     /**
-     * Skip a task, with its button in the widget.
+     * Skip a task, with its button in the widget, and wait until the widget displays it as skipped.
      *
      * @param taskId the id of the task (the name of its page)
+     * @return this widget
      */
-    public void skipTask(String taskId)
+    public TourWidget skipTask(String taskId)
     {
         clickButton(getTaskLocator(taskId), SKIP_ICON);
+        return waitUntilTaskStatus(taskId, TourTaskStatus.SKIPPED);
     }
 
     /**
-     * Reset a task to do, with its button in the widget.
+     * Reset a task to do, with its button in the widget, and wait until the widget displays it as to do.
      *
      * @param taskId the id of the task (the name of its page)
+     * @return this widget
      */
-    public void resetTask(String taskId)
+    public TourWidget resetTask(String taskId)
     {
         clickButton(getTaskLocator(taskId), RESET_ICON);
+        return waitUntilTaskStatus(taskId, TourTaskStatus.TODO);
     }
 
     /**
-     * Skip all the tasks of a tour, with its button in the widget.
+     * Skip the tasks of a tour left to do, with its button in the widget, and wait until the widget displays the tour
+     * as skipped.
      *
      * @param tourId the id of the tour (its serialized document reference)
+     * @return this widget
      */
-    public void skipTour(String tourId)
+    public TourWidget skipTour(String tourId)
     {
         clickButton(getTourHeaderLocator(tourId), SKIP_ICON);
+        return waitUntilTourStatus(tourId, TourTaskStatus.SKIPPED);
     }
 
     /**
-     * Reset all the tasks of a tour to do, with its button in the widget.
+     * Reset all the tasks of a tour to do, with its button in the widget, and wait until the widget displays the tour
+     * as to do.
      *
      * @param tourId the id of the tour (its serialized document reference)
+     * @return this widget
      */
-    public void resetTour(String tourId)
+    public TourWidget resetTour(String tourId)
     {
         clickButton(getTourHeaderLocator(tourId), RESET_ICON);
+        return waitUntilTourStatus(tourId, TourTaskStatus.TODO);
     }
 
     /**
@@ -214,14 +213,18 @@ public class TourWidget extends ViewPage
     }
 
     /**
-     * Wait for the widget to be loaded. The widget is a Vue application mounted asynchronously on every page.
+     * Wait for the widget to be loaded. The widget is a Vue application mounted asynchronously on every page: it starts
+     * collapsed, then restores the state saved by the user, and lists the tours. The tours are fetched only once the
+     * saved state is loaded, so the widget is then expanded or collapsed as saved. The tasks of each tour are still
+     * loaded afterwards, see {@link #waitUntilTaskIsDisplayed(String)}.
      *
      * @return this widget
      * @since 0.2
      */
     public TourWidget waitUntilLoaded()
     {
-        getDriver().waitUntilCondition(driver -> !getDriver().findElementsWithoutWaiting(HEADER).isEmpty());
+        getDriver().waitUntilCondition(driver -> !getDriver().findElementsWithoutWaiting(HEADER).isEmpty()
+            && !getDriver().findElementsWithoutWaiting(TOURS).isEmpty());
         return this;
     }
 
@@ -312,11 +315,10 @@ public class TourWidget extends ViewPage
 
     private TourWidget setCollapsed(boolean collapsed)
     {
-        waitUntilLoaded();
         if (isWidgetCollapsed() != collapsed) {
             // Clicking the top bar toggles the widget (the close button can only collapse it).
             getDriver().findElement(TOP_BAR).click();
-            getDriver().waitUntilCondition(driver -> isWidgetCollapsed() == collapsed);
+            getDriver().waitUntilCondition(driver -> isCollapsedWithoutWaiting() == collapsed);
         }
         return this;
     }

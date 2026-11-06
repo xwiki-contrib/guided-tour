@@ -21,12 +21,10 @@ package org.xwiki.contrib.guidedtour.test.ui;
 
 import java.util.Optional;
 
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture;
-import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture.Step;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourTestUtils;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourTestUtils.Step;
 import org.xwiki.contrib.guidedtour.test.po.TourStepPopover;
 import org.xwiki.contrib.guidedtour.test.po.TourWidget;
 import org.xwiki.model.reference.DocumentReference;
@@ -34,6 +32,7 @@ import org.xwiki.model.reference.SpaceReference;
 import org.xwiki.test.docker.junit5.TestReference;
 import org.xwiki.test.docker.junit5.UITest;
 import org.xwiki.test.ui.TestUtils;
+import org.xwiki.test.ui.po.ViewPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -48,7 +47,6 @@ import static org.xwiki.contrib.guidedtour.test.po.TourTaskStatus.TODO;
  * @version $Id$
  */
 @UITest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TourWidgetIT extends AbstractGuidedTourIT
 {
     private static final float PROGRESS_DELTA = 0.0001f;
@@ -62,18 +60,18 @@ class TourWidgetIT extends AbstractGuidedTourIT
     void skipAndResetTasksAndTours(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Widget");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Widget tour", true);
-        DocumentReference firstTask = this.fixture.createTask(tour, "widgetFirstTask", "First task", 0, true);
-        this.fixture.addSteps(firstTask, Step.withContent("First task, only step"));
-        DocumentReference secondTask = this.fixture.createTask(tour, "widgetSecondTask", "Second task", 1, true);
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Widget");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Widget tour", true);
+        DocumentReference firstTask = this.guidedTour.createTask(tour, "widgetFirstTask", "First task", 0, true);
+        this.guidedTour.addSteps(firstTask, Step.withContent("First task, only step"));
+        DocumentReference secondTask = this.guidedTour.createTask(tour, "widgetSecondTask", "Second task", 1, true);
         // Closing a task at its last step completes it, so the second task needs two steps to be left before its end.
-        this.fixture.addSteps(secondTask,
+        this.guidedTour.addSteps(secondTask,
             Step.withContent("Second task, step one"),
             Step.withContent("Second task, step two"));
-        String tourId = this.fixture.getTourId(tour);
+        String tourId = this.guidedTour.getTourId(tour);
 
-        this.fixture.createUserAndLogin("GuidedTourWidgetUser");
+        String userName = this.guidedTour.createUserAndLogin("GuidedTourWidgetUser");
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget().waitUntilTaskIsDisplayed("widgetSecondTask");
@@ -82,22 +80,18 @@ class TourWidgetIT extends AbstractGuidedTourIT
 
         // Skip and reset a task.
         widget.skipTask("widgetFirstTask");
-        widget.waitUntilTaskStatus("widgetFirstTask", SKIPPED);
         assertTrue(widget.getProgress() > initialProgress);
         assertEquals(TODO, widget.getTourStatus(tourId));
         widget.resetTask("widgetFirstTask");
-        widget.waitUntilTaskStatus("widgetFirstTask", TODO);
         assertEquals(initialProgress, widget.getProgress(), PROGRESS_DELTA);
 
         // Skip and reset a tour.
         widget.skipTour(tourId);
-        widget.waitUntilTaskStatus("widgetFirstTask", SKIPPED)
-            .waitUntilTaskStatus("widgetSecondTask", SKIPPED)
-            .waitUntilTourStatus(tourId, SKIPPED);
+        assertEquals(SKIPPED, widget.getTaskStatus("widgetFirstTask"));
+        assertEquals(SKIPPED, widget.getTaskStatus("widgetSecondTask"));
         widget.resetTour(tourId);
-        widget.waitUntilTaskStatus("widgetFirstTask", TODO)
-            .waitUntilTaskStatus("widgetSecondTask", TODO)
-            .waitUntilTourStatus(tourId, TODO);
+        assertEquals(TODO, widget.getTaskStatus("widgetFirstTask"));
+        assertEquals(TODO, widget.getTaskStatus("widgetSecondTask"));
         assertEquals(initialProgress, widget.getProgress(), PROGRESS_DELTA);
 
         // Skipping a tour only skips the tasks left to do, not the done ones.
@@ -108,31 +102,18 @@ class TourWidgetIT extends AbstractGuidedTourIT
         // The second task starts automatically: leave it before its end, so that it stays to do.
         popover.waitForStep("Second task, step one");
         popover.pressEscape();
-        popover.waitUntilClosed();
-        widget.waitUntilTaskStatus("widgetSecondTask", TODO);
+        // Wait for the leave to be handled (the next tasks aren't started automatically anymore) before checking the
+        // status.
+        this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId));
+        assertEquals(TODO, widget.getTaskStatus("widgetSecondTask"));
         widget.skipTour(tourId);
-        widget.waitUntilTaskStatus("widgetSecondTask", SKIPPED).waitUntilTourStatus(tourId, SKIPPED);
+        assertEquals(SKIPPED, widget.getTaskStatus("widgetSecondTask"));
         assertEquals(DONE, widget.getTaskStatus("widgetFirstTask"));
 
         // Resetting the tour resets all its tasks, including the done ones.
         widget.resetTour(tourId);
-        widget.waitUntilTaskStatus("widgetFirstTask", TODO)
-            .waitUntilTaskStatus("widgetSecondTask", TODO)
-            .waitUntilTourStatus(tourId, TODO);
-
-        // Resetting the tour starts automatically its next tasks again (they were stopped by leaving the second task),
-        // so completing the first task starts the second.
-        widget.clickTask("widgetFirstTask");
-        popover.waitForStep("First task, only step");
-        popover.clickNext();
-        popover.waitForStep("Second task, step one");
-        popover.clickNext();
-        popover.waitForStep("Second task, step two");
-        popover.clickNext();
-        popover.waitUntilClosed();
-        widget.waitUntilTaskStatus("widgetSecondTask", DONE).waitUntilTourStatus(tourId, DONE);
-        assertEquals(DONE, widget.getTaskStatus("widgetFirstTask"));
-        assertTrue(widget.getProgress() > initialProgress);
+        assertEquals(TODO, widget.getTaskStatus("widgetFirstTask"));
+        assertEquals(TODO, widget.getTaskStatus("widgetSecondTask"));
     }
 
     /**
@@ -145,51 +126,52 @@ class TourWidgetIT extends AbstractGuidedTourIT
     {
         String userName = "GuidedTourPersistenceUser";
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Saved");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Persistence tour", true);
-        DocumentReference task = this.fixture.createTask(tour, "persistenceTask", "Persistence task", 0, true);
-        this.fixture.addSteps(task, Step.withContent("Only step"));
-        String tourId = this.fixture.getTourId(tour);
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Saved");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Persistence tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "persistenceTask", "Persistence task", 0, true);
+        this.guidedTour.addSteps(task, Step.withContent("Only step"));
+        String tourId = this.guidedTour.getTourId(tour);
 
-        this.fixture.createUserAndLogin(userName);
+        this.guidedTour.createUserAndLogin(userName);
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget();
         widget.clickTask("persistenceTask");
         TourStepPopover popover = new TourStepPopover().waitForStep("Only step");
-        popover.clickNext();
-        popover.waitUntilClosed();
+        popover.clickDone();
         widget.waitUntilTaskStatus("persistenceTask", DONE);
         widget.collapse();
 
-        this.fixture.waitForUserTourStatus(userName, status -> "COLLAPSED".equals(status.getWidgetState())
+        this.guidedTour.waitForUserTourStatus(userName, status -> "COLLAPSED".equals(status.getWidgetState())
             && status.getTaskStatus(tourId, "persistenceTask").filter(DONE::equals).isPresent());
 
-        // The status is loaded from the user profile, even without any data stored in the browser. The widget is
-        // expanded by default, so it stays collapsed only if the saved state is restored.
-        this.fixture.clearBrowserStorage();
-        widget.reloadPage();
+        // The status is loaded from the user profile, even without any data stored in the browser. The widget starts
+        // collapsed until the saved state is loaded, so the state is checked both collapsed and expanded.
+        this.guidedTour.clearBrowserStorage();
+        new ViewPage().reloadPage();
         widget = new TourWidget();
-        assertFalse(widget.isExpandedWithin(3), "The collapsed state of the widget wasn't restored.");
+        assertTrue(widget.isWidgetCollapsed(), "The collapsed state of the widget wasn't restored.");
         widget.expand().waitUntilTaskStatus("persistenceTask", DONE);
-        this.fixture.waitForUserTourStatus(userName, status -> "OPEN".equals(status.getWidgetState()));
+        this.guidedTour.waitForUserTourStatus(userName, status -> "OPEN".equals(status.getWidgetState()));
+        this.guidedTour.clearBrowserStorage();
+        new ViewPage().reloadPage();
+        assertFalse(new TourWidget().isWidgetCollapsed(), "The expanded state of the widget wasn't restored.");
 
         // Another user has their own status.
         String otherUserName = "GuidedTourOtherPersistenceUser";
-        this.fixture.createUserAndLogin(otherUserName);
+        this.guidedTour.createUserAndLogin(otherUserName);
         setup.gotoPage(page);
         widget = new TourWidget().waitUntilTaskStatus("persistenceTask", TODO);
         widget.skipTask("persistenceTask");
-        widget.waitUntilTaskStatus("persistenceTask", SKIPPED);
-        this.fixture.waitForUserTourStatus(otherUserName,
+        this.guidedTour.waitForUserTourStatus(otherUserName,
             status -> status.getTaskStatus(tourId, "persistenceTask").filter(SKIPPED::equals).isPresent());
 
         // The status of the first user didn't change.
-        setup.login(userName, GuidedTourFixture.PASSWORD);
+        setup.login(userName, GuidedTourTestUtils.PASSWORD);
         setup.gotoPage(page);
         new TourWidget().waitUntilTaskStatus("persistenceTask", DONE);
-        assertEquals(Optional.of(DONE),
-            this.fixture.getUserTourStatus(userName).flatMap(status -> status.getTaskStatus(tourId, "persistenceTask")));
+        assertEquals(Optional.of(DONE), this.guidedTour.getUserTourStatus(userName)
+            .flatMap(status -> status.getTaskStatus(tourId, "persistenceTask")));
     }
 
     /**
@@ -200,34 +182,38 @@ class TourWidgetIT extends AbstractGuidedTourIT
     void guestStatusIsSavedInTheBrowser(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Guest");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Guest tour", true);
-        DocumentReference task = this.fixture.createTask(tour, "guestTask", "Guest task", 0, true);
-        this.fixture.addSteps(task, Step.withContent("Only step"));
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Guest");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Guest tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "guestTask", "Guest task", 0, true);
+        this.guidedTour.addSteps(task, Step.withContent("Only step"));
 
         setup.forceGuestUser();
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget().waitUntilTaskIsDisplayed("guestTask");
         widget.skipTask("guestTask");
-        widget.waitUntilTaskStatus("guestTask", SKIPPED);
-        this.fixture.waitForGuestStatusInBrowser();
+        String tourId = this.guidedTour.getTourId(tour);
+        this.guidedTour.waitForGuestStatusInBrowser(
+            status -> status.getTaskStatus(tourId, "guestTask").filter(SKIPPED::equals).isPresent());
 
-        widget.reloadPage();
+        new ViewPage().reloadPage();
         widget = new TourWidget().waitUntilTaskStatus("guestTask", SKIPPED);
 
-        // The widget is expanded by default, so it stays collapsed only if the saved state is restored.
+        // The widget starts collapsed until the saved state is loaded, so the state is checked both collapsed and
+        // expanded.
         widget.collapse();
-        this.fixture.waitForGuestStatusInBrowser(status -> "COLLAPSED".equals(status.getWidgetState()));
-        widget.reloadPage();
+        this.guidedTour.waitForGuestStatusInBrowser(status -> "COLLAPSED".equals(status.getWidgetState()));
+        new ViewPage().reloadPage();
         widget = new TourWidget();
-        assertFalse(widget.isExpandedWithin(3), "The collapsed state of the widget wasn't restored.");
+        assertTrue(widget.isWidgetCollapsed(), "The collapsed state of the widget wasn't restored.");
         widget.expand();
-        this.fixture.waitForGuestStatusInBrowser(status -> "OPEN".equals(status.getWidgetState()));
+        this.guidedTour.waitForGuestStatusInBrowser(status -> "OPEN".equals(status.getWidgetState()));
+        new ViewPage().reloadPage();
+        assertFalse(new TourWidget().isWidgetCollapsed(), "The expanded state of the widget wasn't restored.");
 
         // Clearing the browser storage resets the progress of the guest.
-        this.fixture.clearBrowserStorage();
-        widget.reloadPage();
+        this.guidedTour.clearBrowserStorage();
+        new ViewPage().reloadPage();
         new TourWidget().waitUntilTaskStatus("guestTask", TODO);
     }
 }

@@ -39,7 +39,7 @@
       <artifactId>xwiki-platform-livedata-test-pageobjects</artifactId>
       <version>${platform.version}</version>
     </dependency>
-    <!-- Used by GuidedTourFixture to read the guided tour status stored in the user profile. -->
+    <!-- Used by GuidedTourTestUtils to read the guided tour status stored in the user profile. -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>

@@ -94,8 +94,7 @@ public class TaskEditPage extends InlinePage
      */
     public List<String> getStepTitles()
     {
-        return getDriver().findElementsWithoutWaiting(TaskPage.STEP_TITLES).stream().map(WebElement::getText)
-            .toList();
+        return TaskPage.getStepTitles(getDriver());
     }
 
     /**

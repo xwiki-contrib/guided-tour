@@ -21,11 +21,9 @@ package org.xwiki.contrib.guidedtour.test.ui;
 
 import java.util.List;
 
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture.Step;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourTestUtils.Step;
 import org.xwiki.contrib.guidedtour.test.po.TourStepPopover;
 import org.xwiki.contrib.guidedtour.test.po.TourWidget;
 import org.xwiki.model.reference.DocumentReference;
@@ -50,7 +48,6 @@ import static org.xwiki.contrib.guidedtour.test.po.TourTaskStatus.TODO;
  * @version $Id$
  */
 @UITest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TaskProgressionIT extends AbstractGuidedTourIT
 {
     /**
@@ -62,30 +59,32 @@ class TaskProgressionIT extends AbstractGuidedTourIT
     void navigateBetweenStepsAndResumeAfterReload(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Steps");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Navigation tour", true);
-        DocumentReference task = this.fixture.createTask(tour, "navigationTask", "Navigation task", 0, true);
-        this.fixture.addSteps(task,
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Steps");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Navigation tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "navigationTask", "Navigation task", 0, true);
+        this.guidedTour.addSteps(task,
             Step.withContent("Step one"),
             Step.withContent("Step two").element("#document-title"),
             Step.withContent("Step three"));
 
-        this.fixture.createUserAndLogin("GuidedTourNavigationUser");
+        String tourId = this.guidedTour.getTourId(tour);
+
+        String userName = this.guidedTour.createUserAndLogin("GuidedTourNavigationUser");
         setup.gotoPage(page);
 
         new TourWidget().clickTask("navigationTask");
         TourStepPopover popover = new TourStepPopover().waitForStep("Step one");
-        // Steps without their own title display the title of their task.
+        // Steps have no title of their own: they display the title of their task.
         assertEquals("Navigation task", popover.getTitle());
         assertEquals(1, popover.getCurrentStepNumber());
         assertEquals(3, popover.getStepCount());
         // A step without element is displayed in the middle of the screen.
-        assertEquals(TourStepPopover.NO_ELEMENT_ID, popover.getHighlightedElementId());
+        assertTrue(popover.isCentered());
 
         popover.clickNext();
         popover.waitForStep("Step two");
         assertEquals(2, popover.getCurrentStepNumber());
-        assertEquals("document-title", popover.getHighlightedElementId());
+        assertTrue(popover.isHighlighting("#document-title"));
 
         // The active task is resumed at the current step after a page reload.
         new ViewPage().reloadPage();
@@ -96,10 +95,11 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.clickPrevious().waitForStep("Step one");
         assertEquals(1, popover.getCurrentStepNumber());
 
-        // Leaving the task before its last step keeps it to do.
+        // Leaving the task before its last step keeps it to do. Wait for the leave to be handled (the next tasks aren't
+        // started automatically anymore) before checking the status.
         popover.pressEscape();
-        popover.waitUntilClosed();
-        new TourWidget().waitUntilTaskStatus("navigationTask", TODO);
+        this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId));
+        assertEquals(TODO, new TourWidget().getTaskStatus("navigationTask"));
     }
 
     /**
@@ -111,20 +111,20 @@ class TaskProgressionIT extends AbstractGuidedTourIT
     void completingATaskStartsTheNextActiveTask(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Tasks");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Progression tour", true);
-        DocumentReference firstTask = this.fixture.createTask(tour, "progressionFirstTask", "First task", 0, true);
-        this.fixture.addSteps(firstTask,
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Tasks");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Progression tour", true);
+        DocumentReference firstTask = this.guidedTour.createTask(tour, "progressionFirstTask", "First task", 0, true);
+        this.guidedTour.addSteps(firstTask,
             Step.withContent("First task, step one"),
             Step.withContent("First task, step two"));
         DocumentReference inactiveTask =
-            this.fixture.createTask(tour, "progressionInactiveTask", "Inactive task", 1, false);
-        this.fixture.addSteps(inactiveTask, Step.withContent("Inactive task, only step"));
-        DocumentReference lastTask = this.fixture.createTask(tour, "progressionLastTask", "Last task", 2, true);
-        this.fixture.addSteps(lastTask, Step.withContent("Last task, only step"));
-        String tourId = this.fixture.getTourId(tour);
+            this.guidedTour.createTask(tour, "progressionInactiveTask", "Inactive task", 1, false);
+        this.guidedTour.addSteps(inactiveTask, Step.withContent("Inactive task, only step"));
+        DocumentReference lastTask = this.guidedTour.createTask(tour, "progressionLastTask", "Last task", 2, true);
+        this.guidedTour.addSteps(lastTask, Step.withContent("Last task, only step"));
+        String tourId = this.guidedTour.getTourId(tour);
 
-        this.fixture.createUserAndLogin("GuidedTourProgressionUser");
+        this.guidedTour.createUserAndLogin("GuidedTourProgressionUser");
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget().waitUntilTaskIsDisplayed("progressionLastTask");
@@ -143,8 +143,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.waitForStep("Last task, only step");
         assertEquals("Last task", popover.getTitle());
         assertEquals(1, popover.getStepCount());
-        popover.clickNext();
-        popover.waitUntilClosed();
+        popover.clickDone();
 
         widget.waitUntilTaskStatus("progressionLastTask", DONE);
         // The inactive task isn't taken into account.
@@ -152,9 +151,9 @@ class TaskProgressionIT extends AbstractGuidedTourIT
     }
 
     /**
-     * Closing a task before its end, or skipping it (with the "Skip All" link of the popover, or from the widget), stops
-     * starting automatically the next tasks of its tour, but not of the other tours. A closed task stays to do, a
-     * skipped task is skipped.
+     * Closing a task before its end, or skipping it (with the "Skip All" link of the popover, or from the widget),
+     * stops starting automatically the next tasks of its tour, but not of the other tours. A closed task stays to do,
+     * a skipped task is skipped.
      */
     @Test
     @Order(3)
@@ -163,37 +162,36 @@ class TaskProgressionIT extends AbstractGuidedTourIT
     {
         String userName = "GuidedTourCloseUser";
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Close");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Close tour", true);
-        DocumentReference firstTask = this.fixture.createTask(tour, "closeFirstTask", "First task", 0, true);
-        this.fixture.addSteps(firstTask,
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Close");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Close tour", true);
+        DocumentReference firstTask = this.guidedTour.createTask(tour, "closeFirstTask", "First task", 0, true);
+        this.guidedTour.addSteps(firstTask,
             Step.withContent("First task, step one"),
             Step.withContent("First task, step two"));
-        DocumentReference secondTask = this.fixture.createTask(tour, "closeSecondTask", "Second task", 1, true);
-        this.fixture.addSteps(secondTask, Step.withContent("Second task, only step"));
-        String tourId = this.fixture.getTourId(tour);
+        DocumentReference secondTask = this.guidedTour.createTask(tour, "closeSecondTask", "Second task", 1, true);
+        this.guidedTour.addSteps(secondTask, Step.withContent("Second task, only step"));
+        String tourId = this.guidedTour.getTourId(tour);
 
-        DocumentReference otherTour = this.fixture.createTour(space, "OtherTour", "Other close tour", true);
+        DocumentReference otherTour = this.guidedTour.createTour(space, "OtherTour", "Other close tour", true);
         DocumentReference otherFirstTask =
-            this.fixture.createTask(otherTour, "closeOtherFirstTask", "Other first task", 0, true);
-        this.fixture.addSteps(otherFirstTask, Step.withContent("Other first task, only step"));
+            this.guidedTour.createTask(otherTour, "closeOtherFirstTask", "Other first task", 0, true);
+        this.guidedTour.addSteps(otherFirstTask, Step.withContent("Other first task, only step"));
         DocumentReference otherSecondTask =
-            this.fixture.createTask(otherTour, "closeOtherSecondTask", "Other second task", 1, true);
-        this.fixture.addSteps(otherSecondTask, Step.withContent("Other second task, only step"));
-        String otherTourId = this.fixture.getTourId(otherTour);
+            this.guidedTour.createTask(otherTour, "closeOtherSecondTask", "Other second task", 1, true);
+        this.guidedTour.addSteps(otherSecondTask, Step.withContent("Other second task, only step"));
+        String otherTourId = this.guidedTour.getTourId(otherTour);
 
-        this.fixture.createUserAndLogin(userName);
+        this.guidedTour.createUserAndLogin(userName);
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget();
         widget.clickTask("closeFirstTask");
         TourStepPopover popover = new TourStepPopover().waitForStep("First task, step one");
         popover.close();
-        popover.waitUntilClosed();
 
         // Once the close is handled (the next tasks aren't started automatically anymore), the task is still to do.
         // The other tour isn't affected.
-        assertTrue(this.fixture.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId))
+        assertTrue(this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId))
             .isCallToActionEnabled(otherTourId));
         widget.waitUntilTaskStatus("closeFirstTask", TODO);
 
@@ -205,31 +203,33 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.clickNext();
         widget.waitUntilTaskStatus("closeFirstTask", DONE);
         // The next task would be started right after the status is saved, so wait for it to be saved before checking.
-        this.fixture.waitForUserTourStatus(userName,
+        this.guidedTour.waitForUserTourStatus(userName,
             status -> status.getTaskStatus(tourId, "closeFirstTask").filter(DONE::equals).isPresent());
         assertFalse(popover.isDisplayedWithin(3), "The next task shouldn't have been started.");
         assertEquals(TODO, widget.getTaskStatus("closeSecondTask"));
 
-        // Resetting the tour starts automatically its next tasks again, until the "Skip All" link skips the task. A tour
-        // can be reset only once none of its tasks is left to do.
-        widget.skipTask("closeSecondTask");
-        widget.waitUntilTourStatus(tourId, SKIPPED);
-        // Skipping a task from the widget also stops starting the next tasks of its tour automatically, and only them.
-        this.fixture.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId)
-            && status.getTaskStatus(tourId, "closeSecondTask").filter(SKIPPED::equals).isPresent()
+        // Resetting the tour starts automatically its next tasks again. A tour can be reset only once none of its tasks
+        // is left to do.
+        widget.skipTask("closeSecondTask").resetTour(tourId);
+        assertEquals(TODO, widget.getTaskStatus("closeFirstTask"));
+        assertEquals(TODO, widget.getTaskStatus("closeSecondTask"));
+        this.guidedTour.waitForUserTourStatus(userName, status -> status.isCallToActionEnabled(tourId));
+
+        // Skipping a task from the widget stops starting the next tasks of its tour automatically, and only them.
+        widget.skipTask("closeFirstTask");
+        this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId)
+            && status.getTaskStatus(tourId, "closeFirstTask").filter(SKIPPED::equals).isPresent()
             && status.isCallToActionEnabled(otherTourId));
-        widget.resetTour(tourId);
-        widget.waitUntilTaskStatus("closeFirstTask", TODO);
-        widget.waitUntilTaskStatus("closeSecondTask", TODO);
-        this.fixture.waitForUserTourStatus(userName, status -> status.isCallToActionEnabled(tourId));
+        widget.skipTask("closeSecondTask").resetTour(tourId);
+        this.guidedTour.waitForUserTourStatus(userName, status -> status.isCallToActionEnabled(tourId));
+
+        // So does skipping a task with the "Skip All" link of the popover.
         widget.clickTask("closeFirstTask");
         popover.waitForStep("First task, step one");
         popover.skipAll();
-        popover.waitUntilClosed();
-
         widget.waitUntilTaskStatus("closeFirstTask", SKIPPED);
         assertEquals(TODO, widget.getTaskStatus("closeSecondTask"));
-        this.fixture.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId)
+        this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId)
             && status.getTaskStatus(tourId, "closeFirstTask").filter(SKIPPED::equals).isPresent());
 
         // The next tasks of the other tour are still started automatically.
@@ -237,80 +237,79 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.waitForStep("Other first task, only step");
         popover.clickNext();
         popover.waitForStep("Other second task, only step");
-        popover.clickNext();
-        popover.waitUntilClosed();
+        popover.clickDone();
         widget.waitUntilTourStatus(otherTourId, DONE);
         // The skipped tour is left as it was.
         assertEquals(SKIPPED, widget.getTaskStatus("closeFirstTask"));
         assertEquals(TODO, widget.getTaskStatus("closeSecondTask"));
+
+        // Skipping the whole tour from the widget also stops starting its next tasks automatically: once its tasks are
+        // reset one by one, completing the first one doesn't start the next one.
+        // FIXME: This currently fails: skipping a tour only changes the status of its tasks, without disabling the call
+        // to action of the tour like skipping a task does, so the next task is started. Skipping a tour should disable
+        // the call to action of the tour, like skipping a task. This is checked last, so that the checks above still
+        // run while it fails.
+        widget.skipTask("closeSecondTask").resetTour(tourId);
+        this.guidedTour.waitForUserTourStatus(userName, status -> status.isCallToActionEnabled(tourId));
+        widget.skipTour(tourId).resetTask("closeFirstTask").resetTask("closeSecondTask");
+        widget.clickTask("closeFirstTask");
+        popover.waitForStep("First task, step one");
+        popover.clickNext();
+        popover.waitForStep("First task, step two");
+        popover.clickNext();
+        widget.waitUntilTaskStatus("closeFirstTask", DONE);
+        this.guidedTour.waitForUserTourStatus(userName,
+            status -> status.getTaskStatus(tourId, "closeFirstTask").filter(DONE::equals).isPresent());
+        assertFalse(popover.isDisplayedWithin(3), "The next task shouldn't have been started.");
+        assertEquals(TODO, widget.getTaskStatus("closeSecondTask"));
     }
 
     /**
-     * A reflex step has no button to move to the next step: the user has to click the highlighted element.
+     * A reflex step has no button to move to the next step: the user has to act on the highlighted element. Clicking a
+     * button moves to the next step at once, while a text input leaves the user some time to type.
      */
     @Test
     @Order(4)
-    void reflexStepOnClick(TestUtils setup, TestReference testReference) throws Exception
+    void reflexSteps(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space),
-            "{{html}}<button type=\"button\" id=\"gtReflexButton\">Click me</button>{{/html}}", "Reflex click");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Reflex click tour", true);
-        DocumentReference task = this.fixture.createTask(tour, "reflexClickTask", "Reflex click task", 0, true);
-        this.fixture.addSteps(task,
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space),
+            "{{html}}<button type=\"button\" id=\"gtReflexButton\">Click me</button>"
+                + "<input type=\"text\" id=\"gtReflexInput\"/>{{/html}}",
+            "Reflex");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Reflex tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "reflexTask", "Reflex task", 0, true);
+        this.guidedTour.addSteps(task,
             Step.withContent("Click the button").element("#gtReflexButton").reflex(),
-            Step.withContent("Button clicked"));
-
-        this.fixture.createUserAndLogin("GuidedTourReflexClickUser");
-        setup.gotoPage(page);
-
-        TourWidget widget = new TourWidget();
-        widget.clickTask("reflexClickTask");
-        TourStepPopover popover = new TourStepPopover().waitForStep("Click the button");
-        assertEquals("gtReflexButton", popover.getHighlightedElementId());
-        assertFalse(popover.hasNextButton());
-        assertFalse(popover.hasPreviousButton());
-
-        popover.clickHighlightedElement();
-        popover.waitForStep("Button clicked");
-        assertTrue(popover.hasNextButton());
-
-        popover.clickNext();
-        popover.waitUntilClosed();
-        widget.waitUntilTaskStatus("reflexClickTask", DONE);
-    }
-
-    /**
-     * A reflex step on a text input leaves the user some time to type, before moving to the next step.
-     */
-    @Test
-    @Order(5)
-    void reflexStepOnTextInput(TestUtils setup, TestReference testReference) throws Exception
-    {
-        SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space),
-            "{{html}}<input type=\"text\" id=\"gtReflexInput\"/>{{/html}}", "Reflex input");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Reflex input tour", true);
-        DocumentReference task = this.fixture.createTask(tour, "reflexInputTask", "Reflex input task", 0, true);
-        this.fixture.addSteps(task,
             Step.withContent("Type your name").element("#gtReflexInput").reflex(),
             Step.withContent("Thanks for typing"));
 
-        this.fixture.createUserAndLogin("GuidedTourReflexInputUser");
+        this.guidedTour.createUserAndLogin("GuidedTourReflexUser");
         setup.gotoPage(page);
 
-        new TourWidget().clickTask("reflexInputTask");
-        TourStepPopover popover = new TourStepPopover().waitForStep("Type your name");
+        TourWidget widget = new TourWidget();
+        widget.clickTask("reflexTask");
+        TourStepPopover popover = new TourStepPopover().waitForStep("Click the button");
+        assertTrue(popover.isHighlighting("#gtReflexButton"));
+        assertFalse(popover.hasNextButton());
+        assertFalse(popover.hasPreviousButton());
+
+        // Clicking the button moves to the next step.
+        popover.clickHighlightedElement();
+        popover.waitForStep("Type your name");
+        assertTrue(popover.isHighlighting("#gtReflexInput"));
         assertFalse(popover.hasNextButton());
 
-        // Measured before typing, so that the elapsed time is never shorter than the delay of the step.
-        long clickedAt = System.currentTimeMillis();
-        popover.typeInHighlightedElement("Alice");
         // The step waits 5 seconds after the click before moving on, to let the user type.
+        long clickedAt = popover.typeInHighlightedElement("Alice");
         assertEquals("Alice", popover.getHighlightedElementValue());
         popover.waitForStep("Thanks for typing", 15);
         long elapsed = System.currentTimeMillis() - clickedAt;
         assertTrue(elapsed >= 5000, "The step moved on after only %d ms.".formatted(elapsed));
+        assertTrue(popover.hasNextButton());
+
+        popover.clickDone();
+        widget.waitUntilTaskStatus("reflexTask", DONE);
     }
 
     /**
@@ -319,17 +318,18 @@ class TaskProgressionIT extends AbstractGuidedTourIT
      * so it's skipped.
      */
     @Test
-    @Order(6)
+    @Order(5)
     void editPageTaskAcrossPages(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
         DocumentReference page =
-            this.fixture.createPage(new DocumentReference("Page", space), "Content to edit", "Edit page");
+            this.guidedTour.createPage(new DocumentReference("Page", space), "Content to edit", "Edit page");
         String pageReference = setup.serializeLocalReference(page);
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Edit page tour", true);
-        DocumentReference task = this.fixture.createTask(tour, "editPageTask", "Edit page task", 0, true);
-        // The same steps as the "Edit a Page" task of the default tour.
-        this.fixture.addSteps(task,
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Edit page tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "editPageTask", "Edit page task", 0, true);
+        // Steps like the ones of the "Edit a Page" task of the default tour, without its introduction step on the
+        // sandbox, and with a last step once the page is saved.
+        this.guidedTour.addSteps(task,
             Step.withContent("Press edit now.").element("#contentmenu #tmEdit a.btn").reflex()
                 .targetPage(pageReference).targetAction("VIEW"),
             Step.withContent("You can write stuff now!")
@@ -340,7 +340,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
                 .targetPage(pageReference).targetAction("EDIT"),
             Step.withContent("The page is saved.").targetPage(pageReference).targetAction("VIEW"));
 
-        String editorName = this.fixture.createUserAndLogin("GuidedTourEditPageUser");
+        String editorName = this.guidedTour.createUserAndLogin("GuidedTourEditPageUser");
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget();
@@ -359,17 +359,16 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.clickHighlightedElementAndWaitForPageReload();
         popover.waitForStep("The page is saved.");
         assertEquals(setup.getURL(page), new ViewPage().getPageURL());
-        popover.clickNext();
-        popover.waitUntilClosed();
+        popover.clickDone();
         new TourWidget().waitUntilTaskStatus("editPageTask", DONE);
-        this.fixture.waitForUserTourStatus(editorName,
-            status -> status.getTaskStatus(this.fixture.getTourId(tour), "editPageTask").filter(DONE::equals)
+        this.guidedTour.waitForUserTourStatus(editorName,
+            status -> status.getTaskStatus(this.guidedTour.getTourId(tour), "editPageTask").filter(DONE::equals)
                 .isPresent());
 
         // A user who can't edit the page doesn't have the edit button, so the task is skipped.
         String viewerName = "GuidedTourEditPageViewer";
-        this.fixture.denyEdit(page, viewerName);
-        this.fixture.createUserAndLogin(viewerName);
+        this.guidedTour.denyEdit(page, viewerName);
+        this.guidedTour.createUserAndLogin(viewerName);
         setup.gotoPage(page);
         widget = new TourWidget();
         widget.clickTask("editPageTask");
@@ -382,16 +381,17 @@ class TaskProgressionIT extends AbstractGuidedTourIT
      * A task whose step targets an element missing from the page can't be done, so it's skipped.
      */
     @Test
-    @Order(7)
+    @Order(6)
     void missingElementSkipsTheTask(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Missing");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Missing element tour", true);
-        DocumentReference task = this.fixture.createTask(tour, "missingElementTask", "Missing element task", 0, true);
-        this.fixture.addSteps(task, Step.withContent("Never displayed").element("#gtMissingElement"));
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Missing");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Missing element tour", true);
+        DocumentReference task =
+            this.guidedTour.createTask(tour, "missingElementTask", "Missing element task", 0, true);
+        this.guidedTour.addSteps(task, Step.withContent("Never displayed").element("#gtMissingElement"));
 
-        this.fixture.createUserAndLogin("GuidedTourMissingElementUser");
+        this.guidedTour.createUserAndLogin("GuidedTourMissingElementUser");
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget();

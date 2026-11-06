@@ -21,13 +21,11 @@ package org.xwiki.contrib.guidedtour.test.ui;
 
 import java.util.List;
 
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture.Step;
-import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture.Task;
-import org.xwiki.contrib.guidedtour.test.po.GuidedTourFixture.Tour;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourTestUtils.Step;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourTestUtils.Task;
+import org.xwiki.contrib.guidedtour.test.po.GuidedTourTestUtils.Tour;
 import org.xwiki.contrib.guidedtour.test.po.TaskEditPage;
 import org.xwiki.contrib.guidedtour.test.po.TaskPage;
 import org.xwiki.contrib.guidedtour.test.po.TourEditPage;
@@ -56,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @version $Id$
  */
 @UITest
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class TourAdministrationIT extends AbstractGuidedTourIT
 {
     /**
@@ -72,9 +69,12 @@ class TourAdministrationIT extends AbstractGuidedTourIT
     void toursList(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference activeTour = this.fixture.createTour(space, "ActiveTour", "Listed active tour", true);
-        this.fixture.createTask(activeTour, "listedActiveTask", "Listed task", 0, true);
-        DocumentReference inactiveTour = this.fixture.createTour(space, "InactiveTour", "Listed inactive tour", false);
+        DocumentReference activeTour = this.guidedTour.createTour(space, "ActiveTour", "Listed active tour", true);
+        DocumentReference listedTask =
+            this.guidedTour.createTask(activeTour, "listedActiveTask", "Listed task", 0, true);
+        this.guidedTour.addSteps(listedTask, Step.withContent("Listed task, only step"));
+        DocumentReference inactiveTour =
+            this.guidedTour.createTour(space, "InactiveTour", "Listed inactive tour", false);
 
         setup.loginAsSuperAdmin();
         ToursPage toursPage = ToursPage.gotoPage();
@@ -108,7 +108,7 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         // Delete a tour.
         toursPage = ToursPage.gotoPage().filterByTitle("Listed");
         assertTrue(toursPage.deleteTour("Listed inactive tour"));
-        assertFalse(this.fixture.exists(inactiveTour));
+        assertFalse(this.guidedTour.exists(inactiveTour));
         toursPage = ToursPage.gotoPage().filterByTitle("Listed");
         assertEquals(List.of("Listed active tour"), toursPage.getTourTitles());
     }
@@ -122,13 +122,13 @@ class TourAdministrationIT extends AbstractGuidedTourIT
     void editTour(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Tour");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Editable tour", true);
-        DocumentReference firstTask = this.fixture.createTask(tour, "editableFirstTask", "First task", 0, true);
-        this.fixture.addSteps(firstTask, Step.withContent("First task, only step"));
-        DocumentReference secondTask = this.fixture.createTask(tour, "editableSecondTask", "Second task", 1, true);
-        this.fixture.addSteps(secondTask, Step.withContent("Second task, only step"));
-        String tourId = this.fixture.getTourId(tour);
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Tour");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Editable tour", true);
+        DocumentReference firstTask = this.guidedTour.createTask(tour, "editableFirstTask", "First task", 0, true);
+        this.guidedTour.addSteps(firstTask, Step.withContent("First task, only step"));
+        DocumentReference secondTask = this.guidedTour.createTask(tour, "editableSecondTask", "Second task", 1, true);
+        this.guidedTour.addSteps(secondTask, Step.withContent("Second task, only step"));
+        String tourId = this.guidedTour.getTourId(tour);
 
         setup.loginAsSuperAdmin();
         TourPage tourPage = TourPage.gotoPage(tour);
@@ -148,7 +148,7 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         TourEditPage tourEditPage = TourEditPage.gotoPage(tour);
         tourEditPage.setTourTitle("Edited tour").setDescription("Edited description").setActive(false);
         tourEditPage.clickSaveAndView();
-        Tour savedTour = this.fixture.getTour(tour);
+        Tour savedTour = this.guidedTour.getTour(tour);
         assertEquals("Edited tour", savedTour.getTitle(), savedTour::toString);
         assertEquals("Edited description", savedTour.getDescription(), savedTour::toString);
         assertFalse(savedTour.isActive(), savedTour::toString);
@@ -164,6 +164,14 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         assertThat(widget.getTourIds(), hasItem(tourId));
         assertEquals("Edited tour", widget.getTourTitle(tourId));
         assertEquals(List.of("editableFirstTask", "editableSecondTask"), widget.getVisibleTaskIds(tourId));
+
+        // Two tasks of the same tour can be given the same title.
+        // FIXME: This shouldn't be possible. Once the titles of the tasks are unique in a tour, saving a duplicate
+        // title should be refused, and this check should fail: update it to expect the refusal.
+        TaskEditPage.gotoPage(secondTask).setTaskTitle("First task").clickSaveAndView();
+        tourPage = TourPage.gotoPage(tour);
+        new TourWidget().collapse();
+        assertEquals(List.of("First task", "First task"), tourPage.getTaskTitles());
     }
 
     /**
@@ -175,37 +183,32 @@ class TourAdministrationIT extends AbstractGuidedTourIT
     void addAndEditTask(TestUtils setup, TestReference testReference) throws Exception
     {
         SpaceReference space = testReference.getLastSpaceReference();
-        DocumentReference page = this.fixture.createPage(new DocumentReference("Page", space), "Content", "Task");
-        DocumentReference tour = this.fixture.createTour(space, "Tour", "Steps tour", true);
+        DocumentReference page = this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Task");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Steps tour", true);
         DocumentReference existingTask =
-            this.fixture.createTask(tour, "stepsExistingTask", "Existing task", 5, true);
-        this.fixture.addSteps(existingTask, Step.withContent("Existing task, only step"));
+            this.guidedTour.createTask(tour, "stepsExistingTask", "Existing task", 5, true);
+        this.guidedTour.addSteps(existingTask, Step.withContent("Existing task, only step"));
         DocumentReference addedTask = new DocumentReference("stepsAddedTask", tour.getLastSpaceReference());
-        String tourId = this.fixture.getTourId(tour);
+        String tourId = this.guidedTour.getTourId(tour);
 
         setup.loginAsSuperAdmin();
 
         // Add a task from the tour page. It's created inactive, so that it can be completed before being displayed.
         TaskPage taskPage = TourEditPage.gotoPage(tour).addTask("stepsAddedTask");
-        this.fixture.deleteAfterTest(addedTask);
+        this.guidedTour.deleteAfterTest(addedTask);
         assertEquals(setup.getURL(addedTask), taskPage.getPageURL());
-        assertFalse(this.fixture.getTask(addedTask).isActive());
+        assertFalse(this.guidedTour.getTask(addedTask).isActive());
 
-        // Edit its properties and add a step.
         TaskEditPage taskEditPage = TaskEditPage.gotoPage(addedTask);
-        taskEditPage.setTaskTitle("Added task").setOrder(1).setActive(true)
-            .addStep("Added task, step one");
-        // FIXME: Add the second step from the UI, with .addStep("Added task, step two"), once the task sheet can add
-        // more than one step without programming rights. The sheet sets the number of a new step object with
-        // $step.getXWikiObject().setNumber(), which requires programming rights: without them, every new step form
-        // is rendered for the object 0, so only a first step can be added. Meanwhile, the step is added after saving.
+        taskEditPage.setTaskTitle("Added task").setOrder(1).setActive(true).addStep("Added task, step one");
         assertEquals(List.of("Added task, step one"), taskEditPage.getStepTitles());
         taskPage = taskEditPage.clickSaveAndView();
         assertEquals(List.of("Added task, step one"), taskPage.getStepTitles());
-        this.fixture.addSteps(addedTask, 1, Step.withContent("Added task, step two"));
-        taskPage = TaskPage.gotoPage(addedTask);
+        taskEditPage = TaskEditPage.gotoPage(addedTask).addStep("Added task, step two");
+        assertEquals(List.of("Added task, step one", "Added task, step two"), taskEditPage.getStepTitles());
+        taskPage = taskEditPage.clickSaveAndView();
         assertEquals(List.of("Added task, step one", "Added task, step two"), taskPage.getStepTitles());
-        Task savedTask = this.fixture.getTask(addedTask);
+        Task savedTask = this.guidedTour.getTask(addedTask);
         assertEquals("Added task", savedTask.getTitle(), savedTask::toString);
         assertEquals(1, savedTask.getOrder(), savedTask::toString);
         assertTrue(savedTask.isActive(), savedTask::toString);
@@ -225,20 +228,18 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         popover.waitForStep("Added task, step two");
         popover.clickNext();
         popover.waitForStep("Existing task, only step");
-        popover.clickNext();
-        popover.waitUntilClosed();
+        popover.clickDone();
 
-        // Edit the first step, remove the second one, and add a new one.
-        taskEditPage = TaskEditPage.gotoPage(addedTask);
-        assertEquals(List.of("Added task, step one", "Added task, step two"), taskEditPage.getStepTitles());
-        taskEditPage.setStepContent(0, "Edited step one").deleteStep(1);
-        // FIXME: Add the new step from the UI, with .addStep("New last step"), once the task sheet can add a step to a
-        // task that already has some without programming rights (see above). Meanwhile, the step is added after saving.
-        assertEquals(List.of("Edited step one"), taskEditPage.getStepTitles());
+        // Add a new step, then edit the first step and remove the second one.
+        taskEditPage = TaskEditPage.gotoPage(addedTask).addStep("New last step");
+        assertEquals(List.of("Added task, step one", "Added task, step two", "New last step"),
+            taskEditPage.getStepTitles());
         taskPage = taskEditPage.clickSaveAndView();
-        assertEquals(List.of("Edited step one"), taskPage.getStepTitles());
-        this.fixture.addSteps(addedTask, 1, Step.withContent("New last step"));
-        taskPage = TaskPage.gotoPage(addedTask);
+        assertEquals(List.of("Added task, step one", "Added task, step two", "New last step"),
+            taskPage.getStepTitles());
+        taskEditPage = TaskEditPage.gotoPage(addedTask).setStepContent(0, "Edited step one").deleteStep(1);
+        assertEquals(List.of("Edited step one", "New last step"), taskEditPage.getStepTitles());
+        taskPage = taskEditPage.clickSaveAndView();
         assertEquals(List.of("Edited step one", "New last step"), taskPage.getStepTitles());
 
         // The task displays the edited steps.
@@ -250,9 +251,55 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         popover.clickNext();
         popover.waitForStep("New last step");
         assertEquals(2, popover.getCurrentStepNumber());
-        // Leave the task before its end, so that the next task isn't started.
-        popover.clickPrevious().waitForStep("Edited step one");
-        popover.pressEscape();
-        popover.waitUntilClosed();
+        // The other task of the tour is already done, so no task is started next.
+        popover.clickDone();
+    }
+
+    /**
+     * Deleting a task moves up the next tasks of the tour, removes it from the dependencies of the other tasks, and
+     * from the widget.
+     */
+    @Test
+    @Order(4)
+    void deleteTask(TestUtils setup, TestReference testReference) throws Exception
+    {
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Dependencies tour", true);
+        DocumentReference firstTask = this.guidedTour.createTask(tour, "dependencyFirstTask", "First task", 0, true);
+        this.guidedTour.addSteps(firstTask, Step.withContent("First task, only step"));
+        DocumentReference secondTask =
+            this.guidedTour.createTask(tour, "dependencySecondTask", "Second task", 1, true, "dependencyFirstTask");
+        this.guidedTour.addSteps(secondTask, Step.withContent("Second task, only step"));
+        DocumentReference thirdTask =
+            this.guidedTour.createTask(tour, "dependencyThirdTask", "Third task", 2, true, "dependencySecondTask");
+        this.guidedTour.addSteps(thirdTask, Step.withContent("Third task, only step"));
+        String tourId = this.guidedTour.getTourId(tour);
+
+        setup.loginAsSuperAdmin();
+        TourPage tourPage = TourPage.gotoPage(tour);
+        TourWidget widget = new TourWidget().expand().waitUntilTaskIsDisplayed("dependencyThirdTask");
+        assertEquals(List.of("dependencyFirstTask", "dependencySecondTask", "dependencyThirdTask"),
+            widget.getVisibleTaskIds(tourId));
+        // Make sure the widget doesn't cover the list of tasks.
+        widget.collapse();
+        assertEquals(List.of("First task", "Second task", "Third task"), tourPage.getTaskTitles());
+
+        tourPage.deleteTask("First task");
+        assertEquals(List.of("Second task", "Third task"), tourPage.getTaskTitles());
+        assertFalse(this.guidedTour.exists(firstTask));
+
+        // The remaining tasks, as the application reads them.
+        Task second = this.guidedTour.getTask(secondTask);
+        assertEquals(0, second.getOrder(), second::toString);
+        assertEquals(List.of(), second.getDependsOn(), second::toString);
+
+        Task third = this.guidedTour.getTask(thirdTask);
+        assertEquals(1, third.getOrder(), third::toString);
+        assertEquals(List.of("dependencySecondTask"), third.getDependsOn(), third::toString);
+
+        // The widget doesn't list the deleted task anymore, once reloaded.
+        tourPage.reloadPage();
+        widget = new TourWidget().expand().waitUntilTaskIsDisplayed("dependencyThirdTask");
+        assertEquals(List.of("dependencySecondTask", "dependencyThirdTask"), widget.getVisibleTaskIds(tourId));
     }
 }

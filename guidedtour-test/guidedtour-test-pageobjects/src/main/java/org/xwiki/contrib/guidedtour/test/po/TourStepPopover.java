@@ -40,7 +40,7 @@ public class TourStepPopover extends BaseElement
      * The id of the element highlighted by driver.js when the step doesn't target any element, in which case the
      * popover is displayed in the middle of the screen.
      */
-    public static final String NO_ELEMENT_ID = "driver-dummy-element";
+    private static final String NO_ELEMENT_ID = "driver-dummy-element";
 
     private static final By POPOVER = By.cssSelector(".driver-popover");
 
@@ -73,9 +73,15 @@ public class TourStepPopover extends BaseElement
     /**
      * The duration of the transition between steps (driver.js default is 400ms), plus a safety margin. driver.js
      * displays the popover of a step before the end of this transition, but it registers the step as active only at
-     * its end. Closing the task before that (with the next button on the last step, the close button or the Escape key)
-     * doesn't call the {@code onDestroyed} hook, so the status of the task isn't updated. A user can't be that fast, but
-     * a test can, so we wait for the end of the transition before interacting with the popover.
+     * its end. Closing the task during the transition to its first step (with the next button of a single step, the
+     * close button or the Escape key) doesn't call the {@code onDestroyed} hook, because no step is active yet, so the
+     * status of the task isn't updated. A user can't be that fast, but a test can, so we wait for the end of the
+     * transition before interacting with the popover (on every step, to keep it simple).
+     * <p>
+     * FIXME: This is a timed wait, which tests should avoid. It works around a bug of the guided tour: the status of a
+     * task should be updated by the close and next handlers, not only by the {@code onDestroyed} hook, so that it
+     * doesn't depend on the transition. Once fixed, or once the end of the transition is reflected in the DOM, remove
+     * this wait.
      */
     private static final long STEP_TRANSITION_DURATION = 600;
 
@@ -120,7 +126,8 @@ public class TourStepPopover extends BaseElement
 
     /**
      * Check whether a step popover is displayed within the given delay. Used to verify that no task is started
-     * automatically, which can't be observed otherwise.
+     * automatically, which can't be observed otherwise: there's no event to wait for when nothing happens, so this
+     * always takes the whole delay when no popover is displayed.
      *
      * @param timeout the delay, in seconds
      * @return {@code true} if a step was displayed before the delay expired
@@ -169,12 +176,22 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
-     * @return the id of the element highlighted by the current step, or {@link #NO_ELEMENT_ID} if the step doesn't
-     *     target any element
+     * @return {@code true} if the current step doesn't target any element, in which case it's displayed in the middle
+     *     of the screen
      */
-    public String getHighlightedElementId()
+    public boolean isCentered()
     {
-        return getHighlightedElement().getAttribute(ATTRIBUTE_ID);
+        return NO_ELEMENT_ID.equals(getHighlightedElement().getAttribute(ATTRIBUTE_ID));
+    }
+
+    /**
+     * @param selector the CSS selector of an element of the page, as given to the step
+     * @return {@code true} if the current step highlights the element matching the given selector
+     */
+    public boolean isHighlighting(String selector)
+    {
+        List<WebElement> elements = getDriver().findElementsWithoutWaiting(By.cssSelector(selector));
+        return !elements.isEmpty() && elements.get(0).equals(getHighlightedElement());
     }
 
     /**
@@ -202,19 +219,21 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
-     * Type into the text input highlighted by the current step. On a reflex step, the step moves on a few seconds
-     * after the input is clicked, to let the user type.
+     * Click the text input highlighted by the current step, and type into it. On a reflex step, the step moves on a few
+     * seconds after the input is clicked, to let the user type.
      *
      * @param text the text to type
-     * @return this popover
+     * @return the time when the input was about to be clicked, in milliseconds, so that the time elapsed since the
+     *     click is never underestimated
      */
-    public TourStepPopover typeInHighlightedElement(String text)
+    public long typeInHighlightedElement(String text)
     {
         waitForStepTransition();
         WebElement input = getHighlightedElement();
+        long clickedAt = System.currentTimeMillis();
         input.click();
         input.sendKeys(text);
-        return this;
+        return clickedAt;
     }
 
     /**
@@ -252,6 +271,16 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
+     * Click the button that ends the task, on its last step, and wait until the popover is closed. Use
+     * {@link #clickNext()} instead when the next task of the tour is expected to start.
+     */
+    public void clickDone()
+    {
+        clickNext();
+        waitUntilClosed();
+    }
+
+    /**
      * Click the button that moves to the previous step.
      *
      * @return this popover
@@ -279,29 +308,33 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
-     * Close the task with the close button of the popover. Unless it's the last step, the task stays to do.
+     * Close the task with the close button of the popover, and wait until the popover is closed. Unless it's the last
+     * step, the task stays to do.
      */
     public void close()
     {
         waitForStepTransition();
         getDriver().findElement(CLOSE_BUTTON).click();
+        waitUntilClosed();
     }
 
     /**
-     * Close the task with the Escape key.
+     * Close the task with the Escape key, and wait until the popover is closed.
      */
     public void pressEscape()
     {
         waitForStepTransition();
         getDriver().createActions().sendKeys(Keys.ESCAPE).perform();
+        waitUntilClosed();
     }
 
     /**
-     * Skip the whole task with the "Skip All" link of the popover.
+     * Skip the whole task with the "Skip All" link of the popover, and wait until the popover is closed.
      */
     public void skipAll()
     {
         getDriver().findElement(SKIP_ALL_BUTTON).click();
+        waitUntilClosed();
     }
 
     /**
@@ -325,7 +358,8 @@ public class TourStepPopover extends BaseElement
 
     private WebElement getHighlightedElement()
     {
-        getDriver().waitUntilCondition(driver -> !getDriver().findElementsWithoutWaiting(HIGHLIGHTED_ELEMENT).isEmpty());
+        getDriver()
+            .waitUntilCondition(driver -> !getDriver().findElementsWithoutWaiting(HIGHLIGHTED_ELEMENT).isEmpty());
         return getDriver().findElementWithoutWaitingWithoutScrolling(HIGHLIGHTED_ELEMENT);
     }
 

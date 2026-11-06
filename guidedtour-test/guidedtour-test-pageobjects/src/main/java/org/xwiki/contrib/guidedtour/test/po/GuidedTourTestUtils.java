@@ -43,12 +43,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Creates the tours, tasks and steps used by the functional tests, through the REST API and as superadmin (without
- * changing the user logged in the browser), and removes them after each test.
+ * changing the user logged in the browser). The pages created are removed by {@link #cleanUp()}, which the tests call
+ * after each test.
  *
  * @version $Id$
  * @since 0.2
  */
-public class GuidedTourFixture
+public class GuidedTourTestUtils
 {
     /**
      * The password of the users created by the tests.
@@ -83,7 +84,7 @@ public class GuidedTourFixture
     /**
      * @param setup the test utilities
      */
-    public GuidedTourFixture(TestUtils setup)
+    public GuidedTourTestUtils(TestUtils setup)
     {
         this.setup = setup;
     }
@@ -169,29 +170,16 @@ public class GuidedTourFixture
      */
     public void addSteps(DocumentReference task, Step... steps) throws Exception
     {
-        addSteps(task, 0, steps);
-    }
-
-    /**
-     * Add steps to a task that already has some, after them.
-     *
-     * @param task the reference of the task page
-     * @param firstOrder the position of the first added step in the task, i.e. the number of steps it already has
-     * @param steps the steps to add
-     * @throws Exception if the steps can't be added
-     */
-    public void addSteps(DocumentReference task, int firstOrder, Step... steps) throws Exception
-    {
         for (int i = 0; i < steps.length; i++) {
             // Steps are numbered from 0, like in the default tours. The order is the position of the step in the task.
-            Object[] properties = steps[i].toProperties(firstOrder + i);
+            Object[] properties = steps[i].toProperties(i);
             asSuperAdmin(() -> this.setup.rest().addObject(task, STEP_CLASS, properties));
         }
     }
 
     /**
      * Remove a page created from the user interface (e.g. a task added from the tour page) after the test, like the
-     * pages created by this fixture. The pages are removed in the reverse order of their creation.
+     * pages created through this class. The pages are removed in the reverse order of their creation.
      *
      * @param reference the reference of the page
      */
@@ -225,7 +213,8 @@ public class GuidedTourFixture
     }
 
     /**
-     * Create a user and log in with it in the browser. The user is deleted when cleaning up.
+     * Create a user and log in with it in the browser. The user isn't deleted when cleaning up, since it doesn't affect
+     * the next tests.
      *
      * @param userName the name of the user
      * @return the name of the user
@@ -233,7 +222,6 @@ public class GuidedTourFixture
     public String createUserAndLogin(String userName)
     {
         this.setup.createUserAndLogin(userName, PASSWORD);
-        this.createdPages.push(new DocumentReference(this.setup.getCurrentWiki(), "XWiki", userName));
         return userName;
     }
 
@@ -319,7 +307,7 @@ public class GuidedTourFixture
     }
 
     /**
-     * Remove the pages and users created by the test, and the guided tour data stored in the browser, so that the next
+     * Remove the pages created by the test, and the guided tour data stored in the browser, so that the next
      * test doesn't resume a task left active by this test.
      *
      * @throws Exception if the pages can't be removed
@@ -344,16 +332,6 @@ public class GuidedTourFixture
     {
         this.setup.getDriver()
             .executeJavascript("try { window.localStorage.clear(); window.sessionStorage.clear(); } catch (e) {}");
-    }
-
-    /**
-     * Wait until the guided tour status of the guest user is stored in the browser. The widget saves it
-     * asynchronously.
-     */
-    public void waitForGuestStatusInBrowser()
-    {
-        this.setup.getDriver().waitUntilCondition(driver -> this.setup.getDriver()
-            .executeJavascript("return window.localStorage.getItem('guidedtour_guestStatus');") != null);
     }
 
     /**

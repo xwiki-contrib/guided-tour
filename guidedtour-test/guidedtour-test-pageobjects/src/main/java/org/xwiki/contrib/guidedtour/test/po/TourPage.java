@@ -57,7 +57,7 @@ public class TourPage extends ViewPage
     /**
      * @return the table listing the tasks of the tour
      */
-    public TableLayoutElement getTasksTable()
+    private TableLayoutElement getTasksTable()
     {
         return new LiveDataElement(TASKS_LIVE_DATA_ID).getTableLayout();
     }
@@ -103,7 +103,10 @@ public class TourPage extends ViewPage
      */
     public TaskPage viewTask(String title)
     {
-        getTasksTable().getCell(TITLE_COLUMN, getRowNumber(title)).findElement(By.tagName("a")).click();
+        WebElement link = getTasksTable().getCell(TITLE_COLUMN, getRowNumber(title)).findElement(By.tagName("a"));
+        getDriver().addPageNotYetReloadedMarker();
+        link.click();
+        getDriver().waitUntilPageIsReloaded();
         return new TaskPage();
     }
 

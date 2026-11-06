@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import org.xwiki.model.reference.EntityReference;
+import org.xwiki.test.ui.XWikiWebDriver;
 import org.xwiki.test.ui.po.ViewPage;
 
 /**
@@ -37,25 +37,34 @@ public class TaskPage extends ViewPage
     /**
      * The titles of the steps in the sidebar, which are their content.
      */
-    static final By STEP_TITLES = By.cssSelector(".stepsListContainer .item .step-item-title");
+    private static final By STEP_TITLES = By.cssSelector(".stepsListContainer .item .step-item-title");
 
     /**
-     * Go to the given task page.
-     *
-     * @param taskReference the reference of the task page
-     * @return the task page
+     * The forms of the steps, rendered with the page, while their sidebar entries are added by a script.
      */
-    public static TaskPage gotoPage(EntityReference taskReference)
-    {
-        getUtil().gotoPage(taskReference);
-        return new TaskPage();
-    }
+    private static final By STEP_FORMS = By.cssSelector(".stepsListContainer .itemDisplay");
 
     /**
+     * Wait until the script of the task sheet has listed the steps in the sidebar.
+     *
      * @return the titles of the steps of the task (their content), in their order
      */
     public List<String> getStepTitles()
     {
-        return getDriver().findElementsWithoutWaiting(STEP_TITLES).stream().map(WebElement::getText).toList();
+        return getStepTitles(getDriver());
+    }
+
+    /**
+     * Wait until the script of the task sheet has listed all the steps in the sidebar, in view or edit mode: the
+     * sidebar has an entry for each step form.
+     *
+     * @param driver the driver
+     * @return the titles of the steps of the task (their content), in their order
+     */
+    static List<String> getStepTitles(XWikiWebDriver driver)
+    {
+        driver.waitUntilCondition(d -> driver.findElementsWithoutWaiting(STEP_TITLES).size()
+            == driver.findElementsWithoutWaiting(STEP_FORMS).size());
+        return driver.findElementsWithoutWaiting(STEP_TITLES).stream().map(WebElement::getText).toList();
     }
 }

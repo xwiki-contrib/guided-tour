@@ -56,7 +56,7 @@ public class ToursPage extends ViewPage
     /**
      * @return the table listing the tours
      */
-    public TableLayoutElement getToursTable()
+    private TableLayoutElement getToursTable()
     {
         return new LiveDataElement(TOURS_LIVE_DATA_ID).getTableLayout();
     }
@@ -124,7 +124,7 @@ public class ToursPage extends ViewPage
      */
     public TourPage viewTour(String title)
     {
-        getToursTable().clickAction(getRowNumber(title), "view");
+        clickActionAndWaitForPageReload(title, "view");
         return new TourPage();
     }
 
@@ -136,7 +136,7 @@ public class ToursPage extends ViewPage
      */
     public TourEditPage editTour(String title)
     {
-        getToursTable().clickAction(getRowNumber(title), "edit");
+        clickActionAndWaitForPageReload(title, "edit");
         return new TourEditPage();
     }
 
@@ -149,7 +149,7 @@ public class ToursPage extends ViewPage
      */
     public boolean deleteTour(String title)
     {
-        getToursTable().clickAction(getRowNumber(title), "delete");
+        clickActionAndWaitForPageReload(title, "delete");
         DeletePageConfirmationPage confirmation = new DeletePageConfirmationPage();
         if (confirmation.hasAffectChildrenOption()) {
             confirmation.setAffectChildren(false);
@@ -157,6 +157,14 @@ public class ToursPage extends ViewPage
         DeletingPage deleting = confirmation.confirmDeletePage();
         deleting.waitUntilFinished();
         return deleting.isSuccess();
+    }
+
+    private void clickActionAndWaitForPageReload(String title, String action)
+    {
+        int rowNumber = getRowNumber(title);
+        getDriver().addPageNotYetReloadedMarker();
+        getToursTable().clickAction(rowNumber, action);
+        getDriver().waitUntilPageIsReloaded();
     }
 
     private int getRowNumber(String title)
