@@ -101,10 +101,15 @@ const util = {
    * @returns the element, if it exists and is visible on the page
    */
   findVisibleElement(selector: string): Element | undefined {
-    const queriedElement = document.querySelector(selector);
-    if (queriedElement && util.isElementVisible(queriedElement)) {
-      return queriedElement;
-    } else {
+    try {
+      const queriedElement = document.querySelector(selector);
+      if (queriedElement && util.isElementVisible(queriedElement)) {
+        return queriedElement;
+      } else {
+        return undefined;
+      }
+    } catch (e) {
+      console.error(e);
       return undefined;
     }
   },
@@ -339,7 +344,8 @@ function convertToDriverStep(
   step: TourStep,
   guidedTourTask: TourTask,
 ): DriveStep {
-  const selector = step.element;
+  const selector =
+    step.element?.trim().length === 0 ? undefined : step.element?.trim();
   // The XWiki placement is `<SIDE>_<ALIGNMENT>` (e.g. `BOTTOM_START`), which driver.js takes separately.
   const [side, align] = (step.placement?.toLowerCase().split("_") ?? []) as [
     Side?,

@@ -149,4 +149,23 @@ describe("driverjsMain", () => {
     // Without placement, driver.js places the popover by itself.
     expect(config.steps![1].popover!.side).toBeUndefined();
   });
+
+  it("doesn't throw on invalid selectors and ignores blank ones", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const task = createTask();
+    task.steps![0].element = "#invalid[";
+    task.steps![1].element = " \t\n ";
+    const config = await getDriverConfigForSteps(
+      task,
+      {} as DefaultGuidedTourManager,
+      {},
+    );
+
+    // driver.js keeps waiting for the element, until it gives up and the step is handled as having no element found.
+    const findElement = config.steps![0].element as () => Element | undefined;
+    expect(findElement).not.toThrow();
+    expect(findElement()).toBeUndefined();
+    // Without element, driver.js shows the popover in the middle of the page.
+    expect(config.steps![1].element).toBeUndefined();
+  });
 });
