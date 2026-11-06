@@ -132,4 +132,21 @@ describe("driverjsMain", () => {
 
     expect(click).toHaveBeenCalledOnce();
   });
+
+  it("places the popover of each step as set in XWiki", async () => {
+    const task = createTask();
+    task.steps![0].placement = "BOTTOM_END";
+    const config = await getDriverConfigForSteps(
+      task,
+      {} as DefaultGuidedTourManager,
+      {},
+    );
+
+    expect(config.steps![0].popover).toMatchObject({
+      side: "bottom",
+      align: "end",
+    });
+    // Without placement, driver.js places the popover by itself.
+    expect(config.steps![1].popover!.side).toBeUndefined();
+  });
 });
