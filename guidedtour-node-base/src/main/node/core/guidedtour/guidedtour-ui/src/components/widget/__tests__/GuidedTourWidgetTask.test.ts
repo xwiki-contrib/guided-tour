@@ -36,22 +36,52 @@ function createGuidedTourManager(): GuidedTourManager {
   } as unknown as GuidedTourManager;
 }
 
-function mountTask(task: TourTask, guidedTourManager: GuidedTourManager) {
+function createTask(status: TourTaskStatus): TourTask {
+  return { id: "task1", title: "Task 1", order: 1, status };
+}
+
+function mountTask(
+  task: TourTask,
+  guidedTourManager: GuidedTourManager,
+  errorHandler?: (error: unknown) => void,
+) {
   return mount(GuidedTourWidgetTask, {
     props: { task, tourId: "tour1" },
-    global: { provide: { GuidedTourManager: guidedTourManager } },
+    global: {
+      provide: { GuidedTourManager: guidedTourManager },
+      config: { errorHandler },
+    },
   });
 }
 
+function isWaiting(wrapper: ReturnType<typeof mountTask>) {
+  return !wrapper.find(".fa-circle-notch").classes("transparent");
+}
+
+/**
+ * Make the given method of the manager wait until the test resolves or rejects it.
+ */
+function holdCall(
+  guidedTourManager: GuidedTourManager,
+  method: "getSteps" | "skipTask" | "setTaskStatus",
+) {
+  let resolveCall: () => void = () => {};
+  let rejectCall: (error: Error) => void = () => {};
+  const promise = new Promise((resolve, reject) => {
+    resolveCall = () => resolve(undefined);
+    rejectCall = reject;
+  });
+  vi.mocked(guidedTourManager[method]).mockReturnValue(promise as never);
+  return {
+    resolve: () => resolveCall(),
+    reject: (error: Error) => rejectCall(error),
+  };
+}
+
 describe("GuidedTourWidgetTask", () => {
-  it("skips the task, which disables the call to action of its tour", async () => {
+  it("skips a task left to do, without starting it", async () => {
     const guidedTourManager = createGuidedTourManager();
-    const task: TourTask = {
-      id: "task1",
-      title: "Task 1",
-      order: 1,
-      status: TourTaskStatus.TODO,
-    };
+    const task = createTask(TourTaskStatus.TODO);
     const wrapper = mountTask(task, guidedTourManager);
 
     await wrapper.find(".post-btn").trigger("click");
@@ -63,14 +93,18 @@ describe("GuidedTourWidgetTask", () => {
     expect(guidedTourManager.startTask).not.toHaveBeenCalled();
   });
 
+  it.each(Object.values(TourTaskStatus))(
+    "shows the status %s of the task",
+    (status) => {
+      const wrapper = mountTask(createTask(status), createGuidedTourManager());
+
+      expect(wrapper.classes()).toContain(`task-${status}`);
+    },
+  );
+
   it("resets a task that is done", async () => {
     const guidedTourManager = createGuidedTourManager();
-    const task: TourTask = {
-      id: "task1",
-      title: "Task 1",
-      order: 1,
-      status: TourTaskStatus.DONE,
-    };
+    const task = createTask(TourTaskStatus.DONE);
     const wrapper = mountTask(task, guidedTourManager);
 
     await wrapper.find(".post-btn").trigger("click");
@@ -81,5 +115,74 @@ describe("GuidedTourWidgetTask", () => {
       TourTaskStatus.TODO,
     );
     expect(guidedTourManager.skipTask).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["skipping", TourTaskStatus.TODO, "skipTask"],
+    ["resetting", TourTaskStatus.DONE, "setTaskStatus"],
+  ] as const)(
+    "shows a spinner while %s the task",
+    async (_description, status, method) => {
+      const guidedTourManager = createGuidedTourManager();
+      const call = holdCall(guidedTourManager, method);
+      const wrapper = mountTask(createTask(status), guidedTourManager);
+
+      await wrapper.find(".post-btn").trigger("click");
+      expect(isWaiting(wrapper)).toBe(true);
+
+      call.resolve();
+      await flushPromises();
+      expect(isWaiting(wrapper)).toBe(false);
+    },
+  );
+
+  it("shows a spinner while fetching the steps of the task", async () => {
+    const guidedTourManager = createGuidedTourManager();
+    const getSteps = holdCall(guidedTourManager, "getSteps");
+    const wrapper = mountTask(
+      createTask(TourTaskStatus.TODO),
+      guidedTourManager,
+    );
+
+    await wrapper.find(".guidedtour-task").trigger("click");
+    expect(isWaiting(wrapper)).toBe(true);
+    expect(guidedTourManager.startTask).not.toHaveBeenCalled();
+
+    getSteps.resolve();
+    await flushPromises();
+    expect(isWaiting(wrapper)).toBe(false);
+  });
+
+  it("starts the task once its steps are fetched", async () => {
+    const guidedTourManager = createGuidedTourManager();
+    const task = createTask(TourTaskStatus.TODO);
+    const wrapper = mountTask(task, guidedTourManager);
+
+    await wrapper.find(".guidedtour-task").trigger("click");
+    await flushPromises();
+
+    expect(guidedTourManager.startTask).toHaveBeenCalledExactlyOnceWith(
+      task,
+      false,
+    );
+  });
+
+  it("doesn't start the task when its steps can't be fetched", async () => {
+    const guidedTourManager = createGuidedTourManager();
+    const getSteps = holdCall(guidedTourManager, "getSteps");
+    // The component doesn't handle the error (the user gets no feedback yet), so let Vue ignore it instead of failing
+    // the test run.
+    const wrapper = mountTask(
+      createTask(TourTaskStatus.TODO),
+      guidedTourManager,
+      () => {},
+    );
+
+    await wrapper.find(".guidedtour-task").trigger("click");
+    getSteps.reject(new Error("Failed"));
+    await flushPromises();
+
+    expect(isWaiting(wrapper)).toBe(false);
+    expect(guidedTourManager.startTask).not.toHaveBeenCalled();
   });
 });
