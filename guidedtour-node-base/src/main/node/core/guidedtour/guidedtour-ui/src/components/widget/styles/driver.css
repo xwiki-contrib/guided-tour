@@ -18,7 +18,7 @@
 .driver-popover {
   font-family: inherit;
   color: var(--text-color);
-  background-color: var(--body-bg);
+  background-color: var(--xwiki-page-content-bg);
 }
 
 .driver-popover-close-btn {
@@ -46,17 +46,17 @@
 
 /* Only color the visible side of the arrow: Driver.js makes the other three transparent. */
 .driver-popover-arrow-side-left {
-  border-left-color: var(--body-bg);
+  border-left-color: var(--xwiki-page-content-bg);
 }
 
 .driver-popover-arrow-side-right {
-  border-right-color: var(--body-bg);
+  border-right-color: var(--xwiki-page-content-bg);
 }
 
 .driver-popover-arrow-side-top {
-  border-top-color: var(--body-bg);
+  border-top-color: var(--xwiki-page-content-bg);
 }
 
 .driver-popover-arrow-side-bottom {
-  border-bottom-color: var(--body-bg);
+  border-bottom-color: var(--xwiki-page-content-bg);
 }
