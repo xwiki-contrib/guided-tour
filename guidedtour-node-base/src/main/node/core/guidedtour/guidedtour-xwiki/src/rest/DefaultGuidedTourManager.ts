@@ -519,7 +519,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     }
 
     this.activeTask = task;
-    this.activeDriverTask = wrapTask(driverTour, this, this.translations);
+    this.activeDriverTask = wrapTask(driverTour, this.translations);
     this.activeDriverTask.drive(stepIndex);
   }
 
