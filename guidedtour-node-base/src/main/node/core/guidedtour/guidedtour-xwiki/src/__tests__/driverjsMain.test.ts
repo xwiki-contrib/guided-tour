@@ -35,12 +35,15 @@ const TRANSLATIONS = {
   "guidedtour.driver.loading": "Loading",
   "guidedtour.driver.error": "Error",
 };
-import { getDriverConfigForSteps, wrapTask } from "../driverjsMain";
-import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { describe, expect, it, vi } from "vitest";
-import type { DefaultGuidedTourManager } from "../rest/DefaultGuidedTourManager";
-import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
-import type { Config, Driver, HookOpts } from "driver.js";
+
+/**
+ * The XWiki notifications shown during the test, in order.
+ */
+const notifications: {
+  text: string;
+  type: string;
+  hide: ReturnType<typeof vi.fn>;
+}[] = [];
 
 function createStep(step: Partial<TourStep> = {}): TourStep {
   return { order: 0, content: "", reflex: false, ...step };
@@ -121,14 +124,45 @@ function setCurrentStep(task: TourTask, stepIndex: number) {
   );
 }
 
+/**
+ * Highlight the given steps one after the other, like driver.js does when the user moves through them.
+ */
+function highlightSteps(config: Config, indexes: number[], element: Element) {
+  for (const index of indexes) {
+    const step = config.steps![index];
+    config.onHighlightStarted!(
+      step.element ? element : undefined,
+      step,
+      createHookOpts(index, config),
+    );
+  }
+}
+
 describe("driverjsMain", () => {
   beforeEach(() => {
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "debug").mockImplementation(() => {});
+    vi.stubGlobal("XWiki", {
+      widgets: {
+        Notification: class {
+          hide = vi.fn();
+          constructor(
+            public text: string,
+            public type: string,
+          ) {
+            notifications.push(this);
+          }
+        },
+      },
+    });
   });
 
   afterEach(() => {
     sessionStorage.clear();
+    notifications.length = 0;
+    document.body.replaceChildren();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -150,11 +184,13 @@ describe("driverjsMain", () => {
       expect(config.steps![1].popover!.side).toBeUndefined();
     });
 
-    it("shows the content of each step on its element, with the title of the task", async () => {
+    it("shows the content of each step on its element once visible, with the title of the task", async () => {
+      document.body.innerHTML =
+        "<div id='content' style='display: none'></div>";
       const task = createTask();
       // The steps sent by the REST API have no title of their own.
       task.steps![0] = createStep({
-        element: "#content",
+        element: " #content ",
         content: "Step content",
       });
       const config = await getDriverConfigForSteps(
@@ -163,10 +199,35 @@ describe("driverjsMain", () => {
         {},
       );
 
-      expect(config.steps![0]).toMatchObject({
-        element: "#content",
-        popover: { title: "Task", description: "Step content" },
+      expect(config.steps![0].popover).toMatchObject({
+        title: "Task",
+        description: "Step content",
       });
+      // driver.js waits for the element of the step as long as this finds nothing.
+      const findElement = config.steps![0].element as () => Element | undefined;
+      expect(findElement()).toBeUndefined();
+      const content = document.querySelector<HTMLElement>("#content")!;
+      content.style.display = "block";
+      expect(findElement()).toBe(content);
+    });
+
+    it("doesn't throw on invalid selectors and ignores blank ones", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const task = createTask();
+      task.steps![0].element = "#invalid[";
+      task.steps![1].element = " \t\n ";
+      const config = await getDriverConfigForSteps(
+        task,
+        {} as DefaultGuidedTourManager,
+        {},
+      );
+
+      // driver.js keeps waiting for the element, until it gives up and the step is handled as having no element found.
+      const findElement = config.steps![0].element as () => Element | undefined;
+      expect(findElement).not.toThrow();
+      expect(findElement()).toBeUndefined();
+      // Without element, driver.js shows the popover in the middle of the page.
+      expect(config.steps![1].element).toBeUndefined();
     });
 
     it("rejects a task without steps", async () => {
@@ -450,19 +511,6 @@ describe("driverjsMain", () => {
       expect(guidedTourManager.activeDriverTask.drive).not.toHaveBeenCalled();
     });
 
-    it("clicks the element of a reflex step", async () => {
-      const task = createTask();
-      const guidedTourManager = createGuidedTourManager(task, 2);
-      const element = document.createElement("button");
-      const click = vi.spyOn(element, "click");
-
-      await clickNext(task, guidedTourManager, 2, element);
-
-      expect(click).toHaveBeenCalledOnce();
-      // The click on the element moves to the next step.
-      expect(guidedTourManager.activeDriverTask.drive).not.toHaveBeenCalled();
-    });
-
     it("moves to the next step when the reflex step shows no element", async () => {
       const task = createTask();
       const guidedTourManager = createGuidedTourManager(task, 2);
@@ -480,344 +528,225 @@ describe("driverjsMain", () => {
     });
   });
 
-  describe("wrapTask", () => {
-    const notifications: { hide: () => void; replace: () => void }[] = [];
-
-    beforeEach(() => {
-      vi.stubGlobal("XWiki", {
-        widgets: {
-          Notification: class {
-            hide = vi.fn();
-            replace = vi.fn();
-            constructor() {
-              notifications.push(this);
-            }
-          },
-        },
-      });
-    });
-
-    afterEach(() => {
-      notifications.length = 0;
-      document.body.replaceChildren();
-      vi.useRealTimers();
-      vi.unstubAllGlobals();
-    });
-
-    /**
-     * Wrap the driver of a task whose second step targets the given element. Like in DefaultGuidedTourManager, the
-     * wrapped driver is the active driver of the guided tour manager.
-     * @returns the task, the wrapped driver, and the mocks of the driver.js driver: `drive` shows a step.
-     */
-    function createWrappedDriver(element?: string) {
+  describe("onHighlightStarted", () => {
+    it("skips the task when the element of a step is not in the page", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
       const task = createTask();
-      task.steps![1].element = element;
-      const guidedTourManager = createGuidedTourManager(task);
-      const { drive, getActiveIndex, destroy } =
-        guidedTourManager.activeDriverTask;
-      const driver = wrapTask(
-        guidedTourManager.activeDriverTask as unknown as Driver,
+      task.steps![1].element = "#missing";
+      const guidedTourManager = createGuidedTourManager(task, 1);
+      const config = await getDriverConfigForSteps(
+        task,
         guidedTourManager as unknown as DefaultGuidedTourManager,
         TRANSLATIONS,
       );
-      return {
+
+      // driver.js gave up waiting for the element.
+      config.onHighlightStarted!(
+        undefined,
+        config.steps![1],
+        createHookOpts(1, config),
+      );
+
+      expect(notifications).toMatchObject([{ text: "Error", type: "error" }]);
+      expect(guidedTourManager.setTaskStatus).toHaveBeenCalledExactlyOnceWith(
         task,
-        driver,
-        drive,
-        getActiveIndex,
-        destroy,
-        guidedTourManager,
-      };
-    }
-
-    /**
-     * Let the wrapped driver show the next step, which waits for its element asynchronously.
-     */
-    async function waitForStepChange() {
-      await new Promise((resolve) => setTimeout(resolve));
-    }
-
-    describe("showing a step", () => {
-      it("shows a step once its element is in the page", async () => {
-        const { task, driver, drive } = createWrappedDriver("#target");
-        vi.useFakeTimers();
-
-        const driving = driver.drive(1);
-        await vi.advanceTimersByTimeAsync(100);
-        expect(drive).not.toHaveBeenCalled();
-        document.body.innerHTML = "<div id='target'></div>";
-        await Promise.all([driving, vi.runAllTimersAsync()]);
-
-        expect(drive).toHaveBeenCalledExactlyOnceWith(1);
-        expect(getCurrentStep(task)).toBe("1");
-        expect(notifications[0].hide).toHaveBeenCalled();
-      });
-
-      it("shows the first step of a task that is starting", async () => {
-        const { driver, drive, getActiveIndex } =
-          createWrappedDriver("#target");
-        // driver.js has no active step before showing the first one, which may be set while waiting for the element.
-        getActiveIndex.mockReturnValueOnce(undefined).mockReturnValue(1);
-        vi.useFakeTimers();
-
-        const driving = driver.drive(1);
-        document.body.innerHTML = "<div id='target'></div>";
-        await Promise.all([driving, vi.runAllTimersAsync()]);
-
-        expect(drive).toHaveBeenCalledExactlyOnceWith(1);
-      });
-
-      it("waits for the element of a step to be visible", async () => {
-        document.body.innerHTML =
-          "<div id='target' style='display: none'></div>";
-        const { driver, drive } = createWrappedDriver("#target");
-        vi.useFakeTimers();
-
-        const driving = driver.drive(1);
-        await vi.advanceTimersByTimeAsync(100);
-        expect(drive).not.toHaveBeenCalled();
-        document.querySelector<HTMLElement>("#target")!.style.display = "block";
-        await Promise.all([driving, vi.runAllTimersAsync()]);
-
-        expect(drive).toHaveBeenCalledExactlyOnceWith(1);
-      });
-
-      it("skips the task when the element of a step is not in the page", async () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        const { task, driver, drive, guidedTourManager } =
-          createWrappedDriver("#missing");
-        vi.useFakeTimers();
-
-        await Promise.all([driver.drive(1), vi.runAllTimersAsync()]);
-
-        expect(drive).not.toHaveBeenCalled();
-        expect(notifications[0].replace).toHaveBeenCalled();
-        expect(guidedTourManager.setTaskStatus).toHaveBeenCalledExactlyOnceWith(
-          task,
-          TourTaskStatus.SKIPPED,
-        );
-      });
-
-      it.each([
-        ["appears", "<div id='target'></div>"],
-        ["never appears", ""],
-      ])(
-        "does nothing when the user moved to another step while the element %s",
-        async (_description, html) => {
-          const { driver, drive, getActiveIndex, guidedTourManager } =
-            createWrappedDriver("#target");
-          getActiveIndex.mockReturnValueOnce(0).mockReturnValue(1);
-          vi.useFakeTimers();
-
-          const driving = driver.drive(1);
-          document.body.innerHTML = html;
-          await Promise.all([driving, vi.runAllTimersAsync()]);
-
-          expect(drive).not.toHaveBeenCalled();
-          expect(guidedTourManager.setTaskStatus).not.toHaveBeenCalled();
-          expect(notifications[0].hide).toHaveBeenCalled();
-        },
+        TourTaskStatus.SKIPPED,
       );
     });
 
-    describe("reflex step", () => {
+    it("shows a step without element", async () => {
+      const task = createTask();
+      const guidedTourManager = createGuidedTourManager(task, 1);
+      const config = await getDriverConfigForSteps(
+        task,
+        guidedTourManager as unknown as DefaultGuidedTourManager,
+        TRANSLATIONS,
+      );
+
+      highlightSteps(config, [1], document.body);
+
+      expect(notifications).toEqual([]);
+      expect(guidedTourManager.setTaskStatus).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * The guided tour manager running the given task, at the given step, with its driver wrapped like in
+   * DefaultGuidedTourManager.
+   * @returns the guided tour manager, the driver.js config of the task, and the mocks of the driver.js driver: `drive`
+   *     shows a step.
+   */
+  async function createWrappedDriver(task: TourTask, activeIndex = 0) {
+    const guidedTourManager = createGuidedTourManager(task, activeIndex);
+    const { drive, destroy } = guidedTourManager.activeDriverTask;
+    wrapTask(
+      guidedTourManager.activeDriverTask as unknown as Driver,
+      TRANSLATIONS,
+    );
+    const config = await getDriverConfigForSteps(
+      task,
+      guidedTourManager as unknown as DefaultGuidedTourManager,
+      TRANSLATIONS,
+    );
+    return { guidedTourManager, config, drive, destroy };
+  }
+
+  describe("wrapTask", () => {
+    it("shows a loading notification until the step is highlighted", async () => {
+      const { guidedTourManager, config, drive } =
+        await createWrappedDriver(createTask());
+
+      guidedTourManager.activeDriverTask.drive(1);
+
+      expect(drive).toHaveBeenCalledExactlyOnceWith(1);
+      expect(notifications).toMatchObject([
+        { text: "Loading", type: "inprogress" },
+      ]);
+      expect(notifications[0].hide).not.toHaveBeenCalled();
+
+      highlightSteps(config, [1], document.body);
+
+      expect(notifications[0].hide).toHaveBeenCalled();
+    });
+
+    it("replaces the loading notification when moving again before the step is highlighted", async () => {
+      const { guidedTourManager, drive } =
+        await createWrappedDriver(createTask());
+
+      guidedTourManager.activeDriverTask.drive(1);
+      guidedTourManager.activeDriverTask.drive(2);
+
+      expect(drive.mock.calls).toEqual([[1], [2]]);
+      expect(notifications).toHaveLength(2);
+      expect(notifications[0].hide).toHaveBeenCalled();
+      expect(notifications[1].hide).not.toHaveBeenCalled();
+    });
+
+    it("hides the loading notification when the task is closed while waiting for the element", async () => {
+      const { guidedTourManager, destroy } =
+        await createWrappedDriver(createTask());
+
+      guidedTourManager.activeDriverTask.drive(1);
+      guidedTourManager.activeDriverTask.destroy();
+
+      expect(destroy).toHaveBeenCalledOnce();
+      expect(notifications[0].hide).toHaveBeenCalled();
+    });
+  });
+
+  describe("reflex step", () => {
+    /**
+     * Show the reflex step of the task (the third one) on the given element, after the first two steps.
+     */
+    async function showReflexStep(html: string) {
+      document.body.innerHTML = html;
+      const reflexElement = document.querySelector<HTMLElement>("#reflex")!;
+      const wrapped = await createWrappedDriver(createTask(), 2);
+      highlightSteps(wrapped.config, [0, 1, 2], reflexElement);
+      return { ...wrapped, reflexElement };
+    }
+
+    it("moves to the next step when its element is clicked", async () => {
+      const { reflexElement, drive } = await showReflexStep(
+        "<button id='reflex'></button>",
+      );
+
+      reflexElement.click();
+      // The listener is removed after the first click.
+      reflexElement.click();
+
+      expect(drive).toHaveBeenCalledExactlyOnceWith(3);
+    });
+
+    it("does nothing when its element is clicked after the task was closed", async () => {
+      const { reflexElement, guidedTourManager, drive } = await showReflexStep(
+        "<button id='reflex'></button>",
+      );
+
+      guidedTourManager.activeDriverTask.destroy();
+      reflexElement.click();
+
+      expect(drive).not.toHaveBeenCalled();
+    });
+
+    it("stops listening for the reflex action as soon as its step is left", async () => {
+      const { reflexElement, guidedTourManager, drive } = await showReflexStep(
+        "<button id='reflex'></button>",
+      );
+
+      // driver.js keeps the reflex step active while it waits for the element of the step being driven to.
+      guidedTourManager.activeDriverTask.drive(1);
+      reflexElement.click();
+
+      expect(drive).toHaveBeenCalledExactlyOnceWith(1);
+    });
+
+    it("moves to the next step only once after it was left and reached again", async () => {
+      const { reflexElement, config, drive } = await showReflexStep(
+        "<button id='reflex'></button>",
+      );
+
+      // Left without triggering the reflex action, then reached again.
+      highlightSteps(config, [1, 2], reflexElement);
+      reflexElement.click();
+
+      expect(drive).toHaveBeenCalledExactlyOnceWith(3);
+    });
+
+    it("clicks its element only once when → is pressed repeatedly", async () => {
+      const { reflexElement, config, drive } = await showReflexStep(
+        "<button id='reflex'></button>",
+      );
+      const click = vi.spyOn(reflexElement, "click");
+
+      // driver.js calls `onNextClick()` with the element of the active step when → is pressed.
+      await config.onNextClick!(reflexElement, {}, createHookOpts(2, config));
+      await config.onNextClick!(reflexElement, {}, createHookOpts(2, config));
+
+      expect(click).toHaveBeenCalledOnce();
+      expect(drive).toHaveBeenCalledExactlyOnceWith(3);
+    });
+
+    describe("on a text input", () => {
       /**
-       * Show the reflex step of the task, on the given element.
+       * Show the reflex step on a text input, and click the input.
        */
-      async function showReflexStep(html: string) {
-        document.body.innerHTML = html;
-        const wrapped = createWrappedDriver();
-        wrapped.getActiveIndex.mockReturnValue(2);
-        await wrapped.driver.drive(2);
+      async function clickReflexInput() {
+        const wrapped = await showReflexStep("<input type='text' id='reflex'>");
+        vi.useFakeTimers();
+        wrapped.reflexElement.click();
         return wrapped;
       }
 
-      function clickReflexElement() {
-        document.querySelector<HTMLElement>("#reflex")!.click();
-      }
+      it("moves to the next step after leaving the user time to type", async () => {
+        // The steps are numbered from 1, like the steps created through the REST API.
+        const { drive } = await clickReflexInput();
 
-      it("moves to the next step when its element is clicked", async () => {
-        const { drive } = await showReflexStep("<button id='reflex'></button>");
-
-        clickReflexElement();
-        // The listener is removed after the first click.
-        clickReflexElement();
-        await waitForStepChange();
-
-        expect(drive.mock.calls).toEqual([[2], [3]]);
+        await vi.advanceTimersByTimeAsync(4999);
+        expect(drive).not.toHaveBeenCalled();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(drive).toHaveBeenCalledExactlyOnceWith(3);
       });
 
-      it("does nothing when its element is clicked after the task ended", async () => {
-        const { drive, getActiveIndex, destroy } = await showReflexStep(
-          "<button id='reflex'></button>",
-        );
+      it("doesn't move when the user left the step while typing", async () => {
+        const { guidedTourManager, drive } = await clickReflexInput();
 
-        getActiveIndex.mockReturnValue(undefined);
-        clickReflexElement();
-        await waitForStepChange();
+        guidedTourManager.activeDriverTask.drive(1);
+        await vi.advanceTimersByTimeAsync(5000);
 
-        expect(drive.mock.calls).toEqual([[2]]);
-        expect(destroy).not.toHaveBeenCalled();
+        expect(drive).toHaveBeenCalledExactlyOnceWith(1);
       });
 
-      describe("on a text input", () => {
-        /**
-         * Show the reflex step on a text input, numbering the steps from 0 like the steps of the default tours, and
-         * click the input.
-         */
-        async function clickReflexInput() {
-          const wrapped = await showReflexStep(
-            "<input type='text' id='reflex'>",
-          );
-          wrapped.task.steps!.forEach((step, index) => (step.order = index));
-          vi.useFakeTimers();
-          clickReflexElement();
-          return wrapped;
-        }
+      it("doesn't move when the user came back to the step while typing", async () => {
+        const { guidedTourManager, config, reflexElement, drive } =
+          await clickReflexInput();
 
-        it("moves to the next step after leaving the user time to type", async () => {
-          const { drive } = await clickReflexInput();
+        guidedTourManager.activeDriverTask.drive(1);
+        highlightSteps(config, [1, 2], reflexElement);
+        await vi.advanceTimersByTimeAsync(5000);
 
-          await vi.advanceTimersByTimeAsync(4999);
-          expect(drive.mock.calls).toEqual([[2]]);
-          await vi.advanceTimersByTimeAsync(1);
-          expect(drive.mock.calls).toEqual([[2], [3]]);
-        });
-
-        it("doesn't move when the user left the step while typing", async () => {
-          const { drive, getActiveIndex } = await clickReflexInput();
-
-          getActiveIndex.mockReturnValue(1);
-          await vi.advanceTimersByTimeAsync(5000);
-
-          expect(drive.mock.calls).toEqual([[2]]);
-        });
-
-        // Known bug: the order of the step is compared with the index of the active step, which starts at 0, while
-        // the steps created through the REST API are numbered from 1. Their text input never moves to the next step.
-        it.todo("moves to the next step when the steps are numbered from 1");
+        expect(drive).toHaveBeenCalledExactlyOnceWith(1);
       });
     });
- * @returns the element of the reflex step, added to the page.
- */
-function addReflexElement(): HTMLElement {
-  document.body.innerHTML = '<button id="reflex"></button>';
-  return document.getElementById("reflex")!;
-}
-
-/**
- * Highlight the given steps one after the other, like driver.js does when the user moves through them.
- */
-function highlightSteps(config: Config, indexes: number[], element: Element) {
-  for (const index of indexes) {
-    const step = config.steps![index];
-    config.onHighlightStarted!(step.element ? element : undefined, step, {
-      state: { activeIndex: index },
-    } as HookOpts);
-  }
-}
-
-describe("driverjsMain", () => {
-  it("advances a reflex step only once after it was left and reached again", async () => {
-    const reflexElement = addReflexElement();
-    const task = createTask();
-    const drive = vi.fn();
-    // The reflex step is the active one when its element is clicked.
-    const guidedTourManager = {
-      activeTask: task,
-      activeDriverTask: { getActiveIndex: () => 2, drive },
-    } as unknown as DefaultGuidedTourManager;
-    const config = await getDriverConfigForSteps(task, guidedTourManager, {});
-
-    // Step 1 > 2 > 3 > 2 > 3, step 3 being left the first time without triggering its reflex action.
-    highlightSteps(config, [0, 1, 2, 1, 2], reflexElement);
-    reflexElement.click();
-
-    expect(drive).toHaveBeenCalledExactlyOnceWith(3);
-  });
-
-  it("stops listening for the reflex action as soon as its step is left", async () => {
-    const reflexElement = addReflexElement();
-    vi.stubGlobal("XWiki", {
-      widgets: {
-        Notification: class {
-          hide() {}
-        },
-      },
-    });
-    const task = createTask();
-    const drive = vi.fn();
-    // driver.js keeps the reflex step active while it waits for the element of the step being driven to.
-    const guidedTourManager = {
-      activeTask: task,
-      activeDriverTask: wrapTask(
-        { getActiveIndex: () => 2, drive } as unknown as Driver,
-        {},
-      ),
-    } as unknown as DefaultGuidedTourManager;
-    const config = await getDriverConfigForSteps(task, guidedTourManager, {});
-
-    // Move back from the reflex step, and click its element before the previous step is highlighted.
-    highlightSteps(config, [0, 1, 2], reflexElement);
-    guidedTourManager.activeDriverTask!.drive(1);
-    reflexElement.click();
-
-    expect(drive).toHaveBeenCalledExactlyOnceWith(1);
-  });
-
-  it("clicks the element of a reflex step only once when → is pressed repeatedly", async () => {
-    const reflexElement = addReflexElement();
-    const click = vi.spyOn(reflexElement, "click");
-    const task = createTask();
-    // driver.js keeps the reflex step active while it waits for the element of the next step.
-    const guidedTourManager = {
-      activeTask: task,
-      activeDriverTask: { getActiveIndex: () => 2, drive: vi.fn() },
-    } as unknown as DefaultGuidedTourManager;
-    const config = await getDriverConfigForSteps(task, guidedTourManager, {});
-
-    // driver.js calls `onNextClick()` with the element of the active step when → is pressed.
-    highlightSteps(config, [0, 1, 2], reflexElement);
-    const hookOptions = { state: { activeIndex: 2 } } as HookOpts;
-    config.onNextClick!(reflexElement, config.steps![2], hookOptions);
-    config.onNextClick!(reflexElement, config.steps![2], hookOptions);
-
-    expect(click).toHaveBeenCalledOnce();
-  });
-
-  it("places the popover of each step as set in XWiki", async () => {
-    const task = createTask();
-    task.steps![0].placement = "BOTTOM_END";
-    const config = await getDriverConfigForSteps(
-      task,
-      {} as DefaultGuidedTourManager,
-      {},
-    );
-
-    expect(config.steps![0].popover).toMatchObject({
-      side: "bottom",
-      align: "end",
-    });
-    // Without placement, driver.js places the popover by itself.
-    expect(config.steps![1].popover!.side).toBeUndefined();
-  });
-
-  it("doesn't throw on invalid selectors and ignores blank ones", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-    const task = createTask();
-    task.steps![0].element = "#invalid[";
-    task.steps![1].element = " \t\n ";
-    const config = await getDriverConfigForSteps(
-      task,
-      {} as DefaultGuidedTourManager,
-      {},
-    );
-
-    // driver.js keeps waiting for the element, until it gives up and the step is handled as having no element found.
-    const findElement = config.steps![0].element as () => Element | undefined;
-    expect(findElement).not.toThrow();
-    expect(findElement()).toBeUndefined();
-    // Without element, driver.js shows the popover in the middle of the page.
-    expect(config.steps![1].element).toBeUndefined();
   });
 });
