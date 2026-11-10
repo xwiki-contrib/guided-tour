@@ -83,7 +83,8 @@ public enum Placement
      * Get the Placement from a string value.
      *
      * @param text the string value to convert
-     * @return the corresponding Placement, or TOP_CENTER if the string does not match any placement
+     * @return the corresponding Placement, or BOTTOM_START (the default placement of Driver.js) if the string does not
+     *     match any placement
      */
     public static Placement fromString(String text)
     {
@@ -92,6 +93,6 @@ public enum Placement
                 return s;
             }
         }
-        return TOP_CENTER;
+        return BOTTOM_START;
     }
 }
