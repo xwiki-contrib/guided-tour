@@ -48,6 +48,20 @@ public class TaskEditPage extends InlinePage
         By.cssSelector(".stepsListContainer dl.itemDisplay:not(.hidden) textarea[id$='_content']");
 
     /**
+     * The step list of the sidebar, once made sortable: this is the last thing done by the script of the task sheet,
+     * after listing the steps, setting up the button adding a step and filling the task title.
+     */
+    private static final By SORTABLE_STEP_LIST = By.cssSelector(".stepsListContainer .item-list.ui-sortable");
+
+    /**
+     * Wait until the script of the task sheet is ready to edit the steps. It's loaded asynchronously, after the page.
+     */
+    public TaskEditPage()
+    {
+        getDriver().waitUntilCondition(driver -> !getDriver().findElementsWithoutWaiting(SORTABLE_STEP_LIST).isEmpty());
+    }
+
+    /**
      * Go to the edit form of the given task.
      *
      * @param taskReference the reference of the task page

@@ -46,6 +46,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.xwiki.contrib.guidedtour.test.po.TourTaskStatus.DONE;
 
 /**
  * Verify the administration of the guided tours: the list of tours, the tour pages and the task pages, and that the
@@ -229,6 +230,9 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         popover.clickNext();
         popover.waitForStep("Existing task, only step");
         popover.clickDone();
+        // The status is saved asynchronously, so wait for it to be saved before leaving the page.
+        this.guidedTour.waitForUserTourStatus(TestUtils.SUPER_ADMIN_CREDENTIALS.getUserName(),
+            status -> status.getTaskStatus(tourId, "stepsExistingTask").filter(DONE::equals).isPresent());
 
         // Add a new step, then edit the first step and remove the second one.
         taskEditPage = TaskEditPage.gotoPage(addedTask).addStep("New last step");
@@ -253,6 +257,7 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         assertEquals(2, popover.getCurrentStepNumber());
         // The other task of the tour is already done, so no task is started next.
         popover.clickDone();
+        assertFalse(popover.isDisplayedWithin(3), "No task should have been started.");
     }
 
     /**
