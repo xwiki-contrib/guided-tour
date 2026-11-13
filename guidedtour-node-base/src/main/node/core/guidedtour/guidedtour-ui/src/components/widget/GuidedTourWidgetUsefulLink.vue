@@ -35,7 +35,7 @@ const props = defineProps(["link"]);
 <style scoped>
 .useful-link {
   padding: 14px 16px 14px 16px;
-  border-color: #ddddddff;
+  border-color: var(--xwiki-border-color);
   border-width: 1px;
   border-style: solid;
 }

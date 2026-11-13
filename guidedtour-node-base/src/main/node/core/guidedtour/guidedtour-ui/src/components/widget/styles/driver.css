@@ -14,9 +14,20 @@
   pointer-events: none;
 }
 
-/* Use the XWiki skin font instead of the Driver.js one. */
+/* Use the XWiki skin font and Color Theme instead of the Driver.js ones. */
 .driver-popover {
   font-family: inherit;
+  color: var(--text-color);
+  background-color: var(--xwiki-page-content-bg);
+}
+
+.driver-popover-close-btn {
+  color: var(--text-muted);
+}
+
+.driver-popover-close-btn:hover,
+.driver-popover-close-btn:focus-visible {
+  color: var(--text-color);
 }
 
 .driver-xwiki-skip-all-button {
@@ -24,10 +35,28 @@
 }
 
 .driver-popover-progress-text {
+  color: var(--text-muted);
   display: flex;
   justify-content: center;
 }
 
 .driver-popover-navigation-btns {
   justify-content: flex-start;
+}
+
+/* Only color the visible side of the arrow: Driver.js makes the other three transparent. */
+.driver-popover-arrow-side-left {
+  border-left-color: var(--xwiki-page-content-bg);
+}
+
+.driver-popover-arrow-side-right {
+  border-right-color: var(--xwiki-page-content-bg);
+}
+
+.driver-popover-arrow-side-top {
+  border-top-color: var(--xwiki-page-content-bg);
+}
+
+.driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--xwiki-page-content-bg);
 }
