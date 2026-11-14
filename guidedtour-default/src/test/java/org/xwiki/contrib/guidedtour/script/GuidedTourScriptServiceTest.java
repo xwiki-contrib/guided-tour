@@ -23,7 +23,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.xwiki.contrib.guidedtour.api.dtos.TaskDTO;
+import org.xwiki.contrib.guidedtour.api.dtos.TourDTO;
 import org.xwiki.contrib.guidedtour.internal.TasksManager;
+import org.xwiki.contrib.guidedtour.internal.ToursManager;
 import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
@@ -49,11 +51,22 @@ class GuidedTourScriptServiceTest
     @MockComponent
     private TasksManager tasksManager;
 
+    @MockComponent
+    private ToursManager toursManager;
+
     @Test
     void getTourTasks() throws Exception
     {
         when(this.tasksManager.getAllTasks(TOUR_ID, TITLE)).thenReturn(List.of(new TaskDTO(), new TaskDTO()));
         List<TaskDTO> result = this.guidedTourScriptService.getTourTasks(TOUR_ID, TITLE);
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    void getAllTours() throws Exception
+    {
+        when(this.toursManager.getAllTours()).thenReturn(List.of(new TourDTO(), new TourDTO()));
+        List<TourDTO> result = this.guidedTourScriptService.getAllTours();
         assertEquals(2, result.size());
     }
 }
