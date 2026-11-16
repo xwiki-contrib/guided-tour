@@ -22,7 +22,7 @@
 }
 
 .driver-popover-close-btn {
-  color: var(--text-muted);
+  color: var(--btn-default-color);
 }
 
 .driver-popover-close-btn:hover,
