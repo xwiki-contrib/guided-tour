@@ -20,30 +20,31 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 -->
 
-<xwikidoc version="1.7" reference="GuidedTour.Tours.Empty.WebHome" locale="">
-  <web>GuidedTour.Tours.Empty</web>
-  <name>WebHome</name>
+<xwikidoc version="1.7" reference="GuidedTour.Tours.GettingStarted.Code.Translations" locale="">
+  <web>GuidedTour.Tours.GettingStarted.Code</web>
+  <name>Translations</name>
   <language/>
-  <defaultLanguage/>
+  <defaultLanguage>en</defaultLanguage>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
-  <parent>xwiki:GuidedTour.Tours.AdminSection.WebHome</parent>
+  <parent>GuidedTour.Tours.GettingStarted.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <version>1.1</version>
-  <title>Empty</title>
+  <title>Getting Started Tour Translations</title>
   <comment/>
   <minorEdit>false</minorEdit>
-  <syntaxId>xwiki/2.1</syntaxId>
+  <syntaxId>plain/1.0</syntaxId>
   <hidden>true</hidden>
-  <content/>
+  <content>guidedtour.gettingStarted.template.name=Guided Tour
+guidedtour.gettingStarted.template.description=The page used by the tasks of the Getting Started tour.</content>
   <object>
-    <name>GuidedTour.Tours.Empty.WebHome</name>
+    <name>GuidedTour.Tours.GettingStarted.Code.Translations</name>
     <number>0</number>
-    <className>XWiki.GuidedTour.TourClass</className>
-    <guid>092052dd-a05a-46b1-b74e-f48dc80f5c5e</guid>
+    <className>XWiki.TranslationDocumentClass</className>
+    <guid>66d64527-d597-526a-8c72-2b0f658deaf2</guid>
     <class>
-      <name>XWiki.GuidedTour.TourClass</name>
+      <name>XWiki.TranslationDocumentClass</name>
       <customClass/>
       <customMapping/>
       <defaultViewSheet/>
@@ -51,41 +52,27 @@
       <defaultWeb/>
       <nameField/>
       <validationScript/>
-      <isActive>
-        <customDisplay/>
-        <defaultValue/>
+      <scope>
+        <cache>0</cache>
         <disabled>0</disabled>
-        <displayFormType>select</displayFormType>
-        <displayType/>
-        <hint/>
-        <name>isActive</name>
-        <number>3</number>
-        <prettyName>Is active</prettyName>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-      </isActive>
-      <title>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>title</name>
+        <displayType>select</displayType>
+        <freeText>forbidden</freeText>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>scope</name>
         <number>1</number>
-        <picker>1</picker>
-        <prettyName>Title</prettyName>
-        <size>30</size>
+        <prettyName>Scope</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
         <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </title>
+        <values>GLOBAL|WIKI|USER|ON_DEMAND</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </scope>
     </class>
-    <property type="Boolean">
-      <isActive>true</isActive>
-    </property>
     <property type="String">
-      <title>Empty Tour (For Testing)</title>
+      <scope>WIKI</scope>
     </property>
   </object>
 </xwikidoc>

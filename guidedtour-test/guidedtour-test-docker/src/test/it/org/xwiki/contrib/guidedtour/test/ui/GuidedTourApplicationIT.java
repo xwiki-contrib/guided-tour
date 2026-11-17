@@ -20,6 +20,7 @@
 package org.xwiki.contrib.guidedtour.test.ui;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -27,11 +28,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.xwiki.contrib.guidedtour.test.po.TourStepPopover;
 import org.xwiki.contrib.guidedtour.test.po.TourWidget;
+import org.xwiki.model.reference.AttachmentReference;
 import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.SpaceReference;
 import org.xwiki.test.docker.junit5.TestReference;
 import org.xwiki.test.docker.junit5.UITest;
 import org.xwiki.test.ui.TestUtils;
+import org.xwiki.test.ui.po.CreatePagePage;
 import org.xwiki.test.ui.po.ViewPage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,16 +52,39 @@ class GuidedTourApplicationIT
 {
     private static final String STEP_CLASS = "XWiki.GuidedTour.StepClass";
 
+    private static final String TOUR_CLASS = "XWiki.GuidedTour.TourClass";
+
+    private static final String TASK_CLASS = "XWiki.GuidedTour.TaskClass";
+
+    private static final String IS_ACTIVE = "isActive";
+
+    private static final String USER_NAME = "GuidedTourUser";
+
+    private static final String USER_PASSWORD = "pa$$word";
+
     /**
-     * The displayed tours should not include inactive tours, or tours which the user has no rights to view.
+     * The displayed tours should not include inactive tours, tours without tasks, or tours which the user has no rights
+     * to view.
      */
     @Test
     @Order(1)
-    void tourVisibility(TestUtils testUtils, TestReference testReference)
+    void tourVisibility(TestUtils setup, TestReference testReference)
     {
-        testUtils.gotoPage(testReference);
-        TourWidget tourWidget = new TourWidget();
-        assertEquals(List.of("xwiki:GuidedTour.Tours.GettingStarted.WebHome"), tourWidget.getTourIds());
+        setup.loginAsSuperAdmin();
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference visibleTour = createTourWithTask(setup, new SpaceReference("VisibleTour", space), true);
+        createTourWithTask(setup, new SpaceReference("InactiveTour", space), false);
+        DocumentReference emptyTour = new DocumentReference("WebHome", new SpaceReference("EmptyTour", space));
+        setup.createPage(emptyTour, "", "Empty tour");
+        setup.addObject(emptyTour, TOUR_CLASS, "title", "Empty tour", IS_ACTIVE, 1);
+        SpaceReference adminTourSpace = new SpaceReference("AdminTour", space);
+        createTourWithTask(setup, adminTourSpace, true);
+        setup.setRightsOnSpace(adminTourSpace, "XWiki.XWikiAdminGroup", "", "view", true);
+
+        setup.forceGuestUser();
+        setup.gotoPage(testReference);
+        assertEquals(Set.of("xwiki:GuidedTour.Tours.GettingStarted.WebHome", visibleTour.toString()),
+            Set.copyOf(new TourWidget().getTourIds()));
     }
 
     /**
@@ -80,10 +106,10 @@ class GuidedTourApplicationIT
 
         DocumentReference tour = new DocumentReference("WebHome", new SpaceReference("Tour", space));
         setup.createPage(tour, "", "Redirect tour");
-        setup.addObject(tour, "XWiki.GuidedTour.TourClass", "title", "Redirect tour", "isActive", 1);
+        setup.addObject(tour, TOUR_CLASS, "title", "Redirect tour", IS_ACTIVE, 1);
         DocumentReference task = new DocumentReference("RedirectTask", tour.getLastSpaceReference());
         setup.createPage(task, "", "Redirect task");
-        setup.addObject(task, "XWiki.GuidedTour.TaskClass", "title", "Redirect task", "isActive", 1, "order", 0);
+        setup.addObject(task, TASK_CLASS, "title", "Redirect task", IS_ACTIVE, 1, "order", 0);
         setup.addObject(task, STEP_CLASS, "order", 0, "content", "Start on page A", "targetPage", pageAReference);
         // A reflex step without element behaves like a regular step.
         setup.addObject(task, STEP_CLASS, "order", 1, "content", "Continue on page B", "targetPage", pageBReference,
@@ -92,7 +118,7 @@ class GuidedTourApplicationIT
             "element", "#goToPageA", "reflex", 1);
         setup.addObject(task, STEP_CLASS, "order", 3, "content", "Back on page A", "targetPage", pageAReference);
 
-        setup.createUserAndLogin("GuidedTourUser", "pa$$word");
+        setup.createUserAndLogin(USER_NAME, USER_PASSWORD);
         setup.gotoPage(pageB);
 
         // Starting the task redirects to the page of its first step.
@@ -115,5 +141,56 @@ class GuidedTourApplicationIT
         popover.pressNextKeyAndWaitForPageReload();
         popover.waitForStep("Back on page A");
         assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
+
+        // Moving past the last step ends the task.
+        popover.clickNext();
+        popover.waitUntilClosed();
+    }
+
+    /**
+     * The "Create a page" task of the Getting Started tour creates the tutorial page of the user from the template that
+     * it offers in the Sandbox, with the image that the other tasks use attached.
+     */
+    @Test
+    @Order(3)
+    void createTutorialPage(TestUtils setup) throws Exception
+    {
+        // The Sandbox of the standard flavor.
+        setup.loginAsSuperAdmin();
+        setup.createPage("Sandbox", "WebHome", "", "Sandbox");
+        setup.login(USER_NAME, USER_PASSWORD);
+        setup.gotoPage("Main", "WebHome");
+        new TourWidget().clickTask("CreatePage");
+        TourStepPopover popover = new TourStepPopover().waitForStep("Welcome to XWiki!");
+        popover.clickNext();
+        popover.waitForStep("Click Create").clickHighlightedElement();
+
+        popover.waitForStep("This is the title of your new page.");
+        CreatePagePage createPage = new CreatePagePage();
+        String templateProvider = "GuidedTour.Tours.GettingStarted.Code.TutorialPageTemplateProvider";
+        assertTrue(createPage.getAvailableTemplates().contains(templateProvider));
+        createPage.getDocumentPicker().setTitle("Tutorial page");
+        popover.clickNext();
+        popover.waitForStep("Select the Guided Tour template.");
+        createPage.setTemplate(templateProvider);
+        popover.waitForStep("Click Create.").clickHighlightedElement();
+        popover.waitForStep("Click Done to save your page.").clickHighlightedElement();
+        popover.waitForStep("you created your tutorial page!");
+
+        DocumentReference tutorialPage = new DocumentReference("xwiki", List.of("Sandbox", "Tutorial page"), "WebHome");
+        assertTrue(setup.rest().exists(new AttachmentReference("xwiki-logo.png", tutorialPage)));
+    }
+
+    private DocumentReference createTourWithTask(TestUtils setup, SpaceReference tourSpace, boolean active)
+    {
+        DocumentReference tour = new DocumentReference("WebHome", tourSpace);
+        String title = tourSpace.getName();
+        setup.createPage(tour, "", title);
+        setup.addObject(tour, TOUR_CLASS, "title", title, IS_ACTIVE, active ? 1 : 0);
+        DocumentReference task = new DocumentReference("Task", tourSpace);
+        setup.createPage(task, "", "Task");
+        setup.addObject(task, TASK_CLASS, "title", "Task", IS_ACTIVE, 1, "order", 0);
+        setup.addObject(task, STEP_CLASS, "order", 0, "content", "Step");
+        return tour;
     }
 }
