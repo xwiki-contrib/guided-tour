@@ -14,6 +14,14 @@
   pointer-events: none;
 }
 
+/* Driver.js still catches the clicks outside the highlighted element with the shape of the overlay, which has inline
+   styles. A step without backdrop hides it and lets the clicks through, for the menus and dialogs that the step asks
+   to use. */
+.driver-xwiki-no-backdrop .driver-overlay path {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Use the XWiki skin font and Color Theme instead of the Driver.js ones. */
 .driver-popover {
   font-family: inherit;
