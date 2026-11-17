@@ -147,7 +147,7 @@ const util = {
       popDOM.previousButton.classList.remove("driver-popover-footer-btn");
       popDOM.nextButton.classList.add("btn", "btn-sm", "btn-primary"); // TODO: Make this an <a> instead of
       // <button>
-      popDOM.previousButton.classList.add("btn", "btn-sm"); // TODO: Make this an <a> instead of <button>
+      popDOM.previousButton.classList.add("btn", "btn-sm", "btn-default"); // TODO: Make this an <a> instead of <button>
     }
     popDOM.footer.appendChild(
       util.makeSkipAllButton(guidedTourManager, guidedTourTask, translations),
