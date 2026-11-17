@@ -51,9 +51,14 @@ describe("StorageManager", () => {
   });
 
   it("doesn't parse a key that isn't a task key prefix", () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
     expect(StorageManager.parseStorageKeyPrefix("other_key")).toBeUndefined();
+    expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+      expect.stringContaining('Error parsing "other_key"'),
+    );
   });
 
   it("keeps the progress of the task in progress in the session storage", () => {

@@ -114,11 +114,14 @@ describe("TourStore", () => {
   });
 
   it("purges the cache when updating the tasks of an unknown tour", () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const store = createStore();
 
     store.updateTourTasks("unknown", [createTask("task3")]);
 
+    expect(consoleWarn).toHaveBeenCalledExactlyOnceWith(
+      "Tour unknown not found in store. Purging cache to ensure integrity.",
+    );
     expect(store.cache.tours).toHaveLength(0);
     expect(store.cache.toursMap.size).toBe(0);
   });
@@ -138,11 +141,16 @@ describe("TourStore", () => {
   ])(
     "purges the cache when updating the steps of an unknown %s",
     (_description, tourId, taskId) => {
-      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleWarn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
       const store = createStore();
 
       store.updateTaskSteps(tourId, taskId, []);
 
+      expect(consoleWarn).toHaveBeenCalledExactlyOnceWith(
+        `Integrity failure: Tour ${tourId} or Task ${taskId} missing. Purging cache.`,
+      );
       expect(store.cache.tours).toHaveLength(0);
     },
   );

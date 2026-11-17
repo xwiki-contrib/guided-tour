@@ -24,6 +24,7 @@ import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GuidedTourRestClient } from "../GuidedTourRestClient";
 import type { TourTask, TourTour } from "@xwiki/contrib-guidedtour-api";
+import type { MockInstance } from "vitest";
 
 vi.mock("../../services/xwiki.js", () => ({
   XWiki: { contextPath: "/xwiki" },
@@ -48,6 +49,7 @@ describe("DefaultTourManagerApi", () => {
   let request: ReturnType<typeof vi.fn>;
   let store: TourStore;
   let api: DefaultTourManagerApi;
+  let consoleDebug: MockInstance<typeof console.debug>;
 
   beforeEach(() => {
     request = vi.fn().mockResolvedValue({});
@@ -56,7 +58,7 @@ describe("DefaultTourManagerApi", () => {
       { request } as unknown as GuidedTourRestClient,
       store,
     );
-    vi.spyOn(console, "debug").mockImplementation(() => {});
+    consoleDebug = vi.spyOn(console, "debug").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -132,6 +134,11 @@ describe("DefaultTourManagerApi", () => {
       [TOURS_URL, "POST", tour],
       [`${TOURS_URL}/tour1`, "PUT", tour],
       [`${TOURS_URL}/tour1`, "DELETE"],
+    ]);
+    expect(consoleDebug.mock.calls).toEqual([
+      ["Creating tour", tour],
+      ["Updating tour", tour],
+      ["Deleting tour", "tour1"],
     ]);
   });
 });

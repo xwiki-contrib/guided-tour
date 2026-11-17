@@ -80,10 +80,16 @@ describe("DefaultTaskManagerApi", () => {
     });
 
     it("fetches the tasks of a tour that isn't cached", async () => {
-      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const consoleWarn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => {});
       request.mockResolvedValue([createTask("task1")]);
 
       expect(getTaskIds(await api.getTasks("unknown"))).toEqual(["task1"]);
+      // The store doesn't know the tour, so it purges its cache.
+      expect(consoleWarn).toHaveBeenCalledExactlyOnceWith(
+        "Tour unknown not found in store. Purging cache to ensure integrity.",
+      );
       expect(request).toHaveBeenCalledExactlyOnceWith(
         "/xwiki/rest/guidedTour/tours/unknown/tasks",
         "GET",

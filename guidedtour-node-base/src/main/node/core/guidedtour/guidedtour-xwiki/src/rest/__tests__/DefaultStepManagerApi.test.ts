@@ -24,6 +24,7 @@ import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GuidedTourRestClient } from "../GuidedTourRestClient";
 import type { TourStep } from "@xwiki/contrib-guidedtour-api";
+import type { MockInstance } from "vitest";
 
 vi.mock("../../services/xwiki.js", () => ({
   XWiki: { contextPath: "/xwiki" },
@@ -39,6 +40,7 @@ describe("DefaultStepManagerApi", () => {
   let request: ReturnType<typeof vi.fn>;
   let store: TourStore;
   let api: DefaultStepManagerApi;
+  let consoleDebug: MockInstance<typeof console.debug>;
 
   beforeEach(() => {
     request = vi.fn().mockResolvedValue({});
@@ -61,7 +63,7 @@ describe("DefaultStepManagerApi", () => {
       { request } as unknown as GuidedTourRestClient,
       store,
     );
-    vi.spyOn(console, "debug").mockImplementation(() => {});
+    consoleDebug = vi.spyOn(console, "debug").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -80,10 +82,14 @@ describe("DefaultStepManagerApi", () => {
   });
 
   it("fetches the steps of a task that isn't cached", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleWarn = vi.spyOn(console, "warn").mockImplementation(() => {});
     request.mockResolvedValue([createStep()]);
 
     expect(await api.getSteps("tour1", "unknown")).toEqual([createStep()]);
+    // The store doesn't know the task, so it purges its cache.
+    expect(consoleWarn).toHaveBeenCalledExactlyOnceWith(
+      "Integrity failure: Tour tour1 or Task unknown missing. Purging cache.",
+    );
     expect(request).toHaveBeenCalledExactlyOnceWith(
       "/xwiki/rest/guidedTour/tours/tour1/tasks/unknown/steps",
       "GET",
@@ -115,6 +121,14 @@ describe("DefaultStepManagerApi", () => {
       [STEPS_URL, "POST", step],
       [`${STEPS_URL}/2`, "PUT", step],
       [`${STEPS_URL}/2`, "DELETE"],
+    ]);
+    expect(consoleDebug.mock.calls).toEqual([
+      ["Creating step", { tourId: "tour1", taskId: "task1", stepData: step }],
+      [
+        "Updating step",
+        { tourId: "tour1", taskId: "task1", stepId: 2, stepData: step },
+      ],
+      ["Deleting step", { tourId: "tour1", taskId: "task1", stepId: 2 }],
     ]);
   });
 });

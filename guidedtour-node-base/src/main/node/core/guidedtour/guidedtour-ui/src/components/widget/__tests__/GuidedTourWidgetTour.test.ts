@@ -57,7 +57,12 @@ async function mountTour(
     props: { tour },
     global: {
       provide: { GuidedTourManager: guidedTourManager },
-      stubs: { GuidedTourWidgetTask: true },
+      stubs: {
+        GuidedTourWidgetTask: true,
+        // Render the default slot directly, which avoids the Vue warnings about
+        // Suspense being experimental and expecting a single root node.
+        Suspense: { template: "<div><slot /></div>" },
+      },
     },
   });
   await flushPromises();

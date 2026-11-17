@@ -29,7 +29,7 @@ import type { Driver } from "driver.js";
 // Kept apart from driverjsMain.test.ts: once the page is unloading, driverjsMain stays in that state.
 describe("driverjsMain while the page is unloading", () => {
   it("doesn't move to another step", async () => {
-    vi.spyOn(console, "log").mockImplementation(() => {});
+    const consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
     const task: TourTask = {
       id: "task1",
       tourId: "tour1",
@@ -58,6 +58,7 @@ describe("driverjsMain while the page is unloading", () => {
       { config: {}, state: { activeIndex: 0 }, driver: {} as Driver, index: 0 },
     );
 
+    expect(consoleLog).toHaveBeenCalledExactlyOnceWith("Setting up", task);
     expect(drive).not.toHaveBeenCalled();
     expect(
       StorageManager.getStorageKey(

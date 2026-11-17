@@ -29,6 +29,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DefaultGuidedTourManager } from "../rest/DefaultGuidedTourManager";
 import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
 import type { Config, Driver, HookOpts, PopoverDOM } from "driver.js";
+import type { MockInstance } from "vitest";
 
 const TRANSLATIONS = {
   "guidedtour.driver.skipAll": "Skip all",
@@ -138,10 +139,15 @@ function highlightSteps(config: Config, indexes: number[], element: Element) {
   }
 }
 
+// driverjsMain logs a lot while setting up and running the tasks: spy on these logs to keep the test output readable,
+// and to assert them where they matter.
+let consoleLog: MockInstance<typeof console.log>;
+let consoleDebug: MockInstance<typeof console.debug>;
+
 describe("driverjsMain", () => {
   beforeEach(() => {
-    vi.spyOn(console, "log").mockImplementation(() => {});
-    vi.spyOn(console, "debug").mockImplementation(() => {});
+    consoleLog = vi.spyOn(console, "log").mockImplementation(() => {});
+    consoleDebug = vi.spyOn(console, "debug").mockImplementation(() => {});
     vi.stubGlobal("XWiki", {
       widgets: {
         Notification: class {
@@ -182,6 +188,10 @@ describe("driverjsMain", () => {
       });
       // Without placement, driver.js places the popover by itself.
       expect(config.steps![1].popover!.side).toBeUndefined();
+      expect(consoleLog.mock.calls).toEqual([
+        [task.steps],
+        ["Setting up", task],
+      ]);
     });
 
     it("shows the content of each step on its element once visible, with the title of the task", async () => {
@@ -212,7 +222,9 @@ describe("driverjsMain", () => {
     });
 
     it("doesn't throw on invalid selectors and ignores blank ones", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       const task = createTask();
       task.steps![0].element = "#invalid[";
       task.steps![1].element = " \t\n ";
@@ -226,17 +238,31 @@ describe("driverjsMain", () => {
       const findElement = config.steps![0].element as () => Element | undefined;
       expect(findElement).not.toThrow();
       expect(findElement()).toBeUndefined();
+      // The invalid selector is reported, but not thrown.
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining(
+            "'#invalid[' is not a valid selector",
+          ),
+        }),
+      );
       // Without element, driver.js shows the popover in the middle of the page.
       expect(config.steps![1].element).toBeUndefined();
     });
 
     it("rejects a task without steps", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       const task = { ...createTask(), steps: undefined };
 
       await expect(
         getDriverConfigForSteps(task, {} as DefaultGuidedTourManager, {}),
       ).rejects.toBe("Task has no steps");
+      expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+        "Task has no steps:",
+        task,
+      );
     });
   });
 
@@ -368,6 +394,13 @@ describe("driverjsMain", () => {
         TourTaskStatus.DONE,
       );
       expect(guidedTourManager.disableCallToAction).not.toHaveBeenCalled();
+      expect(consoleDebug).toHaveBeenCalledExactlyOnceWith(
+        "onDestroyed",
+        undefined,
+        {},
+        expect.anything(),
+        task,
+      );
     });
 
     it("keeps the status of a task closed before the end", async () => {
@@ -530,7 +563,9 @@ describe("driverjsMain", () => {
 
   describe("onHighlightStarted", () => {
     it("skips the task when the element of a step is not in the page", async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
       const task = createTask();
       task.steps![1].element = "#missing";
       const guidedTourManager = createGuidedTourManager(task, 1);
@@ -547,6 +582,10 @@ describe("driverjsMain", () => {
         createHookOpts(1, config),
       );
 
+      expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+        "Failed to find the element of the step:",
+        task.steps![1],
+      );
       expect(notifications).toMatchObject([{ text: "Error", type: "error" }]);
       expect(guidedTourManager.setTaskStatus).toHaveBeenCalledExactlyOnceWith(
         task,
