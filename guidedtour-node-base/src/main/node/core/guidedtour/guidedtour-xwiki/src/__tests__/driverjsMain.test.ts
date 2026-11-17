@@ -133,6 +133,22 @@ describe("driverjsMain", () => {
     expect(click).toHaveBeenCalledOnce();
   });
 
+  it("lets the clicks through the overlay only during the steps without backdrop", async () => {
+    const task = createTask();
+    task.steps![1].backdrop = true;
+    const config = await getDriverConfigForSteps(
+      task,
+      {} as DefaultGuidedTourManager,
+      {},
+    );
+    const element = addReflexElement();
+
+    highlightSteps(config, [0], element);
+    expect(document.body.classList).toContain("driver-xwiki-no-backdrop");
+    highlightSteps(config, [1], element);
+    expect(document.body.classList).not.toContain("driver-xwiki-no-backdrop");
+  });
+
   it("places the popover of each step as set in XWiki", async () => {
     const task = createTask();
     task.steps![0].placement = "BOTTOM_END";

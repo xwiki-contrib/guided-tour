@@ -49,6 +49,10 @@ class GuidedTourApplicationIT
 {
     private static final String STEP_CLASS = "XWiki.GuidedTour.StepClass";
 
+    private static final String USER_NAME = "GuidedTourUser";
+
+    private static final String USER_PASSWORD = "pa$$word";
+
     /**
      * The displayed tours should not include inactive tours, or tours which the user has no rights to view.
      */
@@ -92,7 +96,7 @@ class GuidedTourApplicationIT
             "element", "#goToPageA", "reflex", 1);
         setup.addObject(task, STEP_CLASS, "order", 3, "content", "Back on page A", "targetPage", pageAReference);
 
-        setup.createUserAndLogin("GuidedTourUser", "pa$$word");
+        setup.createUserAndLogin(USER_NAME, USER_PASSWORD);
         setup.gotoPage(pageB);
 
         // Starting the task redirects to the page of its first step.
@@ -115,5 +119,40 @@ class GuidedTourApplicationIT
         popover.pressNextKeyAndWaitForPageReload();
         popover.waitForStep("Back on page A");
         assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
+    }
+
+    /**
+     * A step with backdrop ends the task when the user clicks outside of the highlighted element, while a step without
+     * backdrop lets the click through to the page.
+     */
+    @Test
+    @Order(3)
+    void backdropOfEachStep(TestUtils setup, TestReference testReference)
+    {
+        setup.loginAsSuperAdmin();
+        DocumentReference tour = new DocumentReference("WebHome",
+            new SpaceReference("Tour", testReference.getLastSpaceReference()));
+        setup.createPage(tour, "", "Backdrop tour");
+        setup.addObject(tour, "XWiki.GuidedTour.TourClass", "title", "Backdrop tour", "isActive", 1);
+        DocumentReference task = new DocumentReference("BackdropTask", tour.getLastSpaceReference());
+        setup.createPage(task, "", "Backdrop task");
+        setup.addObject(task, "XWiki.GuidedTour.TaskClass", "title", "Backdrop task", "isActive", 1, "order", 0);
+        setup.addObject(task, STEP_CLASS, "order", 0, "content", "Without backdrop", "element", "#xwikicontent",
+            "backdrop", 0);
+        setup.addObject(task, STEP_CLASS, "order", 1, "content", "With backdrop", "element", "#xwikicontent",
+            "backdrop", 1);
+
+        setup.login(USER_NAME, USER_PASSWORD);
+        setup.gotoPage(task);
+        new TourWidget().clickTask("BackdropTask");
+        TourStepPopover popover = new TourStepPopover().waitForStep("Without backdrop");
+
+        popover.clickOutsideHighlightedElement();
+        assertTrue(popover.isDisplayed());
+
+        popover.clickNext();
+        popover.waitForStep("With backdrop");
+        popover.clickOutsideHighlightedElement();
+        popover.waitUntilClosed();
     }
 }
