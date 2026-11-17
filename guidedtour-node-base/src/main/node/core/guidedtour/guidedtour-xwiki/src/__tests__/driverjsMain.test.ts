@@ -133,6 +133,21 @@ describe("driverjsMain", () => {
     expect(click).toHaveBeenCalledOnce();
   });
 
+  it("places the popover again once a step is shown", async () => {
+    const config = await getDriverConfigForSteps(
+      createTask(),
+      {} as DefaultGuidedTourManager,
+      {},
+    );
+    const refresh = vi.fn();
+
+    config.onHighlighted!(undefined, config.steps![0], {
+      driver: { refresh },
+    } as unknown as HookOpts);
+
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
   it("places the popover of each step as set in XWiki", async () => {
     const task = createTask();
     task.steps![0].placement = "BOTTOM_END";

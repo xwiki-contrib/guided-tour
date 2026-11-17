@@ -249,6 +249,14 @@ function XWikiDriverConfig(
         bindReflexEvents(element, xwikiStep, guidedTourManager);
       }
     },
+    /**
+     * Place the popover again once the step is shown. A scroll during the move from the previous step makes driver.js
+     * place the popover against the element of the previous step, which may no longer be in the page (e.g. the "Add
+     * comment" button, replaced when the comments are refreshed): the popover then ends up in the top left corner.
+     */
+    onHighlighted: (_element, _step, options) => {
+      options.driver.refresh();
+    },
     onPopoverRender: (popDOM, options) => {
       // TODO: Need to handle this better
       const activeIndex = options.state.activeIndex ?? -1;
