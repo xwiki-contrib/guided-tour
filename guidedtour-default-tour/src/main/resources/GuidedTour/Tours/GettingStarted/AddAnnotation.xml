@@ -24,7 +24,7 @@
   <web>GuidedTour.Tours.GettingStarted</web>
   <name>AddAnnotation</name>
   <language/>
-  <defaultLanguage>en</defaultLanguage>
+  <defaultLanguage/>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <parent>GuidedTour.Tours.GettingStarted.WebHome</parent>
@@ -224,10 +224,10 @@
       <backdrop/>
     </property>
     <property type="LargeString">
-      <content>Make sure you are on the tutorial page you created in the "Create a page" task. Select some text of the page content and press Ctrl + M (Cmd + M on Mac) to annotate it. Click Next once the annotation form is open.</content>
+      <content>Select some text of your tutorial page and press Ctrl + M (Cmd + M on Mac) to annotate it. Click Next once the annotation form is open.</content>
     </property>
     <property type="String">
-      <element>#xwikicontent</element>
+      <element>body:has(#guidedtour-tutorial-page) #xwikicontent</element>
     </property>
     <property type="Long">
       <order>0</order>

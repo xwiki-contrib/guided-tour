@@ -40,9 +40,9 @@
         <groupId>org.xwiki.commons</groupId>
         <artifactId>xwiki-commons-tool-xar-plugin</artifactId>
         <configuration>
-          <contentPages>
-            <contentPage>.*/GuidedTour/Tours/[^/]+/[^/]+\.xml</contentPage>
-          </contentPages>
+          <visibleTechnicalPages>
+            <visibleTechnicalPage>.*/GuidedTour/Tours/[^/]+/[^/]+\.xml</visibleTechnicalPage>
+          </visibleTechnicalPages>
         </configuration>
       </plugin>
     </plugins>

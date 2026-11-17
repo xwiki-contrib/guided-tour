@@ -247,13 +247,13 @@
       <creationRestrictionsAreSuggestions>0</creationRestrictionsAreSuggestions>
     </property>
     <property type="String">
-      <description>The page used by the tasks of the Getting Started tour.</description>
+      <description>guidedtour.gettingStarted.template.description</description>
     </property>
     <property type="String">
       <icon/>
     </property>
     <property type="String">
-      <name>Guided Tour</name>
+      <name>guidedtour.gettingStarted.template.name</name>
     </property>
     <property type="StringList">
       <spaces/>

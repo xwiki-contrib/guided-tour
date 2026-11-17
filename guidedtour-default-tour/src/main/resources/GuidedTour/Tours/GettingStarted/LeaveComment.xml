@@ -24,7 +24,7 @@
   <web>GuidedTour.Tours.GettingStarted</web>
   <name>LeaveComment</name>
   <language/>
-  <defaultLanguage>en</defaultLanguage>
+  <defaultLanguage/>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <parent>GuidedTour.Tours.GettingStarted.WebHome</parent>
@@ -224,10 +224,10 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>Make sure you are on the tutorial page you created in the "Create a page" task. This is the Comments section, where you can discuss the page with other users.</content>
+      <content>This is the Comments section of your tutorial page, where you can discuss the page with other users.</content>
     </property>
     <property type="String">
-      <element>#Commentstab</element>
+      <element>body:has(#guidedtour-tutorial-page) #Commentstab</element>
     </property>
     <property type="Long">
       <order>0</order>

@@ -56,6 +56,24 @@ const util = {
     });
   },
   /**
+   * driver.js handles Escape and the arrow keys on `window`, whatever the focused element, so typing in a field or in
+   * the editor would end the task or move to another step. Stop these keys at the document level when they come from
+   * an editable element: the element and the document still get them, driver.js doesn't.
+   */
+  addEditableKeysListener() {
+    document.addEventListener("keyup", (event) => {
+      const target = event.target;
+      if (
+        ["Escape", "ArrowLeft", "ArrowRight"].includes(event.key) &&
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName))
+      ) {
+        event.stopPropagation();
+      }
+    });
+  },
+  /**
    * Do the necessary setup for rendering the `Skip All` link.
    * @param guidedTourManager - API
    * @param guidedTourTask - the task to make the button for
@@ -214,6 +232,7 @@ const util = {
 };
 
 util.addPageUnloadingListener();
+util.addEditableKeysListener();
 
 /**
  * This is a function to ensure each call has its own object, and subsequent manipulation doesn't alter the defaults.

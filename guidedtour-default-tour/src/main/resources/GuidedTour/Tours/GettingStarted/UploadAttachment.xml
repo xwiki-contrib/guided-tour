@@ -24,7 +24,7 @@
   <web>GuidedTour.Tours.GettingStarted</web>
   <name>UploadAttachment</name>
   <language/>
-  <defaultLanguage>en</defaultLanguage>
+  <defaultLanguage/>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <parent>GuidedTour.Tours.GettingStarted.WebHome</parent>
@@ -224,10 +224,10 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>Make sure you are on the tutorial page you created in the "Create a page" task. This is the Attachments section, which lists the files attached to the page.</content>
+      <content>This is the Attachments section of your tutorial page, which lists the files attached to the page.</content>
     </property>
     <property type="String">
-      <element>#Attachmentstab</element>
+      <element>body:has(#guidedtour-tutorial-page) #Attachmentstab</element>
     </property>
     <property type="Long">
       <order>0</order>

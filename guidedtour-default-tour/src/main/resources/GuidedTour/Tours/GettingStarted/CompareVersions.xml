@@ -24,7 +24,7 @@
   <web>GuidedTour.Tours.GettingStarted</web>
   <name>CompareVersions</name>
   <language/>
-  <defaultLanguage>en</defaultLanguage>
+  <defaultLanguage/>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <parent>GuidedTour.Tours.GettingStarted.WebHome</parent>
@@ -224,10 +224,10 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>Make sure you are on the tutorial page you created in the "Create a page" task. This is the History section, which lists the versions of the page.</content>
+      <content>This is the History section of your tutorial page, which lists the versions of the page.</content>
     </property>
     <property type="String">
-      <element>#Historytab</element>
+      <element>body:has(#guidedtour-tutorial-page) #Historytab</element>
     </property>
     <property type="Long">
       <order>0</order>
@@ -965,13 +965,13 @@
       </title>
     </class>
     <property type="String">
-      <dependsOn>CreatePage</dependsOn>
+      <dependsOn>EditPage</dependsOn>
     </property>
     <property type="Boolean">
       <isActive>true</isActive>
     </property>
     <property type="Long">
-      <order>8</order>
+      <order>6</order>
     </property>
     <property type="String">
       <title>View differences between 2 versions of the page</title>

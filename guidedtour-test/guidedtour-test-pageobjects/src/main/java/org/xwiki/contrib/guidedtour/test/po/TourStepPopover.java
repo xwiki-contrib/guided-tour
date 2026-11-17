@@ -19,8 +19,13 @@
  */
 package org.xwiki.contrib.guidedtour.test.po;
 
+import java.util.List;
+
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.WebElement;
 import org.xwiki.test.ui.po.BaseElement;
 
 /**
@@ -32,16 +37,42 @@ public class TourStepPopover extends BaseElement
 {
     private static final By NEXT_BUTTON = By.cssSelector(".driver-popover-next-btn");
 
+    private static final By POPOVER = By.cssSelector(".driver-popover");
+
     /**
      * Wait until the given step is displayed, possibly on another page.
      *
-     * @param description the description of the expected step
+     * @param description the description of the expected step, or a part of it
      * @return this popover
      */
     public TourStepPopover waitForStep(String description)
     {
-        getDriver().waitUntilElementHasTextContent(By.cssSelector(".driver-popover-description"), description);
+        getDriver().waitUntilCondition(driver -> {
+            List<WebElement> elements =
+                getDriver().findElementsWithoutWaiting(By.cssSelector(".driver-popover-description"));
+            try {
+                return !elements.isEmpty() && elements.get(0).getText().contains(description);
+            } catch (StaleElementReferenceException e) {
+                return false;
+            }
+        });
         return this;
+    }
+
+    /**
+     * Click the element highlighted by the step. A step waiting for this click then moves to the next step.
+     */
+    public void clickHighlightedElement()
+    {
+        // The overlay covers the element until the highlight animation reaches it.
+        getDriver().waitUntilCondition(driver -> {
+            try {
+                driver.findElement(By.cssSelector(".driver-active-element")).click();
+                return true;
+            } catch (ElementClickInterceptedException | StaleElementReferenceException e) {
+                return false;
+            }
+        });
     }
 
     /**
@@ -69,5 +100,21 @@ public class TourStepPopover extends BaseElement
         getDriver().addPageNotYetReloadedMarker();
         getDriver().createActions().sendKeys(Keys.ARROW_RIGHT).perform();
         getDriver().waitUntilPageIsReloaded();
+    }
+
+    /**
+     * @return {@code true} if a step is displayed
+     */
+    public boolean isDisplayed()
+    {
+        return !getDriver().findElementsWithoutWaiting(POPOVER).isEmpty();
+    }
+
+    /**
+     * Wait until no step is displayed anymore, after the task is closed.
+     */
+    public void waitUntilClosed()
+    {
+        getDriver().waitUntilCondition(driver -> !isDisplayed());
     }
 }

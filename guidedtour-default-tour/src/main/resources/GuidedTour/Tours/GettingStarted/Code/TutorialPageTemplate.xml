@@ -36,19 +36,12 @@
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
-  <content>This page is your own space to practice. You created it in the first task of the Getting Started tour, and the other tasks of the tour use it too. It is in the Sandbox, so you can change anything on it without affecting the rest of the wiki.
+  <content>(% id="guidedtour-tutorial-page" %)
+This page is your own space to practice. You created it in the first task of the Getting Started tour, and the other tasks of the tour use it too. It is in the Sandbox, so you can change anything on it without affecting the rest of the wiki.
 
 == Continue the Getting Started tour ==
 
-Open the Guided Tours widget at the bottom right of the screen and start the next task. Each task shows you one feature of XWiki:
-
-1. Leave a comment, to discuss the page with other users.
-1. Annotate a few words of the text below, to comment on a specific part of the page.
-1. Attach a file, such as a document or a picture, to the page.
-1. Insert an Info Box macro, which makes a piece of information stand out.
-1. Mention another user, who then gets a notification.
-1. Insert an image. The XWiki logo is already attached to this page, so you can use it if you don't have an image at hand.
-1. Compare two versions of the page, to see what changed between them.
+Open the Guided Tours widget at the bottom right of the screen and start the next task. Each task shows you one feature of XWiki on this page. When a task asks you to insert an image, you can use the XWiki logo, which is already attached to this page.
 
 == Text to experiment with ==
 

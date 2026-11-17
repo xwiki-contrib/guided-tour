@@ -24,7 +24,7 @@
   <web>GuidedTour.Tours.GettingStarted</web>
   <name>CreatePage</name>
   <language/>
-  <defaultLanguage>en</defaultLanguage>
+  <defaultLanguage/>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <parent>GuidedTour.Tours.GettingStarted.WebHome</parent>
@@ -646,7 +646,7 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>This is the title of your new page. Type one, for example "[USERNAME] Tutorial Page", then click Next.</content>
+      <content>This is the title of your new page. Type one that includes your name, for example "Alice's tutorial page", then click Next.</content>
     </property>
     <property type="String">
       <element>#targetTitle</element>
@@ -1282,7 +1282,7 @@
       <content>This is the editor. You can change the content now or later. Click Done to save your page.</content>
     </property>
     <property type="String">
-      <element>.realtime-action-done</element>
+      <element>.realtime-action-done, body:not(:has(template#realtime-edit-toolbar)) .bottombuttons .btn[name="action_save"], body:not(:has(template#realtime-edit-toolbar)) .inplace-editing-buttons .btn[name="action_save"]</element>
     </property>
     <property type="Long">
       <order>5</order>

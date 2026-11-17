@@ -18,7 +18,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import { getDriverConfigForSteps, wrapTask } from "../driverjsMain";
+import { driver, getDriverConfigForSteps, wrapTask } from "../driverjsMain";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { describe, expect, it, vi } from "vitest";
 import type { DefaultGuidedTourManager } from "../rest/DefaultGuidedTourManager";
@@ -168,4 +168,49 @@ describe("driverjsMain", () => {
     // Without element, driver.js shows the popover in the middle of the page.
     expect(config.steps![1].element).toBeUndefined();
   });
+});
+
+/**
+ * @returns a task started with driver.js, on its first step.
+ */
+async function startTask(): Promise<Driver> {
+  vi.stubGlobal("XWiki", {
+    widgets: {
+      Notification: class {
+        hide() {}
+      },
+    },
+  });
+  const config = await getDriverConfigForSteps(
+    createTask(),
+    {} as DefaultGuidedTourManager,
+    {},
+  );
+  config.animate = false;
+  const task = driver(config);
+  task.drive();
+  await vi.waitFor(() =>
+    expect(document.querySelector(".driver-overlay")).not.toBeNull(),
+  );
+  return task;
+}
+
+it("ignores the keys typed in an editable element", async () => {
+  document.body.innerHTML = '<input type="text" id="title">';
+  const task = await startTask();
+
+  // driver.js would move to another step or end the task.
+  for (const key of ["ArrowLeft", "ArrowRight", "Escape"]) {
+    document
+      .getElementById("title")!
+      .dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true }));
+  }
+  expect(task.isActive()).toBe(true);
+  expect(task.getActiveIndex()).toBe(0);
+
+  document.body.dispatchEvent(
+    new KeyboardEvent("keyup", { key: "Escape", bubbles: true }),
+  );
+  expect(task.isActive()).toBe(false);
+  vi.unstubAllGlobals();
 });
