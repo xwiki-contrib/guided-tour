@@ -18,9 +18,9 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import { getDriverConfigForSteps, wrapTask } from "../driverjsMain";
+import { driver, getDriverConfigForSteps, wrapTask } from "../driverjsMain";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DefaultGuidedTourManager } from "../rest/DefaultGuidedTourManager";
 import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
 import type { Config, Driver, HookOpts } from "driver.js";
@@ -133,31 +133,6 @@ describe("driverjsMain", () => {
     expect(click).toHaveBeenCalledOnce();
   });
 
-  it.each([
-    [true, 1],
-    [false, 0],
-  ])(
-    "ends the task on a click outside the highlighted element only if the user confirms it (%s)",
-    async (confirmed, destroyCalls) => {
-      const config = await getDriverConfigForSteps(
-        createTask(),
-        {} as DefaultGuidedTourManager,
-        { "guidedtour.driver.confirmExit": "Stop the task?" },
-      );
-      const destroy = vi.fn();
-      const confirm = vi.fn().mockReturnValue(confirmed);
-      vi.stubGlobal("confirm", confirm);
-
-      config.onDestroyStarted!(undefined, config.steps![0], {
-        driver: { destroy },
-      } as unknown as HookOpts);
-
-      expect(confirm).toHaveBeenCalledWith("Stop the task?");
-      expect(destroy).toHaveBeenCalledTimes(destroyCalls);
-      vi.unstubAllGlobals();
-    },
-  );
-
   it("places the popover of each step as set in XWiki", async () => {
     const task = createTask();
     task.steps![0].placement = "BOTTOM_END";
@@ -192,5 +167,97 @@ describe("driverjsMain", () => {
     expect(findElement()).toBeUndefined();
     // Without element, driver.js shows the popover in the middle of the page.
     expect(config.steps![1].element).toBeUndefined();
+  });
+});
+
+describe("ending a task", () => {
+  /**
+   * The ways for the user to end a task, by the destroy reason that driver.js gives for each.
+   */
+  const endTaskBy: Record<string, () => void> = {
+    close: () =>
+      document.querySelector<HTMLElement>(".driver-popover-close-btn")!.click(),
+    escape: () => pressEscape(),
+    overlay: () =>
+      document
+        .querySelector(".driver-overlay path")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true })),
+  };
+
+  function pressEscape() {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape" }));
+  }
+
+  /**
+   * @returns a task started with driver.js, on its first step.
+   */
+  async function startTask(confirmed: boolean): Promise<Driver> {
+    vi.stubGlobal("XWiki", {
+      widgets: {
+        Notification: class {
+          hide() {}
+        },
+      },
+    });
+    vi.stubGlobal("confirm", vi.fn().mockReturnValue(confirmed));
+    const config = await getDriverConfigForSteps(
+      createTask(),
+      {} as DefaultGuidedTourManager,
+      { "guidedtour.driver.confirmExit": "Stop the task?" },
+    );
+    config.animate = false;
+    const task = driver(config);
+    task.drive();
+    await vi.waitFor(() =>
+      expect(document.querySelector(".driver-overlay")).not.toBeNull(),
+    );
+    return task;
+  }
+
+  let task: Driver | undefined;
+
+  afterEach(() => {
+    task?.destroy();
+    vi.unstubAllGlobals();
+  });
+
+  it.each(Object.keys(endTaskBy))(
+    "ends the task with %s only if the user confirms it",
+    async (reason) => {
+      task = await startTask(false);
+      endTaskBy[reason]();
+      expect(window.confirm).toHaveBeenCalledExactlyOnceWith("Stop the task?");
+      expect(task.isActive()).toBe(true);
+      expect(task.getActiveIndex()).toBe(0);
+
+      vi.mocked(window.confirm).mockReturnValue(true);
+      endTaskBy[reason]();
+      expect(task.isActive()).toBe(false);
+    },
+  );
+
+  it("ends the task without asking when the code ends it", async () => {
+    task = await startTask(false);
+    task.destroy();
+    expect(task.isActive()).toBe(false);
+
+    task = await startTask(false);
+    // Driving to a step that doesn't exist (anymore) ends the task.
+    task.drive(10);
+    expect(task.isActive()).toBe(false);
+    expect(window.confirm).not.toHaveBeenCalled();
+  });
+
+  it("doesn't ask again on the Escape keyup that closes the confirmation", async () => {
+    task = await startTask(false);
+    pressEscape();
+    // The browser closes the confirmation on keydown, and sends the keyup to the page.
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape" }));
+    expect(window.confirm).toHaveBeenCalledOnce();
+
+    pressEscape();
+    expect(window.confirm).toHaveBeenCalledTimes(2);
+    expect(task.isActive()).toBe(true);
   });
 });

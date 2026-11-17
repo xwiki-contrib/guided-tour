@@ -122,6 +122,25 @@ const util = {
   isReflex(step: TourStep): boolean {
     return step.reflex && !!step.element;
   },
+  /**
+   * Browsers close a dialog such as `window.confirm()` on the `keydown` of Escape, but send the `keyup` that follows to
+   * the page, where driver.js would ask to end the task again. Ignore that `keyup`, up to the next key pressed.
+   */
+  ignoreEscapeKeyupClosingDialog() {
+    const controller = new AbortController();
+    const options = { capture: true, signal: controller.signal };
+    window.addEventListener(
+      "keyup",
+      (event) => {
+        controller.abort();
+        if (event.key === "Escape") {
+          event.stopImmediatePropagation();
+        }
+      },
+      options,
+    );
+    window.addEventListener("keydown", () => controller.abort(), options);
+  },
   hideLoadingNotification() {
     util.loadingNotification?.hide();
     util.loadingNotification = undefined;
@@ -235,12 +254,17 @@ function XWikiDriverConfig(
     waitForElement: 3000,
     /**
      * Ask before ending the task when the user clicks outside the highlighted element, presses Escape or clicks the
-     * close button, so that a misclick doesn't discard the task progress. Ending the task from the code (finishing or
-     * skipping it) doesn't go through this hook.
+     * close button, so that a misclick doesn't discard the task progress. The task ends without asking for the other
+     * reasons, which come from the code (e.g. driving to a step that was removed from the task since).
      */
     onDestroyStarted: (_element, _step, options) => {
-      if (window.confirm(translations["guidedtour.driver.confirmExit"])) {
+      if (
+        !["close", "escape", "overlay"].includes(options.reason!) ||
+        window.confirm(translations["guidedtour.driver.confirmExit"])
+      ) {
         options.driver.destroy();
+      } else {
+        util.ignoreEscapeKeyupClosingDialog();
       }
     },
     onHighlightStarted: (element, step, options) => {
