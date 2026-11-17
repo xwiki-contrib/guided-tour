@@ -38,6 +38,7 @@ async function getTranslations(): Promise<Record<string, string>> {
       "next",
       "previous",
       "skipAll",
+      "confirmExit",
       "loading",
       "error",
       "error.initExistingTask",

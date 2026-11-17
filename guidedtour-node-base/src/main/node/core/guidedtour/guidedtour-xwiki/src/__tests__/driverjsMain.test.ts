@@ -133,6 +133,31 @@ describe("driverjsMain", () => {
     expect(click).toHaveBeenCalledOnce();
   });
 
+  it.each([
+    [true, 1],
+    [false, 0],
+  ])(
+    "ends the task on a click outside the highlighted element only if the user confirms it (%s)",
+    async (confirmed, destroyCalls) => {
+      const config = await getDriverConfigForSteps(
+        createTask(),
+        {} as DefaultGuidedTourManager,
+        { "guidedtour.driver.confirmExit": "Stop the task?" },
+      );
+      const destroy = vi.fn();
+      const confirm = vi.fn().mockReturnValue(confirmed);
+      vi.stubGlobal("confirm", confirm);
+
+      config.onDestroyStarted!(undefined, config.steps![0], {
+        driver: { destroy },
+      } as unknown as HookOpts);
+
+      expect(confirm).toHaveBeenCalledWith("Stop the task?");
+      expect(destroy).toHaveBeenCalledTimes(destroyCalls);
+      vi.unstubAllGlobals();
+    },
+  );
+
   it("places the popover of each step as set in XWiki", async () => {
     const task = createTask();
     task.steps![0].placement = "BOTTOM_END";

@@ -233,6 +233,16 @@ function XWikiDriverConfig(
     overlayOpacity: 0.3,
     // How long (in ms) to wait for the step's element to be visible before giving up.
     waitForElement: 3000,
+    /**
+     * Ask before ending the task when the user clicks outside the highlighted element, presses Escape or clicks the
+     * close button, so that a misclick doesn't discard the task progress. Ending the task from the code (finishing or
+     * skipping it) doesn't go through this hook.
+     */
+    onDestroyStarted: (_element, _step, options) => {
+      if (window.confirm(translations["guidedtour.driver.confirmExit"])) {
+        options.driver.destroy();
+      }
+    },
     onHighlightStarted: (element, step, options) => {
       util.hideLoadingNotification();
       const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
