@@ -32,6 +32,8 @@ public class TourStepPopover extends BaseElement
 {
     private static final By NEXT_BUTTON = By.cssSelector(".driver-popover-next-btn");
 
+    private static final By POPOVER = By.cssSelector(".driver-popover");
+
     /**
      * Wait until the given step is displayed, possibly on another page.
      *
@@ -69,5 +71,30 @@ public class TourStepPopover extends BaseElement
         getDriver().addPageNotYetReloadedMarker();
         getDriver().createActions().sendKeys(Keys.ARROW_RIGHT).perform();
         getDriver().waitUntilPageIsReloaded();
+    }
+
+    /**
+     * Click the page title, which is outside of the element highlighted by the step and does nothing on its own. The
+     * click goes to the overlay of the step, if it has one, and otherwise to the title.
+     */
+    public void clickOutsideHighlightedElement()
+    {
+        getDriver().createActions().moveToElement(getDriver().findElement(By.id("document-title"))).click().perform();
+    }
+
+    /**
+     * @return {@code true} if a step is displayed
+     */
+    public boolean isDisplayed()
+    {
+        return !getDriver().findElementsWithoutWaiting(POPOVER).isEmpty();
+    }
+
+    /**
+     * Wait until no step is displayed anymore, after the task is closed.
+     */
+    public void waitUntilClosed()
+    {
+        getDriver().waitUntilCondition(driver -> !isDisplayed());
     }
 }

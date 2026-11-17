@@ -307,8 +307,9 @@ function XWikiDriverConfig(
               TourTaskStatus.DONE,
             );
           } else {
-            // The user closed the task before the end (close button or click outside): keep its status, but don't
-            // start the next tasks of its tour automatically anymore.
+            // The user closed the task before the end (close button, Escape, or a click outside the highlighted
+            // element on a step with backdrop): keep its status, but don't start the next tasks of its tour
+            // automatically anymore.
             await guidedTourManager.disableCallToAction(guidedTourTask.tourId!);
             await guidedTourManager.setTaskStatus(
               guidedTourTask,
