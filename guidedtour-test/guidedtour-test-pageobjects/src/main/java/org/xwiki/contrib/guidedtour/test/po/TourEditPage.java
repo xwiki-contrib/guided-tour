@@ -22,6 +22,7 @@ package org.xwiki.contrib.guidedtour.test.po;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.xwiki.model.reference.EntityReference;
+import org.xwiki.test.ui.po.FormContainerElement;
 import org.xwiki.test.ui.po.InlinePage;
 import org.xwiki.test.ui.po.ViewPage;
 
@@ -67,7 +68,7 @@ public class TourEditPage extends InlinePage
      */
     public TourEditPage setTourTitle(String title)
     {
-        GuidedTourForms.setText(getField("title"), title);
+        setFieldValue(getField("title"), title);
         return this;
     }
 
@@ -77,7 +78,7 @@ public class TourEditPage extends InlinePage
      */
     public TourEditPage setDescription(String description)
     {
-        GuidedTourForms.setText(getField("description"), description);
+        setFieldValue(getField("description"), description);
         return this;
     }
 
@@ -87,7 +88,7 @@ public class TourEditPage extends InlinePage
      */
     public TourEditPage setActive(boolean active)
     {
-        GuidedTourForms.setBoolean(getField("isActive"), active);
+        setFieldValue(getField("isActive"), active ? "1" : "0");
         return this;
     }
 
@@ -102,9 +103,7 @@ public class TourEditPage extends InlinePage
     {
         getDriver().findElement(ADD_TASK_BUTTON).click();
         getDriver().waitUntilElementIsVisible(ADD_TASK_TITLE);
-        WebElement titleInput = getDriver().findElement(ADD_TASK_TITLE);
-        titleInput.clear();
-        titleInput.sendKeys(title);
+        setFieldValue(getDriver().findElement(ADD_TASK_TITLE), title);
         getDriver().addPageNotYetReloadedMarker();
         getDriver().findElement(ADD_TASK_CONFIRM).click();
         waitForNotificationSuccessMessage("Task successfully created!");
@@ -117,6 +116,11 @@ public class TourEditPage extends InlinePage
     protected ViewPage createViewPage()
     {
         return new TourPage();
+    }
+
+    private void setFieldValue(WebElement field, String value)
+    {
+        new FormContainerElement(getFormLocator()).setFieldValue(field, value);
     }
 
     private WebElement getField(String property)

@@ -35,7 +35,6 @@ import org.xwiki.model.reference.DocumentReference;
 import org.xwiki.model.reference.ObjectReference;
 import org.xwiki.model.reference.SpaceReference;
 import org.xwiki.rest.model.jaxb.Property;
-import org.xwiki.test.integration.junit.LogCaptureConfiguration;
 import org.xwiki.test.ui.TestUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -87,20 +86,6 @@ public class GuidedTourTestUtils
     public GuidedTourTestUtils(TestUtils setup)
     {
         this.setup = setup;
-    }
-
-    /**
-     * Declare the server logs expected when using the guided tours. They are logged at WARN level, which would fail the
-     * tests otherwise.
-     *
-     * @param logCaptureConfiguration the log capture configuration of the test class
-     */
-    public static void registerExpectedLogs(LogCaptureConfiguration logCaptureConfiguration)
-    {
-        logCaptureConfiguration.registerExpected(
-            // Each new user starts without a guided tour status, which the widget handles as the default status.
-            "Resource not found: User tour status API: getting user tour status object.",
-            "User tour status not found for user");
     }
 
     /**
@@ -197,19 +182,7 @@ public class GuidedTourTestUtils
      */
     public void denyView(DocumentReference reference, String userName) throws Exception
     {
-        deny(reference, userName, "view");
-    }
-
-    /**
-     * Prevent a user from editing a page.
-     *
-     * @param reference the page
-     * @param userName the name of the user
-     * @throws Exception if the right can't be set
-     */
-    public void denyEdit(DocumentReference reference, String userName) throws Exception
-    {
-        deny(reference, userName, "edit");
+        asSuperAdmin(() -> this.setup.setRights(reference, null, "XWiki." + userName, "view", false));
     }
 
     /**
@@ -359,12 +332,6 @@ public class GuidedTourTestUtils
                 throw new RuntimeException("Failed to read the guided tour status of the guest user.", e);
             }
         });
-    }
-
-    private void deny(DocumentReference reference, String userName, String right) throws Exception
-    {
-        asSuperAdmin(() -> this.setup.rest().addObject(reference, "XWiki.XWikiRights", "users", "XWiki." + userName,
-            "levels", right, "allow", 0));
     }
 
     private Map<String, String> getObjectProperties(DocumentReference document, String className) throws Exception

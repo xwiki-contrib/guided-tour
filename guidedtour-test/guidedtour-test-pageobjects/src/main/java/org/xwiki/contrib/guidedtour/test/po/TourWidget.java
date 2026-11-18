@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NotFoundException;
@@ -362,13 +361,12 @@ public class TourWidget extends BaseElement
 
     private static By getTaskLocator(String taskId)
     {
-        return By.xpath("//div[contains(concat(' ', normalize-space(@class), ' '), ' guidedtour-task ') and @id="
-            + escapeXPathString(taskId) + "]");
+        return By.cssSelector("div.guidedtour-task" + getIdSelector(taskId));
     }
 
     private static By getTourLocator(String tourId)
     {
-        return By.xpath(getTourXPath(tourId));
+        return By.cssSelector(getTourSelector(tourId));
     }
 
     /**
@@ -377,27 +375,20 @@ public class TourWidget extends BaseElement
      */
     private static By getTourHeaderLocator(String tourId)
     {
-        return By.xpath(getTourXPath(tourId)
-            + "//*[contains(concat(' ', normalize-space(@class), ' '), ' guidedtour-tour-header ')]");
+        return By.cssSelector(getTourSelector(tourId) + " .guidedtour-tour-header");
     }
 
-    private static String getTourXPath(String tourId)
+    private static String getTourSelector(String tourId)
     {
-        return "//section[contains(concat(' ', normalize-space(@class), ' '), ' guidedtour-tour ') and @id="
-            + escapeXPathString(tourId) + "]";
+        return "section.guidedtour-tour" + getIdSelector(tourId);
     }
 
-    private static String escapeXPathString(String value)
+    /**
+     * The ids of the tours are document references, which contain characters with a meaning in CSS (like '.' and
+     * ':'), so they are matched as attribute values rather than with the '#' syntax.
+     */
+    private static String getIdSelector(String id)
     {
-        if (!value.contains("\"")) {
-            return "\"" + value + "\"";
-        }
-        if (!value.contains("'")) {
-            return "'" + value + "'";
-        }
-        String[] parts = value.split("\"");
-        return "concat(" + Arrays.stream(parts)
-            .map(part -> "\"" + part + "\"")
-            .collect(Collectors.joining(", '\"', ")) + ")";
+        return "[id='" + id.replace("\\", "\\\\").replace("'", "\\'") + "']";
     }
 }

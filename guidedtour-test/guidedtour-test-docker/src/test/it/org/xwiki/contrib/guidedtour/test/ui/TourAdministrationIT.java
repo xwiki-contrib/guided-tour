@@ -203,6 +203,9 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         TaskEditPage taskEditPage = TaskEditPage.gotoPage(addedTask);
         taskEditPage.setTaskTitle("Added task").setOrder(1).setActive(true).addStep("Added task, step one");
         assertEquals(List.of("Added task, step one"), taskEditPage.getStepTitles());
+        // Save after adding each step, because a single edit session can't add more than one step. The task
+        // sheet sets the number of a new step object with $step.getXWikiObject().setNumber(), which requires the sheet
+        // to have programming rights: without them, every new step form is rendered for the object 0.
         taskPage = taskEditPage.clickSaveAndView();
         assertEquals(List.of("Added task, step one"), taskPage.getStepTitles());
         taskEditPage = TaskEditPage.gotoPage(addedTask).addStep("Added task, step two");

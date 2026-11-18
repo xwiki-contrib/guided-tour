@@ -24,6 +24,7 @@ import java.util.List;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.xwiki.model.reference.EntityReference;
+import org.xwiki.test.ui.po.FormContainerElement;
 import org.xwiki.test.ui.po.InlinePage;
 import org.xwiki.test.ui.po.ViewPage;
 
@@ -79,7 +80,7 @@ public class TaskEditPage extends InlinePage
      */
     public TaskEditPage setTaskTitle(String title)
     {
-        GuidedTourForms.setText(getField("title"), title);
+        setFieldValue(getField("title"), title);
         return this;
     }
 
@@ -89,7 +90,7 @@ public class TaskEditPage extends InlinePage
      */
     public TaskEditPage setOrder(int order)
     {
-        GuidedTourForms.setText(getField("order"), String.valueOf(order));
+        setFieldValue(getField("order"), String.valueOf(order));
         return this;
     }
 
@@ -99,7 +100,7 @@ public class TaskEditPage extends InlinePage
      */
     public TaskEditPage setActive(boolean active)
     {
-        GuidedTourForms.setBoolean(getField("isActive"), active);
+        setFieldValue(getField("isActive"), active ? "1" : "0");
         return this;
     }
 
@@ -168,12 +169,17 @@ public class TaskEditPage extends InlinePage
     {
         getDriver().waitUntilElementIsVisible(DISPLAYED_STEP_CONTENT);
         // Typing updates the title of the step in the sidebar.
-        GuidedTourForms.setText(getDriver().findElement(DISPLAYED_STEP_CONTENT), content);
+        setFieldValue(getDriver().findElement(DISPLAYED_STEP_CONTENT), content);
     }
 
     private List<WebElement> getStepItems()
     {
         return getDriver().findElementsWithoutWaiting(STEP_ITEMS);
+    }
+
+    private void setFieldValue(WebElement field, String value)
+    {
+        new FormContainerElement(getFormLocator()).setFieldValue(field, value);
     }
 
     private WebElement getField(String property)

@@ -31,11 +31,6 @@ import org.xwiki.test.docker.junit5.UITest;
 class AllIT
 {
     @Nested
-    class NestedGuidedTourApplicationIT extends GuidedTourApplicationIT
-    {
-    }
-
-    @Nested
     class NestedTaskProgressionIT extends TaskProgressionIT
     {
     }

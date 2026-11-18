@@ -308,8 +308,7 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
-     * Close the task with the close button of the popover, and wait until the popover is closed. Unless it's the last
-     * step, the task stays to do.
+     * Close the task with the close button of the popover, and wait until the popover is closed.
      */
     public void close()
     {

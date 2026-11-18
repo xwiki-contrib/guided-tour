@@ -37,10 +37,19 @@ abstract class AbstractGuidedTourIT
 {
     protected GuidedTourTestUtils guidedTour;
 
+    /**
+     * Declare the server logs expected when using the guided tours. They are logged at WARN level, which would fail the
+     * tests otherwise.
+     *
+     * @param logCaptureConfiguration the log capture configuration of the test class
+     */
     @BeforeAll
     void registerExpectedLogs(LogCaptureConfiguration logCaptureConfiguration)
     {
-        GuidedTourTestUtils.registerExpectedLogs(logCaptureConfiguration);
+        logCaptureConfiguration.registerExpected(
+            // Each new user starts without a guided tour status, which the widget handles as the default status.
+            "Resource not found: User tour status API: getting user tour status object.",
+            "User tour status not found for user");
     }
 
     @BeforeEach

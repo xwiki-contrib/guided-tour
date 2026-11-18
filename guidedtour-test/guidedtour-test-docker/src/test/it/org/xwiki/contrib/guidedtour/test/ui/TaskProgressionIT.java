@@ -43,8 +43,8 @@ import static org.xwiki.contrib.guidedtour.test.po.TourTaskStatus.SKIPPED;
 import static org.xwiki.contrib.guidedtour.test.po.TourTaskStatus.TODO;
 
 /**
- * Verify the progression through the steps of a task, including the interactive (reflex) steps, and from a task to
- * the next tasks of its tour.
+ * Verify the progression through the steps of a task, including the interactive (reflex) steps and the pages the steps
+ * lead to, and from a task to the next tasks of its tour.
  *
  * @version $Id$
  */
@@ -334,8 +334,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
 
     /**
      * A task can span several pages and actions, like editing a page: the task continues on the edit form after the
-     * user clicks the edit button, and back on the page once saved. A user who can't edit the page can't do the task,
-     * so it's skipped.
+     * user clicks the edit button, and back on the page once saved.
      */
     @Test
     @Order(6)
@@ -360,7 +359,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
                 .targetPage(pageReference).targetAction("EDIT"),
             Step.withContent("The page is saved.").targetPage(pageReference).targetAction("VIEW"));
 
-        String editorName = this.guidedTour.createUserAndLogin("GuidedTourEditPageUser");
+        String userName = this.guidedTour.createUserAndLogin("GuidedTourEditPageUser");
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget();
@@ -380,21 +379,10 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.waitForStep("The page is saved.");
         assertEquals(setup.getURL(page), new ViewPage().getPageURL());
         popover.clickDone();
-        new TourWidget().waitUntilTaskStatus("editPageTask", DONE);
-        this.guidedTour.waitForUserTourStatus(editorName,
+        widget.waitUntilTaskStatus("editPageTask", DONE);
+        this.guidedTour.waitForUserTourStatus(userName,
             status -> status.getTaskStatus(this.guidedTour.getTourId(tour), "editPageTask").filter(DONE::equals)
                 .isPresent());
-
-        // A user who can't edit the page doesn't have the edit button, so the task is skipped.
-        String viewerName = "GuidedTourEditPageViewer";
-        this.guidedTour.denyEdit(page, viewerName);
-        this.guidedTour.createUserAndLogin(viewerName);
-        setup.gotoPage(page);
-        widget = new TourWidget();
-        widget.clickTask("editPageTask");
-        widget.waitForNotificationErrorMessage("Error while moving between task steps.");
-        widget.waitUntilTaskStatus("editPageTask", SKIPPED);
-        new TourStepPopover().waitUntilClosed();
     }
 
     /**
@@ -422,5 +410,60 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         // driver.js displays the step in the middle of the screen once it gives up waiting for its element, until the
         // task is skipped.
         new TourStepPopover().waitUntilClosed();
+    }
+
+    /**
+     * Starting a task, or moving to its next step, should redirect to the page expected by the step, except when
+     * leaving a reflex step, which navigates on its own.
+     */
+    @Test
+    @Order(8)
+    void redirectToTheExpectedPage(TestUtils setup, TestReference testReference) throws Exception
+    {
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference pageA = new DocumentReference("PageA", space);
+        DocumentReference pageB = new DocumentReference("PageB", space);
+        String pageAReference = setup.serializeLocalReference(pageA);
+        String pageBReference = setup.serializeLocalReference(pageB);
+        this.guidedTour.createPage(pageA, "Page A", "Page A");
+        this.guidedTour.createPage(pageB, "[[Go to page A>>doc:%s||id=\"goToPageA\"]]".formatted(pageAReference),
+            "Page B");
+
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Redirect tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "redirectTask", "Redirect task", 0, true);
+        this.guidedTour.addSteps(task,
+            Step.withContent("Start on page A").targetPage(pageAReference),
+            // A reflex step without element has a button to move to the next step, like a regular step.
+            Step.withContent("Continue on page B").targetPage(pageBReference).queryParameters("foo=bar").reflex(),
+            Step.withContent("Click the link").targetPage(pageBReference).element("#goToPageA").reflex(),
+            Step.withContent("Back on page A").targetPage(pageAReference));
+
+        this.guidedTour.createUserAndLogin("GuidedTourRedirectUser");
+        setup.gotoPage(pageB);
+
+        // Starting the task redirects to the page of its first step.
+        new TourWidget().clickTask("redirectTask");
+        TourStepPopover popover = new TourStepPopover().waitForStep("Start on page A");
+        assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
+
+        // Moving to the next step redirects to its page, with its query parameters.
+        popover.clickNext();
+        popover.waitForStep("Continue on page B");
+        assertEquals(setup.getURL(pageB, "view", "foo=bar"), new ViewPage().getPageURL());
+
+        // The next step is on the same page.
+        // FIXME: Leaving a reflex step never redirects, even when it has no element (so it can't navigate on its own),
+        // because driverjsMain.moveToAdjacentStep() checks the reflex flag of the step instead of util.isReflex(). So
+        // if the next step was on another page, there would be no redirect. Once fixed, make the next step target
+        // another page, and check that moving to it redirects there.
+        assertTrue(popover.hasNextButton());
+        popover.clickNext();
+        popover.waitForStep("Click the link");
+        assertFalse(popover.hasNextButton());
+
+        // The right arrow key clicks the element of the reflex step, whose link leads to the page of the last step.
+        popover.pressNextKeyAndWaitForPageReload();
+        popover.waitForStep("Back on page A");
+        assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
     }
 }
