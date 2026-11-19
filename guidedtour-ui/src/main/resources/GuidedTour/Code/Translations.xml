@@ -147,16 +147,12 @@ guidedtour.home.create.button=Create Tour
 guidedtour.home.create.buttonTitle=Create a new tour
 guidedtour.home.manage.button=Manage Tours
 guidedtour.home.manage.buttonTitle=List, edit, or delete tours.
-guidedtour.home.manage.helper.none=No active tours yet.
+guidedtour.home.manage.helper.activeCount={0,choice,0#No active tours yet.|1#1 active tour.|1&lt;{0} active tours.}
 guidedtour.home.manage.helper.noneWithDisabled=No active tours yet. Disabled tours are still listed under Manage Tours.
-guidedtour.home.manage.helper.one=1 active tour.
-guidedtour.home.manage.helper.many={0} active tours.
-guidedtour.home.howItWorks.manage=Open {0} to view, edit, or delete a tour.
-guidedtour.home.howItWorks.sample=New here? Run the {0}, then adapt it for your wiki.
-guidedtour.home.howItWorks.sampleLinkLabel=Getting Started tour
-guidedtour.home.docs=The {0} explains how to point steps at pages and page elements, and bundle them into tasks.
-guidedtour.home.docs.linkLabel=Guided Tour documentation
-guidedtour.home.docs.linkAriaLabel=Guided Tour documentation (opens in a new tab)
+guidedtour.home.howItWorks.manage=Open {0}Manage Tours{1} to view, edit, or delete a tour.
+guidedtour.home.howItWorks.sample=New here? Run the {0}Getting Started tour{1}, then adapt it for your wiki.
+guidedtour.home.docs=The {0}Guided Tour documentation{1} explains how to point steps at pages and page elements, and bundle them into tasks.
+guidedtour.home.docs.linkAria1Label=Guided Tour documentation (opens in a new tab)
 </content>
   <object>
     <name>GuidedTour.Code.Translations</name>

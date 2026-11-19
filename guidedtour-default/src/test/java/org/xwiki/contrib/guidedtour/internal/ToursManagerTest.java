@@ -52,10 +52,12 @@ import com.xpn.xwiki.doc.XWikiDocument;
 import com.xpn.xwiki.objects.BaseObject;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TOUR_CLASS;
 
@@ -175,6 +177,27 @@ class ToursManagerTest
         assertTrue(tours.getFirst().isActive());
         assertEquals("tour description", tours.getFirst().getDescription());
         assertTrue(tours.getFirst().getTasksList().isEmpty());
+    }
+
+    @Test
+    void getAllToursWithoutTasks() throws Exception
+    {
+        when(this.localSerializer.serialize(TOUR_CLASS)).thenReturn(SERIALIZED_CLASS);
+        when(this.queryUtil.executeQuery("select doc.fullName from XWikiDocument doc, BaseObject obj "
+            + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class and doc.name <> "
+            + ":excludeName", Map.of("excludeName", "TourTemplate", "class", SERIALIZED_CLASS))).thenReturn(
+            List.of(this.documentReference));
+        when(this.baseObject.getStringValue("title")).thenReturn("tour title");
+        when(this.baseObject.getIntValue("isActive")).thenReturn(0);
+        when(this.baseObject.getStringValue("description")).thenReturn("tour description");
+
+        List<TourDTO> tours = this.toursManager.getAllTours(false);
+        assertEquals(1, tours.size());
+        assertEquals("tour title", tours.getFirst().getTitle());
+        assertFalse(tours.getFirst().isActive());
+        assertEquals("tour description", tours.getFirst().getDescription());
+        assertTrue(tours.getFirst().getTasksList().isEmpty());
+        verifyNoInteractions(this.tasksManager);
     }
 
     @Test

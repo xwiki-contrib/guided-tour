@@ -37,75 +37,71 @@
   <syntaxId>xwiki/2.1</syntaxId>
   <hidden>true</hidden>
   <content>{{velocity}}
-#set ($discard = $xwiki.ssx.use('GuidedTour.WebHome'))
-#set ($providerExists = $xwiki.exists('XWiki.GuidedTour.TourTemplateProvider'))
-#set ($sampleExists = $xwiki.exists('GuidedTour.Tours.GettingStarted.WebHome'))
-#set ($toursURL = $xwiki.getURL('GuidedTour.Tours.WebHome'))
-#set ($createURL = $xwiki.getURL('GuidedTour.Tours.WebHome', 'create'))
-#if ($providerExists)
-  #set ($createURL = "${createURL}?templateProvider=XWiki.GuidedTour.TourTemplateProvider")
+## Renders a translation whose {0} and {1} parameters mark the start and the end of a link. The translation is escaped
+## first, and only then are the markers replaced by the (trusted) link tags.
+#macro (guidedTourTranslationWithLink $key $linkStartTag)
+$escapetool.xml($services.localization.render($key, ['__LINKSTART__', '__LINKEND__'])).replace('__LINKSTART__',
+  $linkStartTag).replace('__LINKEND__', '&lt;/a&gt;')##
 #end
-#set ($tours = $services.guidedtour.getAllTours())
-#set ($totalCount = $tours.size())
+#set ($discard = $xwiki.ssx.use('GuidedTour.WebHome'))
+#set ($toursURL = $xwiki.getURL('GuidedTour.Tours.WebHome'))
+## New tours are created as child pages of GuidedTour.Tours, which needs edit right there (there is no create right).
+#set ($toursSpaceReference = $services.model.resolveSpace('GuidedTour.Tours'))
+#set ($canCreateTour = $services.security.authorization.hasAccess('edit', $toursSpaceReference))
+#set ($createQueryString = $escapetool.url({'templateProvider': 'XWiki.GuidedTour.TourTemplateProvider'}))
+#set ($createURL = $xwiki.getURL('GuidedTour.Tours.WebHome', 'create', $createQueryString))
+#set ($sampleReference = 'GuidedTour.Tours.GettingStarted.WebHome')
+#set ($sampleExists = $xwiki.exists($sampleReference))
+#set ($docsURL = 'https://www.xwiki.org/xwiki/bin/view/documentation/extensions/user/guided-tour/')
+#set ($docsAriaLabel = $escapetool.xml($services.localization.render('guidedtour.home.docs.linkAriaLabel')))
+#set ($docsLinkAttributes = "target=""_blank"" rel=""noopener noreferrer"" aria-label=""$docsAriaLabel""")
+#set ($docsLinkStartTag = "&lt;a href=""$docsURL"" $docsLinkAttributes&gt;")
+## Only the tours themselves are needed here (to count them), so skip loading their tasks.
+#set ($tours = $services.guidedtour.getAllTours(false))
 #set ($activeToursCount = 0)
 #foreach ($tour in $tours)
   #if ($tour.isActive())
     #set ($activeToursCount = $activeToursCount + 1)
   #end
 #end
-#set ($createLabel = $escapetool.xml($services.localization.render('guidedtour.home.create.button')))
-#set ($createTitle = $escapetool.xml($services.localization.render('guidedtour.home.create.buttonTitle')))
-#set ($manageLabel = $escapetool.xml($services.localization.render('guidedtour.home.manage.button')))
-#set ($manageTitle = $escapetool.xml($services.localization.render('guidedtour.home.manage.buttonTitle')))
-#set ($helperNone = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.none')))
-#set ($helperNoneDisabled = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.noneWithDisabled')))
-#set ($helperOne = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.one')))
-#set ($helperMany = $escapetool.xml($services.localization.render('guidedtour.home.manage.helper.many', [$!activeToursCount])))
-#set ($howTitle = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.title')))
-#set ($howIntro = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.intro')))
-#set ($manageAnchor = "&lt;a href='$toursURL'&gt;$manageLabel&lt;/a&gt;")
-#set ($manageItem = $services.localization.render('guidedtour.home.howItWorks.manage').replace('{0}', $manageAnchor))
-#set ($sampleURL = $xwiki.getURL('GuidedTour.Tours.GettingStarted.WebHome'))
-#set ($sampleLabel = $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.sampleLinkLabel')))
-#set ($sampleAnchor = "&lt;a href='$sampleURL'&gt;$sampleLabel&lt;/a&gt;")
-#set ($sampleItem = $services.localization.render('guidedtour.home.howItWorks.sample').replace('{0}', $sampleAnchor))
-#set ($docsURL = 'https://www.xwiki.org/xwiki/bin/view/documentation/extensions/user/guided-tour/')
-#set ($docsLabel = $escapetool.xml($services.localization.render('guidedtour.home.docs.linkLabel')))
-#set ($docsAria = $escapetool.xml($services.localization.render('guidedtour.home.docs.linkAriaLabel')))
-#set ($docsAttributes = "target='_blank' rel='noopener noreferrer' aria-label='$docsAria'")
-#set ($docsAnchor = "&lt;a href='$docsURL' $docsAttributes&gt;$docsLabel&lt;/a&gt;")
-#set ($docsItem = $services.localization.render('guidedtour.home.docs').replace('{0}', $docsAnchor))
+#if ($activeToursCount == 0 &amp;&amp; !$tours.isEmpty())
+  #set ($helper = $services.localization.render('guidedtour.home.manage.helper.noneWithDisabled'))
+#else
+  #set ($helper = $services.localization.render('guidedtour.home.manage.helper.activeCount', [$activeToursCount]))
+#end
 {{html}}
   &lt;div class="guidedtour-home-actions"&gt;
-    &lt;a href="$createURL" class="btn btn-primary" title="$createTitle"&gt;
-      &lt;span class="fa fa-plus" aria-hidden="true"&gt;&lt;/span&gt; $createLabel
-    &lt;/a&gt;
-    &lt;a href="$toursURL" class="btn btn-default" title="$manageTitle"&gt;
-      &lt;span class="fa fa-list" aria-hidden="true"&gt;&lt;/span&gt; $manageLabel
-    &lt;/a&gt;
-    #if ($activeToursCount == 0)
-      #if ($totalCount &gt; 0)
-        &lt;span class="text-muted"&gt;$helperNoneDisabled&lt;/span&gt;
-      #else
-        &lt;span class="text-muted"&gt;$helperNone&lt;/span&gt;
-      #end
-    #elseif ($activeToursCount == 1)
-      &lt;span class="text-muted"&gt;$helperOne&lt;/span&gt;
-    #else
-      &lt;span class="text-muted"&gt;$helperMany&lt;/span&gt;
+    #if ($canCreateTour)
+      &lt;a href="$escapetool.xml($createURL)" class="btn btn-primary"
+          title="$escapetool.xml($services.localization.render('guidedtour.home.create.buttonTitle'))"&gt;
+        $services.icon.renderHTML('add')
+        $escapetool.xml($services.localization.render('guidedtour.home.create.button'))
+      &lt;/a&gt;
     #end
+    &lt;a href="$escapetool.xml($toursURL)" class="btn btn-default"
+        title="$escapetool.xml($services.localization.render('guidedtour.home.manage.buttonTitle'))"&gt;
+      $services.icon.renderHTML('list-bullets')
+      $escapetool.xml($services.localization.render('guidedtour.home.manage.button'))
+    &lt;/a&gt;
+    &lt;span class="text-muted"&gt;$escapetool.xml($helper)&lt;/span&gt;
   &lt;/div&gt;
-  &lt;h2 id="howGuidedToursWork"&gt;$howTitle&lt;/h2&gt;
-  &lt;p&gt;$howIntro&lt;/p&gt;
-  &lt;ul&gt;
-    #if ($totalCount &gt; 0)
-      &lt;li&gt;$manageItem&lt;/li&gt;
-    #end
-    #if ($sampleExists)
-      &lt;li&gt;$sampleItem&lt;/li&gt;
-    #end
-  &lt;/ul&gt;
-  &lt;p&gt;$docsItem&lt;/p&gt;
+  &lt;h2 id="howGuidedToursWork"&gt;
+    $escapetool.xml($services.localization.render('guidedtour.home.howItWorks.title'))
+  &lt;/h2&gt;
+  &lt;p&gt;$escapetool.xml($services.localization.render('guidedtour.home.howItWorks.intro'))&lt;/p&gt;
+  #if (!$tours.isEmpty() || $sampleExists)
+    &lt;ul&gt;
+      #if (!$tours.isEmpty())
+        &lt;li&gt;#guidedTourTranslationWithLink('guidedtour.home.howItWorks.manage'
+          "&lt;a href=""$escapetool.xml($toursURL)""&gt;")&lt;/li&gt;
+      #end
+      #if ($sampleExists)
+        &lt;li&gt;#guidedTourTranslationWithLink('guidedtour.home.howItWorks.sample'
+          "&lt;a href=""$escapetool.xml($xwiki.getURL($sampleReference))""&gt;")&lt;/li&gt;
+      #end
+    &lt;/ul&gt;
+  #end
+  &lt;p&gt;#guidedTourTranslationWithLink('guidedtour.home.docs' $docsLinkStartTag)&lt;/p&gt;
 {{/html}}
 {{/velocity}}</content>
   <object>

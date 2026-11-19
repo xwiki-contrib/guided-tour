@@ -31,6 +31,7 @@ import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.when;
 
 /**
@@ -65,8 +66,8 @@ class GuidedTourScriptServiceTest
     @Test
     void getAllTours() throws Exception
     {
-        when(this.toursManager.getAllTours()).thenReturn(List.of(new TourDTO(), new TourDTO()));
-        List<TourDTO> result = this.guidedTourScriptService.getAllTours();
-        assertEquals(2, result.size());
+        List<TourDTO> tours = List.of(new TourDTO());
+        when(this.toursManager.getAllTours(false)).thenReturn(tours);
+        assertSame(tours, this.guidedTourScriptService.getAllTours(false));
     }
 }

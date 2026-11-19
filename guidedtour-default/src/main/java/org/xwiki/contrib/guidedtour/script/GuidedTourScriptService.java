@@ -74,14 +74,16 @@ public class GuidedTourScriptService implements ScriptService
     /**
      * Get all the tours the current user can view, excluding the tour template.
      *
+     * @param withTasks {@code true} to also load the tasks of each tour, {@code false} when only the tour information
+     *     (e.g. title or active state) is needed
      * @return the list of tours
      * @throws QueryException if an error occurs while executing the query
      * @throws XWikiException if there is an error while interacting with the XWiki API
      * @throws InvalidIdException if a tour returned by the query has no tour object
      * @since 0.2
      */
-    public List<TourDTO> getAllTours() throws QueryException, XWikiException, InvalidIdException
+    public List<TourDTO> getAllTours(boolean withTasks) throws QueryException, XWikiException, InvalidIdException
     {
-        return this.toursManager.getAllTours();
+        return this.toursManager.getAllTours(withTasks);
     }
 }
