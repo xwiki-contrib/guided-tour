@@ -17,11 +17,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-import { StorageManager } from "../StorageManager";
+import { reactive } from "vue";
 import type {
+  TourProgress,
   TourStep,
   TourTask,
-  TourTaskStatus,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
 
@@ -32,7 +32,8 @@ import type {
  */
 export interface TourCache {
   tours: TourTour[];
-  toursMap: Map<string, TourTour>;
+  // Utility map from Tour id to index into tours array
+  toursMap: Map<string, number>;
 }
 
 /**
@@ -49,6 +50,10 @@ export class TourStore {
     tours: [],
     toursMap: new Map(),
   };
+  /**
+   * The progress of the current user in each tour, keyed by tour id.
+   */
+  private userToursStatus: Record<string, TourProgress> = {};
 
   // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
   constructor(private readonly xm) {
@@ -63,13 +68,24 @@ export class TourStore {
   }
 
   /**
+   * Set the progress of the current user, applied to the tasks when they are added to the cache.
+   * @param userToursStatus - The progress of the user in each tour, keyed by tour id.
+   */
+  public setUserToursStatus(userToursStatus: Record<string, TourProgress>) {
+    this.userToursStatus = userToursStatus;
+  }
+
+  /**
    * Replace the full tour list, rebuild the map, and set {@link TourTask#tourId}
    * on every nested task.
    */
   public updateTours(tours: TourTour[]) {
     this.populateTourTasks(tours);
-    this._cache.tours = tours;
-    this._cache.toursMap = new Map(tours.map((t) => [t.id, t]));
+    this.clearCache();
+    for (let i = 0; i < tours.length; i++) {
+      this._cache.tours.push(reactive(tours[i]));
+      this._cache.toursMap.set(tours[i].id, i);
+    }
   }
 
   /**
@@ -80,7 +96,10 @@ export class TourStore {
     // FIXME: What if we need to fetch the cache in this step? (i.e. a valid tour is not in the cache)
     // To fix as part of GUIDEDTOUR-23.
     // this.setupTasks(this.cache.toursMap.get(tourId)?.tasksList ?? [], tourId);
-    return this._cache.toursMap.get(tourId)?.tasksList ?? [];
+    const tourIndex = this._cache.toursMap.get(tourId);
+    return tourIndex !== undefined
+      ? (this._cache.tours[tourIndex].tasksList ?? [])
+      : [];
   }
 
   /**
@@ -90,8 +109,9 @@ export class TourStore {
    * @param tasks - The new task list.
    */
   public updateTourTasks(tourId: string, tasks: TourTask[]) {
-    const tour = this._cache.toursMap.get(tourId);
-    if (tour) {
+    const tourIndex = this._cache.toursMap.get(tourId);
+    if (tourIndex !== undefined) {
+      const tour = this._cache.tours[tourIndex];
       // Update the reference (since it's an object, it updates in the array too)
       this.setupTasks(tasks, tourId);
       tour.tasksList = tasks;
@@ -116,33 +136,10 @@ export class TourStore {
    * Assign the tour id to each task so that tasks know their parent tour.
    */
   private setupTasks(tasks: TourTask[], tourId: string) {
-    const userTaskStatuses: Map<string, TourTaskStatus> =
-      this.getLocalUserTaskStatuses(this.currentUserReference);
     for (const task of tasks) {
       task.tourId = tourId;
-      // FIXME: Use this for guest users only. To be done as part of GUIDEDTOUR-2
       task.status =
-        userTaskStatuses.get(StorageManager.getStorageKeyPrefix(task)) ??
-        task.status;
-    }
-  }
-
-  private getLocalUserTaskStatuses(
-    userReference: string,
-  ): Map<string, TourTaskStatus> {
-    const userTaskStatusesStr = StorageManager.getStorageKey(
-      StorageManager.getUserTaskStatusesStorageKey(userReference),
-    );
-    if (!userTaskStatusesStr) {
-      console.warn("No task statuses in sessionStorage");
-      return new Map();
-    }
-    try {
-      return new Map<string, TourTaskStatus>(
-        Object.entries(JSON.parse(userTaskStatusesStr)),
-      );
-    } catch {
-      return new Map();
+        this.userToursStatus[tourId]?.tasksStatus[task.id] ?? task.status;
     }
   }
 
@@ -151,7 +148,9 @@ export class TourStore {
    * @returns The task if found, otherwise undefined.
    */
   private getTaskOrPurge(tourId: string, taskId: string): TourTask | undefined {
-    const tour = this._cache.toursMap.get(tourId);
+    const tourIndex = this._cache.toursMap.get(tourId);
+    const tour =
+      tourIndex !== undefined ? this._cache.tours[tourIndex] : undefined;
     const task = tour?.tasksList?.find((t) => t.id === taskId);
 
     if (!tour || !task) {
@@ -185,7 +184,8 @@ export class TourStore {
    * Empty the cache entirely.
    */
   public clearCache() {
-    this._cache.tours = [];
+    // Empty the tours array while maintaining the same array object.
+    this._cache.tours.splice(0);
     this._cache.toursMap.clear();
   }
 }

@@ -76,5 +76,10 @@
       <artifactId>xwiki-commons-job-api</artifactId>
       <version>${commons.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.xwiki.platform</groupId>
+      <artifactId>xwiki-platform-configuration-default</artifactId>
+      <version>${platform.version}</version>
+    </dependency>
   </dependencies>
 </project>

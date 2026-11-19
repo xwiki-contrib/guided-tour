@@ -73,7 +73,7 @@ const progress = props.progress;
   left: 0px;
   top: 0px;
   height: 9px;
-  background: #7698ffff;
+  background: var(--brand-primary);
   transition: width 0.15s ease-out;
 }
 </style>

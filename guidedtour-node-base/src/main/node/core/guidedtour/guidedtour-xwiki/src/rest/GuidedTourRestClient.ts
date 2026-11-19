@@ -17,6 +17,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
+import { RestError } from "./RestError";
 // @ts-expect-error this is a JavaScript file, it is expected to not have types.
 import { XWiki } from "../services/xwiki.js";
 
@@ -33,11 +34,14 @@ export class GuidedTourRestClient {
    * @param url - The full URL to request.
    * @param method - The HTTP method.
    * @param body - Optional JSON-serializable body for POST / PUT.
+   * @param expectedStatuses - Error statuses handled by the caller: no notification is shown for them, only a
+   *     {@link RestError} is thrown.
    */
   public async request<T>(
     url: string,
     method: "GET" | "POST" | "PUT" | "DELETE",
     body?: unknown,
+    expectedStatuses: number[] = [],
   ): Promise<T> {
     const headers: Record<string, string> = {
       // "XWiki-Form-Token": await this.getCSRFToken(),
@@ -51,7 +55,7 @@ export class GuidedTourRestClient {
       body: body === undefined ? undefined : JSON.stringify(body),
     });
     if (!response.ok) {
-      this.handleError(response.status);
+      this.handleError(response.status, expectedStatuses);
     }
     if (method === "GET") {
       return response.json();
@@ -60,10 +64,14 @@ export class GuidedTourRestClient {
   }
 
   /**
-   * Show an XWiki notification for the given HTTP status and throw.
+   * Show an XWiki notification for the given HTTP status, unless the caller handles it, and throw.
    * @param status - The HTTP status code.
+   * @param expectedStatuses - The error statuses handled by the caller.
    */
-  private handleError(status: number): never {
+  private handleError(status: number, expectedStatuses: number[]): never {
+    if (expectedStatuses.includes(status)) {
+      throw new RestError(status);
+    }
     let message: string;
     let type: "error" | "warning";
     switch (status) {
@@ -85,6 +93,6 @@ export class GuidedTourRestClient {
         break;
     }
     new XWiki.widgets.Notification(message, type);
-    throw new Error(`HTTP Error: ${status}`);
+    throw new RestError(status);
   }
 }

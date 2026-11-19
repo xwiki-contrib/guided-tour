@@ -38,6 +38,11 @@
   <hidden>true</hidden>
   <content>## Classes
 
+admin.guidedtour.description=Administration space for Guided Tour application
+GuidedTour.Code.ConfigurationClass_usefulLinks=Useful links
+GuidedTour.Code.ConfigurationClass_usefulLinks.hint=Links displayed in the guided tour widget. Each URL needs to be added on a separate line
+GuidedTour.Code.ConfigurationClass_defaultSpace=Default space
+GuidedTour.Code.ConfigurationClass_defaultSpace.hint=Configure the target space where actions are performed
 XWiki.GuidedTour.StepClass_order=Order
 XWiki.GuidedTour.StepClass_order_hint=Order of this step in the task.
 XWiki.GuidedTour.StepClass_element=Element
@@ -45,17 +50,35 @@ XWiki.GuidedTour.StepClass_element_hint=The CSS selector of the element to be hi
 XWiki.GuidedTour.StepClass_content=Content
 XWiki.GuidedTour.StepClass_content_hint=The content to display for this step.
 XWiki.GuidedTour.StepClass_placement=Placement
-XWiki.GuidedTour.StepClass_placement_hint=The placement of the step tooltip.
+XWiki.GuidedTour.StepClass_placement_hint=The placement of the step popup relative to the highlighted element. May be ignored if there is not enough space on the screen to display the popup.
+XWiki.GuidedTour.StepClass_placement_BOTTOM_START=Bottom start
+XWiki.GuidedTour.StepClass_placement_BOTTOM_CENTER=Bottom center
+XWiki.GuidedTour.StepClass_placement_BOTTOM_END=Bottom end
+XWiki.GuidedTour.StepClass_placement_LEFT_START=Left start
+XWiki.GuidedTour.StepClass_placement_LEFT_CENTER=Left center
+XWiki.GuidedTour.StepClass_placement_LEFT_END=Left end
+XWiki.GuidedTour.StepClass_placement_TOP_START=Top start
+XWiki.GuidedTour.StepClass_placement_TOP_CENTER=Top center
+XWiki.GuidedTour.StepClass_placement_TOP_END=Top end
+XWiki.GuidedTour.StepClass_placement_RIGHT_START=Right start
+XWiki.GuidedTour.StepClass_placement_RIGHT_CENTER=Right center
+XWiki.GuidedTour.StepClass_placement_RIGHT_END=Right end
 XWiki.GuidedTour.StepClass_backdrop=Backdrop
 XWiki.GuidedTour.StepClass_backdrop_hint=Marks if a backdrop should be shown for this step.
 XWiki.GuidedTour.StepClass_reflex=Reflex
-XWiki.GuidedTour.StepClass_reflex_hint=Marks if clicking the highlighted element allows proceeding to the next step.
+XWiki.GuidedTour.StepClass_reflex_hint=Marks if clicking the highlighted element allows proceeding to the next step. If reflex is enabled, the task won't be automatically redirected to the page expected by the next step.
 XWiki.GuidedTour.StepClass_targetPage=Target page
 XWiki.GuidedTour.StepClass_targetPage_hint=The page on which the step should be displayed. If left empty, the current page will be used.
 XWiki.GuidedTour.StepClass_targetAction=Target action
-XWiki.GuidedTour.StepClass_targetAction_hint=The action on the target page. If left empty, the current action will be used.
+XWiki.GuidedTour.StepClass_targetAction_hint=The expected action on the page targeted by this step.
+XWiki.GuidedTour.StepClass_targetAction_NOT_SET=Not Set
+XWiki.GuidedTour.StepClass_targetAction_VIEW=View
+XWiki.GuidedTour.StepClass_targetAction_EDIT=Edit
+XWiki.GuidedTour.StepClass_targetAction_CREATE=Create
+XWiki.GuidedTour.StepClass_targetAction_ADMIN=Admin
+XWiki.GuidedTour.StepClass_targetAction_DELETE=Delete
 XWiki.GuidedTour.StepClass_queryParameters=Query parameters
-XWiki.GuidedTour.StepClass_queryParameters_hint=Parameters to append to the URL when navigating to the target page.
+XWiki.GuidedTour.StepClass_queryParameters_hint=Query parameters to append to the URL when navigating to the target page. You can also include a URI fragment at the end (e.g.: "?rev=1.0#History")
 XWiki.GuidedTour.TourClass_title=Title
 XWiki.GuidedTour.TourClass_title_hint=The tour title that will be displayed in the widget.
 XWiki.GuidedTour.TourClass_description=Description
@@ -92,9 +115,15 @@ guidedtour.tours.sheet.tasks.header=Tasks
 guidedtour.tours.sheet.tasks.button.add=Add task
 guidedtour.tasks.sheet.title.properties=Properties
 guidedtour.tasks.sheet.title.steps=Steps
-guidedtour.tasks.sheet.steps.count=Step #{0}
+guidedtour.tasks.sheet.steps.delete=Delete
 guidedtour.tasks.sheet.steps.button.add=Add step
-
+guidedtour.tasks.sheet.step.notification.inProgress=Creating step...
+guidedtour.tasks.sheet.step.notification.done=Done
+guidedtour.tasks.sheet.step.notification.error=Error creating task step.
+guidedtour.tasks.sheet.step.title.generic=Step #{0}
+guidedtour.tasks.sheet.step.title.sidebar.screenReaderDescription=Step {0} in sidebar, with description: "{1}"
+guidedtour.tasks.sheet.steps.keyboardHints.edit=You can navigate the steps by focusing the sidebar and pressing the arrow keys. Press Alt+Shift+N or Alt+Shift+A to add a new step, Alt+Shift+D or Alt+Shift+Delete to remove the currently selected step, and Alt+Shift+ArrowUp/Alt+Shift+ArrowDown to move the currently selected step.
+guidedtour.tasks.sheet.steps.keyboardHints=You can navigate the steps by focusing the sidebar and pressing the arrow keys.
 ## Modals
 
 guidedtour.modal.task.delete.title=Delete task

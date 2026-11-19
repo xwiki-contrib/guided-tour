@@ -46,31 +46,16 @@
     <defaultWeb/>
     <nameField/>
     <validationScript/>
-    <callToAction>
-      <customDisplay/>
-      <defaultValue>1</defaultValue>
-      <disabled>0</disabled>
-      <displayFormType>select</displayFormType>
-      <displayType/>
-      <hint/>
-      <name>callToAction</name>
-      <number>3</number>
-      <prettyName>Call to action</prettyName>
-      <unmodifiable>0</unmodifiable>
-      <validationMessage/>
-      <validationRegExp/>
-      <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-    </callToAction>
-    <tasksStatus>
+    <toursStatus>
       <contenttype>PureText</contenttype>
       <customDisplay/>
       <disabled>0</disabled>
       <editor>PureText</editor>
       <hint/>
-      <name>tasksStatus</name>
-      <number>2</number>
+      <name>toursStatus</name>
+      <number>1</number>
       <picker>1</picker>
-      <prettyName>Tasks status</prettyName>
+      <prettyName>Tours status</prettyName>
       <restricted>0</restricted>
       <rows>5</rows>
       <size>256</size>
@@ -78,7 +63,7 @@
       <validationMessage/>
       <validationRegExp/>
       <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-    </tasksStatus>
+    </toursStatus>
     <widgetState>
       <cache>0</cache>
       <customDisplay/>

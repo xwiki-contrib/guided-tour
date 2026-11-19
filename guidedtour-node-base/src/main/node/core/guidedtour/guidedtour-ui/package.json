@@ -47,7 +47,6 @@
     "@xwiki/contrib-guidedtour-api": "workspace:*",
     "@xwiki/platform-localization-adapter-vue": "catalog:",
     "@xwiki/platform-localization-api": "catalog:",
-    "dompurify": "catalog:",
     "driver.js": "catalog:",
     "eventemitter3": "catalog:",
     "lz-string": "catalog:",

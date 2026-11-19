@@ -49,7 +49,7 @@ public class StepDTO
 
     private String targetPage;
 
-    private ActionType targetAction;
+    private ActionType targetAction = ActionType.NOT_SET;
 
     private String queryParameters;
 

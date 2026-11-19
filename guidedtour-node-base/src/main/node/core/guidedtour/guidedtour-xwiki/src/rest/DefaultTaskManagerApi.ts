@@ -79,7 +79,11 @@ export class DefaultTaskManagerApi implements TaskManagerApi {
   async deleteTask(tourId: string, taskId: string): Promise<void> {
     const url = this.getTasksUrl(tourId, taskId);
     await this.restClient.request(url, "DELETE");
-    const tourTasks = this.sharedStore.cache.toursMap.get(tourId)?.tasksList;
+    const tourIndex = this.sharedStore.cache.toursMap.get(tourId);
+    const tourTasks =
+      tourIndex !== undefined
+        ? this.sharedStore.cache.tours[tourIndex].tasksList
+        : undefined;
     if (tourTasks) {
       const index = tourTasks.findIndex((t) => t.id === taskId);
       if (index !== -1) {

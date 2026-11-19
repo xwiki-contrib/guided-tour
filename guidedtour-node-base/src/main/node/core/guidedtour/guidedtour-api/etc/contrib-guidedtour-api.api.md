@@ -17,9 +17,13 @@ export interface GuidedTourManager {
     getTasks(tourId: string): Promise<TourTask[] | undefined>;
     getTours(): Promise<TourTour[]>;
     getUsefulLinks(): Promise<string[]>;
+    getWidgetState(): Promise<WidgetState>;
     initExistingTask(): void;
-    saveTaskStatus(tourId: string, taskId: string, status: TourTaskStatus): Promise<void>;
+    resetTour(tourId: string): Promise<void>;
     setTaskStatus(task: TourTask, status: TourTaskStatus): Promise<void>;
+    setWidgetState(widgetState: WidgetState): Promise<void>;
+    skipTask(task: TourTask): Promise<void>;
+    skipTour(tourId: string): Promise<void>;
     startTask(task: TourTask, remember: boolean): Promise<void>;
     updateStep(tourId: string, taskId: string, stepId: number, stepData: TourStep): Promise<void>;
     updateTask(tourId: string, taskId: string, taskData: TourTask): Promise<void>;
@@ -53,6 +57,12 @@ export interface TourManagerApi {
 }
 
 // @beta
+export interface TourProgress {
+    callToAction: boolean;
+    tasksStatus: Record<string, TourTaskStatus>;
+}
+
+// @beta
 export type TourStep = {
     element?: string;
     order: number;
@@ -61,7 +71,6 @@ export type TourStep = {
     placement?: string;
     backdrop?: boolean;
     reflex: boolean;
-    path?: string;
     targetClass?: string;
     targetPage?: string;
     targetAction?: string;
@@ -98,6 +107,19 @@ export interface TourTour {
     status?: TourTaskStatus;
     tasksList?: TourTask[];
     title: string;
+}
+
+// @beta
+export interface UserTourStatus {
+    toursStatus: Record<string, TourProgress>;
+    widgetState: WidgetState;
+}
+
+// @beta
+export enum WidgetState {
+    COLLAPSED = "COLLAPSED",
+    HIDDEN = "HIDDEN",
+    OPEN = "OPEN"
 }
 
 // (No @packageDocumentation comment for this package)

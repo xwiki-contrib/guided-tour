@@ -24,6 +24,29 @@ import { TourStore } from "./rest/TourStore";
 import { loadById } from "./services/require.js";
 
 /**
+ * Resolve the driver translations from the XWiki localization webjar.
+ *
+ * The webjar is only available at runtime in the XWiki environment, so it is loaded dynamically.
+ * @returns the resolved translations, keyed by the full translation key.
+ */
+async function getTranslations(): Promise<Record<string, string>> {
+  const webjarModule = "xwiki-platform-localization-webjar";
+  const { resolver } = await import(/* @vite-ignore */ webjarModule);
+  const { translations } = await resolver.resolve({
+    prefix: "guidedtour.driver.",
+    keys: [
+      "next",
+      "previous",
+      "skipAll",
+      "loading",
+      "error",
+      "error.initExistingTask",
+    ],
+  });
+  return translations;
+}
+
+/**
  * The main API of the GuidedTour app.
  * @since 1.0
  * @beta
@@ -31,8 +54,9 @@ import { loadById } from "./services/require.js";
 const guidedTourManager: Promise<DefaultGuidedTourManager> = loadById(
   "xwiki-meta",
   // @ts-expect-error this is a JavaScript file, it is expected to not have types.
-).then((xwikiMeta) => {
+).then(async (xwikiMeta) => {
   const sharedStore = new TourStore(xwikiMeta);
-  return new DefaultGuidedTourManager(xwikiMeta, sharedStore);
+  const translations = await getTranslations();
+  return new DefaultGuidedTourManager(xwikiMeta, sharedStore, translations);
 });
 export { type DefaultGuidedTourManager, guidedTourManager };

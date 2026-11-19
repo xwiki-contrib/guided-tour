@@ -32,7 +32,7 @@
       <div class="right-group">
         <button
           id="widget-close"
-          class="btn"
+          class="btn btn-default"
           :aria-label="t('guidedtour.widget.header.close')"
           @click.stop="onCloseButtonClicked(true)"
         >

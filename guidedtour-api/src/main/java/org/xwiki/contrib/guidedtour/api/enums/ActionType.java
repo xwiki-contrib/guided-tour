@@ -39,19 +39,27 @@ public enum ActionType
      */
     VIEW,
     /**
-     * Comment action: represents an action that requires the user to add comments.
+     * Delete action: represents an action that requires the user to delete a document.
      */
-    COMMENT,
+    DELETE,
     /**
      * Create action: represents an action that requires the user to create a new document.
      */
-    CREATE;
+    CREATE,
+    /**
+     * Admin action: represents an action that requires the user to access the administration of a page or wiki.
+     */
+    ADMIN,
+    /**
+     * Not set: no specific action is expected, the step can be displayed whatever the current action is.
+     */
+    NOT_SET;
 
     /**
      * Get the ActionType from a string value.
      *
      * @param text the string value to convert
-     * @return the corresponding ActionType, or VIEW if the string does not match any action type
+     * @return the corresponding ActionType, or {@link #NOT_SET} if the string does not match any action type
      */
     public static ActionType fromString(String text)
     {
@@ -60,6 +68,6 @@ public enum ActionType
                 return s;
             }
         }
-        return VIEW;
+        return NOT_SET;
     }
 }

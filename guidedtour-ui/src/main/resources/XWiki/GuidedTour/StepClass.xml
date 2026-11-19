@@ -54,7 +54,7 @@
       <displayType/>
       <hint/>
       <name>backdrop</name>
-      <number>6</number>
+      <number>3</number>
       <prettyName>Backdrop</prettyName>
       <unmodifiable>0</unmodifiable>
       <validationMessage/>
@@ -62,13 +62,13 @@
       <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
     </backdrop>
     <content>
-      <contenttype>FullyRenderedText</contenttype>
+      <contenttype>PureText</contenttype>
       <customDisplay/>
       <disabled>0</disabled>
-      <editor>---</editor>
+      <editor>PureText</editor>
       <hint/>
       <name>content</name>
-      <number>9</number>
+      <number>1</number>
       <picker>1</picker>
       <prettyName>Content</prettyName>
       <restricted>1</restricted>
@@ -98,7 +98,7 @@
       <disabled>0</disabled>
       <hint/>
       <name>order</name>
-      <number>3</number>
+      <number>0</number>
       <numberType>long</numberType>
       <prettyName>Order</prettyName>
       <size>30</size>
@@ -110,7 +110,7 @@
     <placement>
       <cache>0</cache>
       <customDisplay/>
-      <defaultValue>Top center</defaultValue>
+      <defaultValue/>
       <disabled>0</disabled>
       <displayType>select</displayType>
       <freeText/>
@@ -118,7 +118,7 @@
       <largeStorage>0</largeStorage>
       <multiSelect>0</multiSelect>
       <name>placement</name>
-      <number>5</number>
+      <number>4</number>
       <picker>1</picker>
       <prettyName>Placement</prettyName>
       <relationalStorage>0</relationalStorage>
@@ -129,7 +129,7 @@
       <unmodifiable>0</unmodifiable>
       <validationMessage/>
       <validationRegExp/>
-      <values>LEFT_START=Left start|LEFT_CENTER=Left center|LEFT_END=Left end|TOP_START=Top start|TOP_CENTER=Top center|TOP_END=Top end|RIGHT_START=Right start|RIGHT_CENTER=Right center|RIGHT_END=Right end|BOTTOM_START=Bottom start|BOTTOM_CENTER=Bottom center|BOTTOM_END=Bottom end</values>
+      <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
       <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
     </placement>
     <queryParameters>
@@ -137,7 +137,7 @@
       <disabled>0</disabled>
       <hint/>
       <name>queryParameters</name>
-      <number>10</number>
+      <number>7</number>
       <picker>1</picker>
       <prettyName>Query parameters</prettyName>
       <size>30</size>
@@ -154,7 +154,7 @@
       <displayType/>
       <hint/>
       <name>reflex</name>
-      <number>7</number>
+      <number>8</number>
       <prettyName>Reflex</prettyName>
       <unmodifiable>0</unmodifiable>
       <validationMessage/>
@@ -164,7 +164,7 @@
     <targetAction>
       <cache>0</cache>
       <customDisplay/>
-      <defaultValue>View</defaultValue>
+      <defaultValue>NOT_SET</defaultValue>
       <disabled>0</disabled>
       <displayType>select</displayType>
       <freeText/>
@@ -172,7 +172,7 @@
       <largeStorage>0</largeStorage>
       <multiSelect>0</multiSelect>
       <name>targetAction</name>
-      <number>9</number>
+      <number>6</number>
       <picker>1</picker>
       <prettyName>Target action</prettyName>
       <relationalStorage>0</relationalStorage>
@@ -183,7 +183,7 @@
       <unmodifiable>0</unmodifiable>
       <validationMessage/>
       <validationRegExp/>
-      <values>EDIT=Edit|VIEW=View|COMMENT=Comment|CREATE=Create</values>
+      <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
       <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
     </targetAction>
     <targetPage>
@@ -199,7 +199,7 @@
       <largeStorage>0</largeStorage>
       <multiSelect>0</multiSelect>
       <name>targetPage</name>
-      <number>8</number>
+      <number>5</number>
       <picker>1</picker>
       <prettyName>Target page</prettyName>
       <relationalStorage>0</relationalStorage>

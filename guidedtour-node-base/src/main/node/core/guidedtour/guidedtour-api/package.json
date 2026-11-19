@@ -37,9 +37,6 @@
     "typecheck": "tsc"
   },
   "types": "./dist/index.d.ts",
-  "dependencies": {
-    "driver.js": "catalog:"
-  },
   "peerDependencies": {
     "vue": "3.x"
   },

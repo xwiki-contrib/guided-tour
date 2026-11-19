@@ -22,25 +22,16 @@ import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
 import { driver } from "driver.js";
 import type { DefaultGuidedTourManager } from "./rest/DefaultGuidedTourManager";
 import type { TourStep, TourTask } from "@xwiki/contrib-guidedtour-api";
-import type { Config, DriveStep, Driver, PopoverDOM } from "driver.js";
+import type {
+  Alignment,
+  Config,
+  DriveStep,
+  Driver,
+  PopoverDOM,
+  Side,
+} from "driver.js";
 
 type StepDirection = "next" | "previous";
-
-/**
- * Resolve the driver translations from the XWiki localization webjar.
- *
- * The webjar is only available at runtime in the XWiki environment, so it is loaded dynamically.
- * @returns the resolved translations, keyed by the full translation key.
- */
-async function getTranslations(): Promise<Record<string, string>> {
-  const webjarModule = "xwiki-platform-localization-webjar";
-  const { resolver } = await import(/* @vite-ignore */ webjarModule);
-  const { translations } = await resolver.resolve({
-    prefix: "guidedtour.driver.",
-    keys: ["next", "previous", "skipAll", "loading", "error"],
-  });
-  return translations;
-}
 
 const util = {
   /**
@@ -48,6 +39,14 @@ const util = {
    * step). This flag is true when the page is being unloaded before a redirect (after a `beforeunload` event).
    */
   pageUnloadingFlag: false,
+  /**
+   * Shown while driver.js waits for the element of the step being driven to.
+   */
+  loadingNotification: undefined as { hide(): void } | undefined,
+  /**
+   * Aborting it removes the reflex listener of the active step (see `bindReflexEvents`).
+   */
+  reflexListenerController: undefined as AbortController | undefined,
   /**
    * Add listener so `pageUnloadingFlag` is set to true on `beforeunload` event trigger.
    */
@@ -60,6 +59,7 @@ const util = {
    * Do the necessary setup for rendering the `Skip All` link.
    * @param guidedTourManager - API
    * @param guidedTourTask - the task to make the button for
+   * @param translations - the translations used for the label of the button
    * @returns The `Skip All` element
    */
   makeSkipAllButton(
@@ -70,8 +70,12 @@ const util = {
     const customSkipAll = document.createElement("a");
     customSkipAll.classList.add("driver-xwiki-skip-all-button");
 
-    function onSkipAll() {
-      guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
+    /**
+     * Skip the task when the `Skip All` link is clicked.
+     */
+    async function onSkipAll() {
+      // Skipping the task also stops starting the next tasks of its tour automatically.
+      await guidedTourManager.skipTask(guidedTourTask);
     }
 
     customSkipAll.onclick = onSkipAll;
@@ -79,7 +83,7 @@ const util = {
     return customSkipAll;
   },
   /**
-   * For use in `waitForElement` below.
+   * For use in `findVisibleElement` below.
    *
    * @param element - The element to check
    * @returns true if the element is visible on the page, false otherwise.
@@ -93,58 +97,34 @@ const util = {
     }
   },
   /**
-   * Wait until an element is visible on the page.
-   *
-   * @param selector - css selector for the element to wait for (should be compatible with document.querySelector)
-   * @returns a promise which succeeds if the element is found within the time limit, and fails otherwise
+   * @param selector - css selector for the element to find (should be compatible with document.querySelector)
+   * @returns the element, if it exists and is visible on the page
    */
-  async waitForElement(
-    selector: string | undefined,
-  ): Promise<Element | undefined> {
-    if (!selector) {
-      // Return instantly if we're not supposed to wait for an element.
-      return;
-    }
-    return util.retryWithCallback(() => {
+  findVisibleElement(selector: string): Element | undefined {
+    try {
       const queriedElement = document.querySelector(selector);
       if (queriedElement && util.isElementVisible(queriedElement)) {
         return queriedElement;
       } else {
         return undefined;
       }
-    }, selector);
+    } catch (e) {
+      console.error(e);
+      return undefined;
+    }
   },
   /**
+   * Figure out if the given step should be considered a reflex step.
    *
-   * @param callbackFn - The function to run to test if our goal has been achieved. Should return truthy if achieved,
-   *     false otherwise (if we still need to wait)
-   * @param probeInterval - time (in ms) to wait after a failed check for the specified element. Decrease this argument
-   *                to get a quicker response once the specified element appears in the page.
-   * @param maxIntervals - how many probe intervals to wait until rejecting
-   * @param consoleName - For debugging, to display in console
-   * @returns the return value of callbackFn if successful, or a failed Promise if the timeout is reached.
+   * @param step - the TourStep to check
+   * @returns true if the step should be treated as a reflex step (advancing on click), false otherwise
    */
-  async retryWithCallback<T>(
-    callbackFn: () => T,
-    consoleName = "something",
-    probeInterval = 50,
-    maxIntervals = 60,
-  ): Promise<T> {
-    // TODO: Could maybe use MutationObservers here?
-    console.debug(`waiting for ${consoleName}...`);
-    for (let i = 0; i < maxIntervals; i += 1) {
-      const retValue = callbackFn();
-      if (retValue) {
-        return retValue;
-      }
-      console.debug(`(${i}/${maxIntervals}) waiting for ${consoleName}...`);
-      await new Promise((resolve) => setTimeout(resolve, probeInterval));
-    }
-    return Promise.reject(
-      `Failed to confirm ${consoleName} after waiting ${
-        probeInterval * maxIntervals
-      } (${probeInterval} * ${maxIntervals}) ms.`,
-    );
+  isReflex(step: TourStep): boolean {
+    return step.reflex && !!step.element;
+  },
+  hideLoadingNotification() {
+    util.loadingNotification?.hide();
+    util.loadingNotification = undefined;
   },
   /**
    * Decides which buttons should be visible in the modal, and updates the DOM.
@@ -158,13 +138,16 @@ const util = {
     guidedTourTask: TourTask,
     translations: Record<string, string>,
   ) {
-    if (step.reflex) {
+    if (util.isReflex(step)) {
       popDOM.footerButtons.removeChild(popDOM.nextButton);
       popDOM.footerButtons.removeChild(popDOM.previousButton);
     } else {
+      // Drop the driver.js button styles, so that the XWiki ones apply.
+      popDOM.nextButton.classList.remove("driver-popover-footer-btn");
+      popDOM.previousButton.classList.remove("driver-popover-footer-btn");
       popDOM.nextButton.classList.add("btn", "btn-sm", "btn-primary"); // TODO: Make this an <a> instead of
       // <button>
-      popDOM.previousButton.classList.add("btn", "btn-sm"); // TODO: Make this an <a> instead of <button>
+      popDOM.previousButton.classList.add("btn", "btn-sm", "btn-default"); // TODO: Make this an <a> instead of <button>
     }
     popDOM.footer.appendChild(
       util.makeSkipAllButton(guidedTourManager, guidedTourTask, translations),
@@ -178,6 +161,7 @@ const util = {
     const stepOffset = direction == "next" ? 1 : -1;
     return guidedTourTask.steps?.[currentStepActiveIndex + stepOffset];
   },
+  // eslint-disable-next-line max-statements
   async moveToAdjacentStep(
     guidedTourTask: TourTask,
     guidedTourManager: DefaultGuidedTourManager,
@@ -216,9 +200,16 @@ const util = {
       adjacentStepIndex.toString(),
     );
 
-    // The `.drive()` method is overridden in xwiki to wait for elements to appear in the page, thus making it async (as
-    // opposed to driver.js's default non-async method).
-    await guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
+    // If the adjacent step is on another page, redirect to it. Reflex actions never redirect, since they might navigate
+    // on their own (e.g. "Save and view").
+    if (
+      !guidedTourTask.steps![currentStepActiveIndex].reflex &&
+      guidedTourManager.redirectToExpectedPage(adjacentStep)
+    ) {
+      return;
+    }
+
+    guidedTourManager.activeDriverTask!.drive(adjacentStepIndex);
   },
 };
 
@@ -240,6 +231,24 @@ function XWikiDriverConfig(
     showProgress: true,
     showButtons: ["previous", "next", "close"],
     overlayOpacity: 0.3,
+    // How long (in ms) to wait for the step's element to be visible before giving up.
+    waitForElement: 3000,
+    onHighlightStarted: (element, step, options) => {
+      util.hideLoadingNotification();
+      const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
+      if (element === undefined && step.element !== undefined) {
+        // We didn't find the element we wanted. Don't proceed with the task.
+        console.error("Failed to find the element of the step:", xwikiStep);
+        new XWiki.widgets.Notification(
+          translations["guidedtour.driver.error"],
+          "error",
+        );
+        // Skip the task since we didn't find the step's targeted element in the page.
+        guidedTourManager.setTaskStatus(guidedTourTask, TourTaskStatus.SKIPPED);
+      } else {
+        bindReflexEvents(element, xwikiStep, guidedTourManager);
+      }
+    },
     onPopoverRender: (popDOM, options) => {
       // TODO: Need to handle this better
       const activeIndex = options.state.activeIndex ?? -1;
@@ -267,9 +276,14 @@ function XWikiDriverConfig(
         activeIndex.toString(),
       );
     },
-    onDestroyed: function (_element, _step, _options) {
+    /**
+     * Set the status of the task when it is closed: DONE if the user reached the end, otherwise keep its status and
+     * stop starting the next tasks of its tour automatically.
+     */
+    // eslint-disable-next-line max-statements
+    onDestroyed: async function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
-      // The state provided by driver.js is empty when this function is called.
+      util.hideLoadingNotification();
       if (guidedTourManager.activeTask === undefined) {
         // The task status was already set by an external command, so don't recompute the status here.
         return;
@@ -280,14 +294,40 @@ function XWikiDriverConfig(
               StorageManager.getTaskCurrentStepStorageKey(guidedTourTask),
             ) ?? "-1",
           ) + 1;
-        const status =
-          currentStepIndex >= guidedTourTask.steps!.length
-            ? TourTaskStatus.DONE
-            : TourTaskStatus.SKIPPED;
-        guidedTourManager.setTaskStatus(guidedTourTask, status);
+        try {
+          if (currentStepIndex >= guidedTourTask.steps!.length) {
+            await guidedTourManager.setTaskStatus(
+              guidedTourTask,
+              TourTaskStatus.DONE,
+            );
+          } else {
+            // The user closed the task before the end (close button or click outside): keep its status, but don't
+            // start the next tasks of its tour automatically anymore.
+            await guidedTourManager.disableCallToAction(guidedTourTask.tourId!);
+            await guidedTourManager.setTaskStatus(
+              guidedTourTask,
+              guidedTourTask.status,
+            );
+          }
+        } catch (e) {
+          console.error(e);
+        }
       }
     },
-    onNextClick: async () => {
+    onNextClick: async (element, _step, options) => {
+      const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
+      if (
+        util.isReflex(xwikiStep) &&
+        element instanceof HTMLElement &&
+        element.id !== "driver-dummy-element"
+      ) {
+        // Click only until the reflex action is done (or the step is changed): driver.js keeps the step active while it
+        // waits for the element of the step being driven to, so the arrow key can be pressed again in the meantime.
+        if (!util.reflexListenerController?.signal.aborted) {
+          element.click();
+        }
+        return;
+      }
       await util.moveToAdjacentStep(guidedTourTask, guidedTourManager, "next");
     },
     onPrevClick: async () => {
@@ -304,11 +344,23 @@ function convertToDriverStep(
   step: TourStep,
   guidedTourTask: TourTask,
 ): DriveStep {
+  const selector =
+    step.element?.trim().length === 0 ? undefined : step.element?.trim();
+  // The XWiki placement is `<SIDE>_<ALIGNMENT>` (e.g. `BOTTOM_START`), which driver.js takes separately.
+  const [side, align] = (step.placement?.toLowerCase().split("_") ?? []) as [
+    Side?,
+    Alignment?,
+  ];
   return {
-    element: step.element,
+    // driver.js waits (see `waitForElement`) while this returns nothing, so hidden elements are waited for too.
+    element: selector
+      ? ((() => util.findVisibleElement(selector)) as () => Element)
+      : undefined,
     popover: {
       title: step.title ?? guidedTourTask.title,
       description: step.content,
+      side,
+      align,
     },
   };
 }
@@ -316,13 +368,13 @@ function convertToDriverStep(
 async function getDriverConfigForSteps(
   guidedTourTask: TourTask,
   guidedTourManager: DefaultGuidedTourManager,
-): Promise<{ config: Config; translations: Record<string, string> }> {
+  translations: Record<string, string>,
+): Promise<Config> {
   if (!guidedTourTask.steps) {
     console.error("Task has no steps:", guidedTourTask);
     throw "Task has no steps";
   }
   console.log(guidedTourTask.steps);
-  const translations = await getTranslations();
   const config = XWikiDriverConfig(
     guidedTourManager,
     guidedTourTask,
@@ -331,85 +383,32 @@ async function getDriverConfigForSteps(
   config.steps = guidedTourTask.steps!.map((step) =>
     convertToDriverStep(step, guidedTourTask),
   );
-  return { config, translations };
+  return config;
 }
 
 function wrapTask(
   guidedTourTask: Driver,
-  guidedTourManager: DefaultGuidedTourManager,
   translations: Record<string, string>,
 ): Driver {
-  function hasActiveStepIndexChanged(
-    previousActiveStepIndex: number | undefined,
-    currentStepActiveIndex: number | undefined,
-  ) {
-    return (
-      previousActiveStepIndex !== undefined &&
-      currentStepActiveIndex != previousActiveStepIndex
-    );
-  }
   const _drive = guidedTourTask.drive;
-  // eslint-disable-next-line max-statements
-  guidedTourTask.drive = async function (stepIndex: number = 0) {
-    const loadingNotification = new XWiki.widgets.Notification(
+  guidedTourTask.drive = function (stepIndex: number = 0) {
+    // The active step changed: stop listening for its reflex action, even while driver.js waits for the element of the
+    // step being driven to (it keeps the old active step in the meantime).
+    util.reflexListenerController?.abort();
+    util.hideLoadingNotification();
+    util.loadingNotification = new XWiki.widgets.Notification(
       translations["guidedtour.driver.loading"],
       "inprogress",
     );
-    const currentStepActiveIndex = guidedTourTask.getActiveIndex();
-    try {
-      const targetedElement = await util.waitForElement(
-        guidedTourManager.activeTask!.steps![stepIndex].element,
-      );
-      if (
-        hasActiveStepIndexChanged(
-          currentStepActiveIndex,
-          guidedTourTask.getActiveIndex(),
-        )
-      ) {
-        // The active step moved while waiting for the element, so don't do anything.
-        loadingNotification.hide();
-        return;
-      }
-      bindReflexEvents(
-        targetedElement,
-        guidedTourManager.activeTask!.steps![stepIndex],
-        guidedTourManager,
-      );
-      StorageManager.setStorageKey(
-        StorageManager.getTaskCurrentStepStorageKey(
-          guidedTourManager.activeTask!,
-        ),
-        stepIndex.toString(),
-      );
-      _drive(stepIndex);
-      loadingNotification.hide();
-      return;
-    } catch (e) {
-      if (
-        hasActiveStepIndexChanged(
-          currentStepActiveIndex,
-          guidedTourTask.getActiveIndex(),
-        )
-      ) {
-        // The active step moved while waiting for the element, so don't do anything.
-        loadingNotification.hide();
-        return;
-      }
-      // We didn't find the element we wanted. Don't proceed with the task.
-      console.error(e);
-      loadingNotification.replace(
-        new XWiki.widgets.Notification(
-          translations["guidedtour.driver.error"],
-          "error",
-        ),
-      );
-      // Skip the task since we didn't find the step's targeted element in the page.
-      guidedTourManager.setTaskStatus(
-        guidedTourManager.activeTask!,
-        TourTaskStatus.SKIPPED,
-      );
-    }
-  }.bind(guidedTourTask);
+    _drive(stepIndex);
+  };
+  const _destroy = guidedTourTask.destroy;
+  guidedTourTask.destroy = function () {
+    // driver.js doesn't call `onDestroyed()` if it was still waiting for the first step's element.
+    util.hideLoadingNotification();
+    util.reflexListenerController?.abort();
+    _destroy();
+  };
   return guidedTourTask;
 }
 
@@ -423,6 +422,7 @@ export { XWikiDriverConfig, driver, getDriverConfigForSteps, wrapTask };
  * @param guidedTourManager - The guidedTourManager Api instance.
  * @param callbackFn - A callback to execute once the element is interacted with.
  */
+// eslint-disable-next-line max-statements
 function bindReflexEvents(
   element: Element | undefined,
   step: TourStep,
@@ -441,15 +441,20 @@ function bindReflexEvents(
   },
 ) {
   console.debug("Doing reflex bind");
-  if (!step.reflex || element === undefined) {
+  // Only the active step listens for its reflex action: stop listening on the element of the previous step, in case
+  // it was left without triggering the reflex (e.g. by moving back to the previous step).
+  util.reflexListenerController?.abort();
+  if (!util.isReflex(step)) {
     if (step.reflex && element === undefined) {
       console.warn("WARNING: reflex step with empty element:", step);
     }
     return;
   }
+  const controller = new AbortController();
+  util.reflexListenerController = controller;
   const triggerCallback = () => {
     console.debug("Removing reflex listener on ", element);
-    element.removeEventListener("click", callback);
+    controller.abort();
     callbackFn();
   };
   const callback = (event: Event) => {
@@ -465,9 +470,8 @@ function bindReflexEvents(
       new Promise((resolve) => setTimeout(resolve, msTimeout))
         .then(() => {
           console.debug("sloip awoked");
-          if (
-            step.order != guidedTourManager.activeDriverTask?.getActiveIndex()
-          ) {
+          // Don't proceed if the step was changed in the meantime, even if it's active again.
+          if (!controller.signal.aborted) {
             triggerCallback();
           }
           return;
@@ -478,7 +482,7 @@ function bindReflexEvents(
     }
   };
   console.debug("Adding reflex listener on ", element);
-  element.addEventListener("click", callback);
+  element!.addEventListener("click", callback, { signal: controller.signal });
 }
 
 // FIXME: From old TourJS.xml

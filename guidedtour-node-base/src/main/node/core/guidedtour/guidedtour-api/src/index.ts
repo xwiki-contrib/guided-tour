@@ -19,20 +19,24 @@
  */
 
 import { TourTaskStatus } from "./tourTaskStatus";
+import { WidgetState } from "./userTourStatus";
 import type { GuidedTourManager } from "./rest/GuidedTourManager";
 import type { StepManagerApi } from "./rest/StepManagerApi";
 import type { TaskManagerApi } from "./rest/TaskManagerApi";
 import type { TourManagerApi } from "./rest/TourManagerApi";
 import type { TourStep, TourTask, TourTour } from "./tourData";
+import type { TourProgress, UserTourStatus } from "./userTourStatus";
 
 export type {
   GuidedTourManager,
   StepManagerApi,
   TaskManagerApi,
   TourManagerApi,
+  TourProgress,
   TourStep,
   TourTask,
   TourTour,
+  UserTourStatus,
 };
 
-export { TourTaskStatus };
+export { TourTaskStatus, WidgetState };

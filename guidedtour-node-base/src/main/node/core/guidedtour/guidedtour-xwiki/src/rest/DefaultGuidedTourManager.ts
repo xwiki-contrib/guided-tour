@@ -21,6 +21,7 @@
 import { DefaultStepManagerApi } from "./DefaultStepManagerApi";
 import { DefaultTaskManagerApi } from "./DefaultTaskManagerApi";
 import { DefaultTourManagerApi } from "./DefaultTourManagerApi";
+import { DefaultUserStatusApi } from "./DefaultUserStatusApi";
 import { GuidedTourRestClient } from "./GuidedTourRestClient";
 import { StorageManager } from "../StorageManager";
 import { driver, getDriverConfigForSteps, wrapTask } from "../driverjsMain";
@@ -29,11 +30,21 @@ import { DocumentReference } from "@xwiki/platform-model-api";
 import type { TourStore } from "./TourStore";
 import type {
   GuidedTourManager,
+  TourProgress,
   TourStep,
   TourTask,
   TourTour,
+  UserTourStatus,
+  WidgetState,
 } from "@xwiki/contrib-guidedtour-api";
 import type { Driver } from "driver.js";
+
+/**
+ * Create the progress of a tour that the user never started.
+ */
+function createTourProgress(): TourProgress {
+  return { callToAction: true, tasksStatus: {} };
+}
 
 /**
  * Facade that implements {@link GuidedTourManager} by delegating to the three
@@ -46,6 +57,12 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   private readonly defaultTourManagerApi: DefaultTourManagerApi;
   private readonly defaultTaskManagerApi: DefaultTaskManagerApi;
   private readonly defaultStepManagerApi: DefaultStepManagerApi;
+  private readonly userStatusApi: DefaultUserStatusApi;
+
+  /**
+   * The progress and preferences of the current user, loaded once per page.
+   */
+  private userStatus?: Promise<UserTourStatus>;
 
   /**
    * The currently active driver.js instance, if a task is in progress.
@@ -69,6 +86,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     // @ts-expect-error xwikiMeta is from a JavaScript file, it is expected to not have types.
     private readonly xm,
     sharedStore: TourStore,
+    private readonly translations: Record<string, string>,
   ) {
     this.sharedStore = sharedStore;
     const restClient = new GuidedTourRestClient();
@@ -84,31 +102,279 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       restClient,
       sharedStore,
     );
+    this.userStatusApi = new DefaultUserStatusApi(restClient, xm.userReference);
   }
 
-  async saveUserTaskStatuses(guidedTourManager: DefaultGuidedTourManager) {
-    // Get a map of {"task_tour": task.status}
-    const taskStatuses = Object.fromEntries(
-      (
-        await Promise.all(
-          (await guidedTourManager.getTours()).map(async (tour) =>
-            (await guidedTourManager.getTasks(tour.id)).map((task) => [
-              StorageManager.getStorageKeyPrefix(task),
-              task.status,
-            ]),
-          ),
+  /**
+   * Get the progress and preferences of the current user, loading them on the first call.
+   */
+  private getUserStatus(): Promise<UserTourStatus> {
+    this.userStatus ??= this.loadUserStatus();
+    return this.userStatus;
+  }
+
+  /**
+   * Load the progress and preferences of the current user, and share the progress with the tasks cache.
+   */
+  private async loadUserStatus(): Promise<UserTourStatus> {
+    const status = await this.userStatusApi.load();
+    this.sharedStore.setUserToursStatus(status.toursStatus);
+    return status;
+  }
+
+  /**
+   * Save the user status, with the current status of the tasks loaded on this page.
+   */
+  private async saveUserStatus() {
+    const userStatus = await this.getUserStatus();
+    // Update the progress of the tours loaded on this page. The tours that are not loaded here (e.g. tours from other
+    // wikis) keep their stored progress. The loop doesn't await, so that no other change can interleave with it.
+    for (const tour of this.sharedStore.cache.tours) {
+      if (tour.tasksList === undefined) {
+        continue;
+      }
+      userStatus.toursStatus[tour.id] ??= createTourProgress();
+      const progress = userStatus.toursStatus[tour.id];
+      // Replace the stored statuses of the tour instead of merging them, so that we always keep only the existing
+      // tasks of the tour, and not any tasks that were removed from the tour.
+      progress.tasksStatus = Object.fromEntries(
+        tour.tasksList.map((task) => [task.id, task.status]),
+      );
+      if (
+        progress.callToAction &&
+        tour.tasksList.every((task) => task.status === TourTaskStatus.TODO)
+      ) {
+        // Nothing to remember for this tour, it is the same as a tour that was never started.
+        delete userStatus.toursStatus[tour.id];
+      }
+    }
+    await this.userStatusApi.save(userStatus);
+  }
+
+  /**
+   * Set whether the next task of a tour should be started automatically when a task of the tour is finished.
+   * @param tourId - The id of the tour.
+   * @param callToAction - Whether to start the next task automatically.
+   */
+  private async setCallToAction(
+    tourId: string,
+    callToAction: boolean,
+  ): Promise<void> {
+    const userStatus = await this.getUserStatus();
+    // Update the progress right after getting it, so that a concurrent save can't replace it in the meantime.
+    userStatus.toursStatus[tourId] ??= createTourProgress();
+    userStatus.toursStatus[tourId].callToAction = callToAction;
+  }
+
+  /**
+   * Whether the next task of a tour should be started automatically when a task of the tour is finished.
+   */
+  private async isCallToActionEnabled(tourId: string): Promise<boolean> {
+    return (
+      (await this.getUserStatus()).toursStatus[tourId]?.callToAction !== false
+    );
+  }
+
+  /**
+   * Get the state of the widget, as last saved by the current user.
+   * @since 0.2
+   */
+  async getWidgetState(): Promise<WidgetState> {
+    return (await this.getUserStatus()).widgetState;
+  }
+
+  /**
+   * Save the state of the widget in the current user's status, so that it is restored on the next page load.
+   * @param widgetState - The new state of the widget.
+   * @since 0.2
+   */
+  async setWidgetState(widgetState: WidgetState): Promise<void> {
+    const userStatus = await this.getUserStatus();
+    userStatus.widgetState = widgetState;
+    await this.userStatusApi.save(userStatus);
+  }
+
+  /**
+   * Stop starting the next tasks of a tour automatically, because the user closed or skipped one of its tasks.
+   * The change is saved along with the status of the task, by {@link setTaskStatus}.
+   * @param tourId - The id of the tour.
+   * @since 0.2
+   */
+  async disableCallToAction(tourId: string): Promise<void> {
+    await this.setCallToAction(tourId, false);
+  }
+
+  /**
+   * Skip a task, and stop starting the next tasks of its tour automatically. The new status is saved at once.
+   * @param task - The task to skip.
+   * @since 0.2
+   */
+  async skipTask(task: TourTask): Promise<void> {
+    await this.disableCallToAction(task.tourId!);
+    await this.setTaskStatus(task, TourTaskStatus.SKIPPED);
+  }
+
+  /**
+   * Reset all the tasks of a tour to TODO, and start the next task automatically again when a task is finished.
+   * The new status is saved at once, for all the tasks.
+   * @param tourId - The id of the tour to reset.
+   * @since 0.2
+   */
+  async resetTour(tourId: string): Promise<void> {
+    // Resetting an entire tour starts its next tasks automatically again.
+    await this.setCallToAction(tourId, true);
+    await this.setTourTasksStatus(tourId, TourTaskStatus.TODO, () => true);
+  }
+
+  /**
+   * Skip all the TODO tasks of a tour, keeping the ones already done or skipped. The new status is saved at once,
+   * for all the tasks.
+   * @param tourId - The id of the tour to skip.
+   * @since 0.2
+   */
+  async skipTour(tourId: string): Promise<void> {
+    // Only skip the tasks left to do, keep the ones already done or skipped.
+    await this.setTourTasksStatus(
+      tourId,
+      TourTaskStatus.SKIPPED,
+      (task) => task.status === TourTaskStatus.TODO,
+    );
+  }
+
+  /**
+   * Set the status of the tasks of a tour, then save the user status with a single request.
+   * @param tourId - The id of the tour.
+   * @param status - The new status of the tasks.
+   * @param filter - Selects the tasks of the tour whose status should change.
+   */
+  private async setTourTasksStatus(
+    tourId: string,
+    status: TourTaskStatus,
+    filter: (task: TourTask) => boolean,
+  ): Promise<void> {
+    const tasks = (await this.getTasks(tourId)).filter(filter);
+    for (const task of tasks) {
+      task.status = status;
+    }
+    const tour = await this.defaultTourManagerApi.getTour(tourId);
+    if (tour !== undefined) {
+      this.defaultTourManagerApi.computeToursStatus([tour]);
+    }
+    if (this.activeTask !== undefined && tasks.includes(this.activeTask)) {
+      this.destroyActiveTask();
+    }
+    await this.saveUserStatus();
+  }
+
+  /**
+   * Check if the current page matches the one expected by the step, and redirect to it otherwise.
+   * @param adjacentStep - The step whose expected page to check.
+   * @returns true if the current page is not the expected one.
+   */
+  // eslint-disable-next-line max-statements
+  redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean {
+    if (adjacentStep === undefined) {
+      return false;
+    }
+    const targetDocumentReference = adjacentStep?.targetPage
+      ? XWiki.Model.resolve(
+          adjacentStep.targetPage,
+          XWiki.EntityType.DOCUMENT,
+          XWiki.currentDocument.documentReference,
         )
-      ).flat(),
+      : XWiki.currentDocument.documentReference;
+    const redirectURL = this.resolveStepRedirectURL(
+      adjacentStep,
+      targetDocumentReference,
     );
-    // For guest users, set the session storage for persistence.
-    StorageManager.setStorageKey(
-      StorageManager.getUserTaskStatusesStorageKey(this.xm.userReference),
-      JSON.stringify(taskStatuses),
-    );
-    // TODO: For logged-in users, also save this in their user profile (GUIDEDTOUR-2).
+    if (
+      this.isOnExpectedPage(adjacentStep, redirectURL, targetDocumentReference)
+    ) {
+      return false;
+    }
+    const currentURL = new URL(window.location.href);
+    window.location.href = redirectURL.href;
+    // Set the URI fragment, so the comparison below doesn't take it into account.
+    currentURL.hash = redirectURL.hash;
+    if (redirectURL.hash != "" && currentURL.href == redirectURL.href) {
+      // Changing only the fragment doesn't reload the page, but the callers expect a reload to resume the task.
+      // Reloading in any other case would cancel the navigation started above.
+      window.location.reload();
+    }
+    return true;
   }
 
+  /**
+   * Check if the current page matches the page, action, query parameters and fragment expected by the step.
+   * @param step - The step whose expected page to check.
+   * @param expectedURL - The url to check against.
+   * @param targetDocumentReference - The reference of the page expected by the step.
+   * @returns true if the current page is the expected one.
+   */
+  private isOnExpectedPage(
+    step: TourStep,
+    expectedURL: URL,
+    // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
+    targetDocumentReference,
+  ): boolean {
+    // Check that every expected query parameter is present, with the expected value, in the current URL.
+    const currentPageQueryParams = new URLSearchParams(window.location.search);
+    let hasExpectedQueryParams = true;
+    expectedURL.searchParams.forEach((value, name) => {
+      hasExpectedQueryParams &&= currentPageQueryParams
+        .getAll(name)
+        .includes(value);
+    });
+    // Check the expected fragment, if any, against the current one.
+    const hasExpectedFragment =
+      !expectedURL.hash || expectedURL.hash == window.location.hash;
+    let pageAction = XWiki.contextaction;
+    if (XWiki.contextaction == "view" && window.location.hash == "#edit") {
+      // Inplace WYSIWYG leads to an URL like `/view/page#edit` instead of `/edit/page`, so we need to include it as
+      // part of the EDIT pageAction.
+      pageAction = "edit";
+    }
+    return (
+      XWiki.Model.serialize(targetDocumentReference) ==
+        XWiki.Model.serialize(XWiki.currentDocument.documentReference) &&
+      (!step.targetAction || pageAction == step.targetAction.toLowerCase()) &&
+      hasExpectedQueryParams &&
+      hasExpectedFragment
+    );
+  }
+
+  /**
+   * Resolve the URL to redirect to in order to reach the page expected by the step.
+   * @param step - The step whose redirect URL to resolve.
+   * @param targetDocumentReference - The reference of the page expected by the step.
+   * @returns the redirect URL.
+   */
+  private resolveStepRedirectURL(
+    step: TourStep,
+    // @ts-expect-error DocumentReference is from a JavaScript file, it is expected to not have types.
+    targetDocumentReference,
+  ): URL {
+    const url = new URL(
+      new XWiki.Document(targetDocumentReference).getURL(
+        step.targetAction?.toLowerCase(),
+      ) +
+        "?" +
+        (step.queryParameters ?? "").replace(/^\?/, ""),
+      window.location.href,
+    );
+    if (!url.search) {
+      // Drop the dangling "?" left by empty query parameters, so the URL can be compared to the current one.
+      url.search = "";
+    }
+    return url;
+  }
+
+  /**
+   * Get all the tours, with the status of their tasks set from the progress of the current user.
+   */
   async getTours(): Promise<TourTour[]> {
+    // The user status is needed to set the status of the tasks.
+    await this.getUserStatus();
     const tours = await this.defaultTourManagerApi.getTours();
 
     this.defaultTourManagerApi.computeToursStatus(tours ?? []);
@@ -125,18 +391,6 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
   async updateTour(tourId: string, tour: TourTour): Promise<void> {
     await this.defaultTourManagerApi.updateTour(tourId, tour);
-  }
-
-  /**
-   * Persist a task status to the server.
-   * TODO: Implement server synchronisation (GUIDEDTOUR-2).
-   */
-  async saveTaskStatus(
-    tourId: string,
-    taskId: string,
-    status: TourTaskStatus,
-  ): Promise<void> {
-    console.log(tourId, taskId, status);
   }
 
   /**
@@ -204,7 +458,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
   /**
    * Get the sandbox space document reference name.
-   * TODO: Make this configurable via Admin Settings (GUIDEDTOUR-2).
+   * TODO: Make this configurable via Admin Settings.
    */
   getSandboxSpace(): Promise<string> {
     return Promise.resolve(new DocumentReference("Sandbox.WebHome").name);
@@ -212,7 +466,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
 
   /**
    * Get useful links to display in the widget.
-   * TODO: Get these from the Admin section (GUIDEDTOUR-2).
+   * TODO: Get these from the Admin section.
    */
   getUsefulLinks(): Promise<string[]> {
     const usefulLinks: string[] = [
@@ -229,6 +483,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    * @param task - The task to start.
    * @param remember - Whether to resume from a saved step index.
    */
+  // eslint-disable-next-line max-statements
   async startTask(task: TourTask, remember = true): Promise<void> {
     // Fetch or get the cached steps.
     task.steps ??= await this.getSteps(task.tourId!, task.id);
@@ -239,7 +494,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
           ) ?? "0",
         )
       : 0;
-    const { config, translations } = await getDriverConfigForSteps(task, this);
+    const config = await getDriverConfigForSteps(task, this, this.translations);
     const driverTour = driver(config);
     StorageManager.setStorageKey(
       StorageManager.getActiveTaskStorageKey(),
@@ -249,9 +504,22 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
       StorageManager.getTaskStepStorageStorageKey(task),
       JSON.stringify(task.steps!),
     );
+    // Make sure the right storage parameters are set, in case we'll redirect.
+    StorageManager.setStorageKey(
+      StorageManager.getTaskCurrentStepStorageKey(task),
+      stepIndex.toString(),
+    );
+
+    // Only redirect when the task is started fresh, not when it's resumed on page load (`remember`). This avoids
+    // redirect loops, and doesn't interrupt reflex actions that navigate on their own (e.g. "Save and view").
+    if (!remember && this.redirectToExpectedPage(task.steps![stepIndex])) {
+      // Return before setting `activeTask`, since it only lives in memory and would be lost on navigation anyway.
+      // The new task is persisted through the storage keys set above, and `initExistingTask()` resumes it on page load.
+      return;
+    }
 
     this.activeTask = task;
-    this.activeDriverTask = wrapTask(driverTour, this, translations);
+    this.activeDriverTask = wrapTask(driverTour, this.translations);
     this.activeDriverTask.drive(stepIndex);
   }
 
@@ -263,9 +531,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
   }
 
   /**
-   * Check session storage for an in-progress task and resume it.
+   * Check session storage for an in-progress task and resume it. Shows a notification if an error was encountered.
    * Called on page load to recover tours that span multiple pages.
    */
+  // eslint-disable-next-line max-statements
   async initExistingTask() {
     // FIXME: This should be moved somewhere else, but idk where. `GuidedTourWidget.vue` ? idk
     const existingActiveTask = StorageManager.getStorageKey(
@@ -276,6 +545,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
         StorageManager.parseStorageKeyPrefix(existingActiveTask);
       if (parsedIds === undefined) {
         console.error("No good task parsing value:", parsedIds);
+        new XWiki.widgets.Notification(
+          this.translations["guidedtour.driver.error.initExistingTask"],
+          "error",
+        );
       } else {
         // Populate the cache by fetching all tours first.
         await this.getTours();
@@ -290,6 +563,10 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
             "Tried to get task for ",
             parsedIds,
             ", it didn't work.",
+          );
+          new XWiki.widgets.Notification(
+            this.translations["guidedtour.driver.error.initExistingTask"],
+            "error",
           );
         }
       }
@@ -307,12 +584,33 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     this.defaultTourManagerApi.computeToursStatus(
       Array.of((await this.defaultTourManagerApi.getTour(task.tourId!))!),
     );
-    if (task === this.activeTask) {
+    const wasActive = task === this.activeTask;
+    if (wasActive) {
       // Since we're setting the task status, it means we're done with all steps. So destroy the active task.
       this.destroyActiveTask();
     }
     // Sync with storage.
-    await this.saveUserTaskStatuses(this);
+    await this.saveUserStatus();
+    if (
+      wasActive &&
+      status === TourTaskStatus.DONE &&
+      (await this.isCallToActionEnabled(task.tourId!))
+    ) {
+      await this.startNextTask(task);
+    }
+  }
+
+  /**
+   * Start the next task to do in the tour of the given task, if there is one left. Never moves to another tour.
+   * @param task - The task that was just finished.
+   */
+  private async startNextTask(task: TourTask): Promise<void> {
+    const nextTask = (await this.getTasks(task.tourId!))
+      .filter((t) => t.active && t.status === TourTaskStatus.TODO)
+      .sort((a, b) => a.order - b.order)[0];
+    if (nextTask !== undefined) {
+      await this.startTask(nextTask, false);
+    }
   }
 
   /**

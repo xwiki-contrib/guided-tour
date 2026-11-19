@@ -226,6 +226,16 @@ class TasksManagerTest
     }
 
     @Test
+    void createTaskNoId()
+    {
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            this.tasksManager.createTask(TOUR_ID, new TaskDTO());
+        });
+
+        assertEquals("Given DTO is missing both id and title, cannot create a task.", exception.getMessage());
+    }
+
+    @Test
     void getTask() throws Exception
     {
         when(this.queryUtil.executeQuery(GET_TASK_QUERY,

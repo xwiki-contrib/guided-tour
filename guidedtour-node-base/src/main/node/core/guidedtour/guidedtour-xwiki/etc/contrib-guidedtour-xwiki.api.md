@@ -6,14 +6,16 @@
 
 import { Driver } from 'driver.js';
 import { GuidedTourManager } from '@xwiki/contrib-guidedtour-api';
+import { TourProgress } from '@xwiki/contrib-guidedtour-api';
 import { TourStep } from '@xwiki/contrib-guidedtour-api';
 import { TourTask } from '@xwiki/contrib-guidedtour-api';
 import { TourTaskStatus } from '@xwiki/contrib-guidedtour-api';
 import { TourTour } from '@xwiki/contrib-guidedtour-api';
+import { WidgetState } from '@xwiki/contrib-guidedtour-api';
 
 // @beta
 export class DefaultGuidedTourManager implements GuidedTourManager {
-    constructor(xm: any, sharedStore: TourStore);
+    constructor(xm: any, sharedStore: TourStore, translations: Record<string, string>);
     activeDriverTask?: Driver;
     activeTask?: TourTask;
     createStep(tourId: string, taskId: string, stepData: TourStep): Promise<void>;
@@ -26,23 +28,26 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
     deleteTask(tourId: string, taskId: string): Promise<void>;
     // (undocumented)
     deleteTour(tourId: string): Promise<void>;
+    disableCallToAction(tourId: string): Promise<void>;
     getSandboxSpace(): Promise<string>;
     getSteps(tourId: string, taskId: string): Promise<TourStep[]>;
     // (undocumented)
     getTask(tourId: string, taskId: string): Promise<TourTask | undefined>;
     // (undocumented)
     getTasks(tourId: string): Promise<TourTask[]>;
-    // (undocumented)
     getTours(): Promise<TourTour[]>;
     getUsefulLinks(): Promise<string[]>;
+    getWidgetState(): Promise<WidgetState>;
     initExistingTask(): Promise<void>;
-    saveTaskStatus(tourId: string, taskId: string, status: TourTaskStatus): Promise<void>;
-    // (undocumented)
-    saveUserTaskStatuses(guidedTourManager: DefaultGuidedTourManager): Promise<void>;
+    redirectToExpectedPage(adjacentStep: TourStep | undefined): boolean;
+    resetTour(tourId: string): Promise<void>;
     setTaskStatus(task: TourTask, status: TourTaskStatus): Promise<void>;
     setupStep(step: TourStep): void;
+    setWidgetState(widgetState: WidgetState): Promise<void>;
     // Warning: (ae-forgotten-export) The symbol "TourStore" needs to be exported by the entry point index.d.ts
     sharedStore: TourStore;
+    skipTask(task: TourTask): Promise<void>;
+    skipTour(tourId: string): Promise<void>;
     startTask(task: TourTask, remember?: boolean): Promise<void>;
     updateStep(tourId: string, taskId: string, stepId: number, stepData: TourStep): Promise<void>;
     // (undocumented)

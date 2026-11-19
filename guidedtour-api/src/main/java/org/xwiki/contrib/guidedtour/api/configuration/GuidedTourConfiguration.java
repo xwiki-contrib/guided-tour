@@ -17,25 +17,35 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
- {
-  // We want all suggestions right away
-  "prHourlyLimit" : 0,
-  "prConcurrentLimit" : 0,
+package org.xwiki.contrib.guidedtour.api.configuration;
 
-  // Skip Eclipse M2E special setup "dependency"
-  "ignoreDeps": ["org.eclipse.m2e:lifecycle-mapping"],
+import java.util.List;
 
-  "packageRules": [
-    // Add the URL to the XWiki Nexus public proxy for non-Central Maven dependencies
-    {
-      "matchDatasources": ["maven"],
-      "registryUrls": ["https://repo1.maven.org/maven2/", "https://nexus.xwiki.org/nexus/content/repositories/public/"]
-    },
+import org.xwiki.component.annotation.Role;
+import org.xwiki.model.reference.DocumentReference;
+import org.xwiki.stability.Unstable;
 
-    // There is always a more recent version of contrib parent or commons/rendering/platform and we don't want to upgrade just for that
-    {
-      "matchPackagePrefixes": ["org.xwiki.commons:", "org.xwiki.rendering:", "org.xwiki.platform:", "org.xwiki.enterprise:", "org.xwiki.contrib:parent-"],
-      "enabled": false
-    }
-  ]
+/**
+ * Guided Tour configurations.
+ *
+ * @version $Id$
+ * @since 1.0
+ */
+@Role
+@Unstable
+public interface GuidedTourConfiguration
+{
+    /**
+     * Get the default space where actions are performed.
+     *
+     * @return {@link DocumentReference} representing where actions are performed on the tour
+     */
+    DocumentReference getDefaultSpace();
+
+    /**
+     * Get the links displayed in the guided tour widget.
+     *
+     * @return {@link List} with the links displayed in the guided tour widget.
+     */
+    List<String> getUsefulLinks();
 }

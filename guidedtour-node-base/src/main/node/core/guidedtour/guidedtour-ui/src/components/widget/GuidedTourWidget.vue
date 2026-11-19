@@ -52,7 +52,7 @@
           <GuidedTourWidgetTour
             v-for="tour in state.tours"
             :key="tour.id"
-            :tour="ref(tour)"
+            :tour="tour"
             @toggleCollapseTour="
               (tour: TourTour) => {
                 tour.isCollapsed = !tour.isCollapsed;
@@ -90,40 +90,67 @@
 
 <script setup lang="ts">
 //import type { I18n } from "vue-i18n";
-// All the logic should live here (TODO: Maybe move most of it to a .ts file)
-// FIXME: This should be injected from somewhere else, but I have no idea from where.
 import GuidedTourWidgetHeader from "./GuidedTourWidgetHeader.vue";
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTour from "./GuidedTourWidgetTour.vue";
 import GuidedTourWidgetUsefulLink from "./GuidedTourWidgetUsefulLink.vue";
-import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { computed, onMounted, provide, reactive, ref } from "vue";
+import { TourTaskStatus, WidgetState } from "@xwiki/contrib-guidedtour-api";
+import { computed, onMounted, provide, reactive } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
+import type { Reactive } from "vue";
 
 const { guidedTourManager } = defineProps<{
   guidedTourManager: GuidedTourManager;
 }>();
 
-provide<GuidedTourManager>("DefaultGuidedTourManager", guidedTourManager!);
+provide<GuidedTourManager>("GuidedTourManager", guidedTourManager!);
 
 const state = reactive({
-  guidedTourManager: guidedTourManager,
   isWidgetCollapsed: true,
-  tours: [] as TourTour[],
+  tours: [] as Reactive<TourTour>[],
   usefulLinks: [] as string[],
   isWidgetShown: true,
   toursLoadError: "",
   waitingLoadAsync: 0,
 });
-function onCloseGuidedTourWidget(buttonClicked: boolean) {
+// Whether the user toggled the widget before the saved widget state was loaded, in which case the saved state
+// shouldn't override the user's choice. Only read once, when the saved state is loaded.
+let toggledBeforeLoad = false;
+/**
+ * Collapse or expand the widget, and save its new state. Hide the widget instead if it is already collapsed and the
+ * close button was clicked.
+ * @param buttonClicked - Whether the close button was clicked.
+ */
+async function onCloseGuidedTourWidget(buttonClicked: boolean) {
   if (state.isWidgetCollapsed && buttonClicked) {
     state.isWidgetShown = false;
   } else {
     state.isWidgetCollapsed = !state.isWidgetCollapsed;
+    toggledBeforeLoad = true;
+    try {
+      await guidedTourManager.setWidgetState(
+        state.isWidgetCollapsed ? WidgetState.COLLAPSED : WidgetState.OPEN,
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+/**
+ * Restore the widget state saved by the user, unless they already toggled the widget.
+ */
+async function loadWidgetState() {
+  try {
+    const widgetState = await guidedTourManager.getWidgetState();
+    if (!toggledBeforeLoad) {
+      state.isWidgetCollapsed = widgetState === WidgetState.COLLAPSED;
+    }
+  } catch (e) {
+    console.error(e);
   }
 }
 onMounted(() => {
@@ -132,8 +159,10 @@ onMounted(() => {
   guidedTourManager
     .getTours()
     .then((tours) => {
-      // In order for the progress to be reactive, we need to preserve the original tours array. Thus, the elements need to be pushed into the old array.
-      state.tours.push(...tours);
+      // The returned tour objects should be reactive, so the changes can be reflected in the UI.
+      state.tours = tours;
+      // initExistingTask() requires the cache to be already fetched by getTours().
+      guidedTourManager.initExistingTask();
       state.waitingLoadAsync++;
       return tours;
     })
@@ -154,9 +183,7 @@ onMounted(() => {
       console.error(e);
       state.waitingLoadAsync++;
     });
-  guidedTourManager.initExistingTask();
-  // TODO: This should come from the localStorage
-  // state.isWidgetShown = await guidedTourManager.isWidgetShown();
+  loadWidgetState();
 });
 // FIXME: The .val property is a workaround, so vue doesn't auto-unwrap the progress, thus making it non-reactive.
 const progress = {
@@ -204,7 +231,7 @@ const progress = {
   bottom: 0px;
   right: 0px;
   box-shadow: 0px 0px 12px 0px #00000033;
-  background-color: white;
+  background-color: var(--xwiki-page-content-bg);
   width: fit-content;
   overflow: hidden;
   display: inline-block;
