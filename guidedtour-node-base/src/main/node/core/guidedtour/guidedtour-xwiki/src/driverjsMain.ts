@@ -86,15 +86,11 @@ const util = {
    * For use in `findVisibleElement` below.
    *
    * @param element - The element to check
-   * @returns true if the element is visible on the page, false otherwise.
+   * @returns false if the element or one of its ancestors is hidden (e.g. `display: none`), true otherwise. driver.js
+   *   places the popover of a hidden element in the top left corner of the page.
    */
   isElementVisible(element: Element): boolean {
-    const style = globalThis.getComputedStyle(element);
-    if (style.display == "none") {
-      return false;
-    } else {
-      return true;
-    }
+    return element.checkVisibility();
   },
   /**
    * @param selector - css selector for the element to find (should be compatible with document.querySelector)
@@ -253,6 +249,8 @@ function XWikiDriverConfig(
      * Place the popover again once the step is shown. A scroll during the move from the previous step makes driver.js
      * place the popover against the element of the previous step, which may no longer be in the page (e.g. the "Add
      * comment" button, replaced when the comments are refreshed): the popover then ends up in the top left corner.
+     * `refresh()` places the popover on the next animation frame, once driver.js has recorded the element of this step.
+     * This works around driver.js 1.10.2 and can be removed from driver.js 1.12.0, which handles such a refresh itself.
      */
     onHighlighted: (_element, _step, options) => {
       options.driver.refresh();

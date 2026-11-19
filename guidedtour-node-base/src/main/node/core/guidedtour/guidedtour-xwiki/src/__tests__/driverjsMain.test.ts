@@ -165,6 +165,24 @@ describe("driverjsMain", () => {
     expect(config.steps![1].popover!.side).toBeUndefined();
   });
 
+  it("finds the element of a step only when it is visible", async () => {
+    document.body.innerHTML =
+      '<div style="display: none"><button id="hidden"></button></div><button id="visible"></button>';
+    const task = createTask();
+    task.steps![0].element = "#hidden";
+    task.steps![1].element = "#visible";
+    const config = await getDriverConfigForSteps(
+      task,
+      {} as DefaultGuidedTourManager,
+      {},
+    );
+
+    const findElement = (index: number) =>
+      (config.steps![index].element as () => Element | undefined)();
+    expect(findElement(0)).toBeUndefined();
+    expect(findElement(1)).toBe(document.getElementById("visible"));
+  });
+
   it("doesn't throw on invalid selectors and ignores blank ones", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const task = createTask();
