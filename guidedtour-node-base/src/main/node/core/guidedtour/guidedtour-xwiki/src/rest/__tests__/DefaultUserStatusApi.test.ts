@@ -151,7 +151,10 @@ describe("DefaultUserStatusApi", () => {
 
       // Only the GET request, the default status must not overwrite the stored one.
       expect(request).toHaveBeenCalledTimes(1);
-      expect(consoleError).toHaveBeenCalled();
+      expect(consoleError).toHaveBeenCalledExactlyOnceWith(
+        "Failed to load the guided tour user status.",
+        expect.any(RestError),
+      );
     });
 
     it("sends a copy of the status", async () => {
