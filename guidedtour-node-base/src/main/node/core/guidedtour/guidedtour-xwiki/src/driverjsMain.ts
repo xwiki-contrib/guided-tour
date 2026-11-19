@@ -254,11 +254,13 @@ function XWikiDriverConfig(
     waitForElement: 3000,
     /**
      * Ask before ending the task when the user clicks outside the highlighted element, presses Escape or clicks the
-     * close button, so that a misclick doesn't discard the task progress. The task ends without asking for the other
-     * reasons, which come from the code (e.g. driving to a step that was removed from the task since).
+     * close button, so that a misclick doesn't discard the task progress. The task ends without asking on its last
+     * step, where it is done (see `onDestroyed`), and for the other reasons, which come from the code (e.g. driving to
+     * a step that was removed from the task since).
      */
     onDestroyStarted: (_element, _step, options) => {
       if (
+        options.driver.isLastStep() ||
         !["close", "escape", "overlay"].includes(options.reason!) ||
         window.confirm(translations["guidedtour.driver.confirmExit"])
       ) {

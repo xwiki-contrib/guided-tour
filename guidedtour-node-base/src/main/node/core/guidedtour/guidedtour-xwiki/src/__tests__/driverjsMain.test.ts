@@ -249,6 +249,14 @@ describe("ending a task", () => {
     expect(window.confirm).not.toHaveBeenCalled();
   });
 
+  it("ends the task without asking on its last step", async () => {
+    task = await startTask(false);
+    task.drive(task.getConfig().steps!.length - 1);
+    endTaskBy.close();
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(task.isActive()).toBe(false);
+  });
+
   it("doesn't ask again on the Escape keyup that closes the confirmation", async () => {
     task = await startTask(false);
     pressEscape();
