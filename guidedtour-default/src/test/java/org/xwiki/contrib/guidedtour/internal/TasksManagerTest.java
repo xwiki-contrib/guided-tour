@@ -81,7 +81,7 @@ class TasksManagerTest
         "select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp "
             + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class "
             + "and doc.space = :space and obj.id = orderProp.id.id and orderProp.id.name = 'order' "
-            + "and lower(doc.title) like lower(:titleFilter) escape '\\' order by orderProp.value asc";
+            + "and lower(doc.title) like lower(:titleFilter) escape '!' order by orderProp.value asc";
 
     private static final String GET_TASK_QUERY = "select doc.fullName from XWikiDocument doc, BaseObject obj "
         + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space "
@@ -296,6 +296,19 @@ class TasksManagerTest
         assertEquals(1, tasks.getFirst().getOrder());
         assertTrue(tasks.getFirst().isActive());
         assertTrue(tasks.getFirst().getDependsOn().isEmpty());
+    }
+
+    @Test
+    void getAllTasksFilteredWithLikeWildcards() throws Exception
+    {
+        when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
+            Map.of("space", "tourSpace", "titleFilter", "%50!% off!_now!!%", "class", SERIALIZED_CLASS))).thenReturn(
+            List.of(this.taskReference1));
+
+        List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID, "50% off_now!");
+
+        assertEquals(1, tasks.size());
+        assertEquals(VALIDATED_TASK_ID1, tasks.getFirst().getId());
     }
 
     @Test
