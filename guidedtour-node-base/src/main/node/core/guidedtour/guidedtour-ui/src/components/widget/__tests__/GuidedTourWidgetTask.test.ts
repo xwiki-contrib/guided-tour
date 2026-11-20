@@ -18,6 +18,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import { RESOLVER_PROVIDE } from "./i18nMock";
 import GuidedTourWidgetTask from "../GuidedTourWidgetTask.vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
@@ -26,6 +27,8 @@ import type {
   GuidedTourManager,
   TourTask,
 } from "@xwiki/contrib-guidedtour-api";
+
+vi.mock("@xwiki/platform-localization-adapter-vue", () => import("./i18nMock"));
 
 function createGuidedTourManager(): GuidedTourManager {
   return {
@@ -48,10 +51,17 @@ function mountTask(
   return mount(GuidedTourWidgetTask, {
     props: { task, tourId: "tour1" },
     global: {
-      provide: { GuidedTourManager: guidedTourManager },
+      provide: { GuidedTourManager: guidedTourManager, ...RESOLVER_PROVIDE },
       config: { errorHandler },
     },
   });
+}
+
+/**
+ * Click on the task, which starts it.
+ */
+async function clickTask(wrapper: ReturnType<typeof mountTask>) {
+  await wrapper.find(".guidedtour-widget-item-main").trigger("click");
 }
 
 function isWaiting(wrapper: ReturnType<typeof mountTask>) {
@@ -144,7 +154,7 @@ describe("GuidedTourWidgetTask", () => {
       guidedTourManager,
     );
 
-    await wrapper.find(".guidedtour-task").trigger("click");
+    await clickTask(wrapper);
     expect(isWaiting(wrapper)).toBe(true);
     expect(guidedTourManager.startTask).not.toHaveBeenCalled();
 
@@ -158,7 +168,7 @@ describe("GuidedTourWidgetTask", () => {
     const task = createTask(TourTaskStatus.TODO);
     const wrapper = mountTask(task, guidedTourManager);
 
-    await wrapper.find(".guidedtour-task").trigger("click");
+    await clickTask(wrapper);
     await flushPromises();
 
     expect(guidedTourManager.startTask).toHaveBeenCalledExactlyOnceWith(
@@ -178,11 +188,35 @@ describe("GuidedTourWidgetTask", () => {
       () => {},
     );
 
-    await wrapper.find(".guidedtour-task").trigger("click");
+    await clickTask(wrapper);
     getSteps.reject(new Error("Failed"));
     await flushPromises();
 
     expect(isWaiting(wrapper)).toBe(false);
     expect(guidedTourManager.startTask).not.toHaveBeenCalled();
   });
+
+  it.each([
+    [TourTaskStatus.TODO, "guidedtour.widget.task.skip [Task 1]"],
+    [TourTaskStatus.DONE, "guidedtour.widget.task.reset [Task 1]"],
+  ])("names the button acting on a task that is %s", async (status, label) => {
+    const wrapper = mountTask(createTask(status), createGuidedTourManager());
+    await flushPromises();
+
+    expect(wrapper.find(".post-btn").attributes("aria-label")).toBe(label);
+  });
+
+  it.each([
+    [TourTaskStatus.TODO, "Task 1"],
+    [TourTaskStatus.DONE, "Task 1 guidedtour.widget.status.done"],
+    [TourTaskStatus.SKIPPED, "Task 1 guidedtour.widget.status.skipped"],
+  ])(
+    "tells the assistive technologies that the task is %s",
+    async (status, text) => {
+      const wrapper = mountTask(createTask(status), createGuidedTourManager());
+      await flushPromises();
+
+      expect(wrapper.find(".guidedtour-widget-item-main").text()).toBe(text);
+    },
+  );
 });

@@ -36,10 +36,11 @@ describe("GuidedTourWidgetItem", () => {
       slots: { "item-title": "Title" },
     });
 
-    expect(wrapper.find(".guidedtour-widget-item").classes()).toContain(
-      "loading",
-    );
+    const placeholder = wrapper.find(".guidedtour-widget-item");
+    expect(placeholder.classes()).toContain("loading");
     expect(wrapper.text()).toBe("");
+    // The placeholders are only decorative.
+    expect(placeholder.attributes("aria-hidden")).toBe("true");
   });
 
   it("shows its content and handles clicks once loaded", async () => {
@@ -47,7 +48,7 @@ describe("GuidedTourWidgetItem", () => {
     const wrapper = mount(GuidedTourWidgetItem, {
       props: { loading: false, waiting: ref(false), id: "item1", onClick },
       slots: {
-        "pre-btns": "<button class='pre'>pre</button>",
+        "pre-btns": "<i class='pre'></i>",
         "item-title": "Title",
         "post-btns": "<button class='post'>post</button>",
       },
@@ -60,9 +61,58 @@ describe("GuidedTourWidgetItem", () => {
     expect(wrapper.find(".guidedtour-widget-item-title").text()).toBe("Title");
     expect(wrapper.find(".post-btns .post").exists()).toBe(true);
 
-    await item.trigger("click");
+    await wrapper.find(".guidedtour-widget-item-main").trigger("click");
     expect(onClick).toHaveBeenCalledOnce();
   });
+
+  it("runs its main action from a button holding its title, but not its other actions", () => {
+    const wrapper = mount(GuidedTourWidgetItem, {
+      props: { loading: false, waiting: ref(false) },
+      slots: {
+        "pre-btns": "<i class='pre'></i>",
+        "item-title": "Title",
+        "post-btns": "<button class='post'>post</button>",
+      },
+    });
+
+    const main = wrapper.find("button.guidedtour-widget-item-main");
+    expect(main.text()).toBe("Title");
+    // The decoration before the title is not announced.
+    expect(main.find(".pre-btns").attributes("aria-hidden")).toBe("true");
+    // Buttons can't be nested.
+    expect(main.find(".post").exists()).toBe(false);
+  });
+
+  it("tells whether the content it controls is expanded", () => {
+    const wrapper = mount(GuidedTourWidgetItem, {
+      props: {
+        loading: false,
+        waiting: ref(false),
+        expanded: false,
+        controls: "content",
+      },
+    });
+
+    const main = wrapper.find(".guidedtour-widget-item-main");
+    expect(main.attributes("aria-expanded")).toBe("false");
+    expect(main.attributes("aria-controls")).toBe("content");
+  });
+
+  it.each([
+    [3, "H3"],
+    [undefined, "DIV"],
+  ])(
+    "wraps its main button in a heading of level %s",
+    (headingLevel, tagName) => {
+      const wrapper = mount(GuidedTourWidgetItem, {
+        props: { loading: false, waiting: ref(false), headingLevel },
+      });
+
+      expect(
+        wrapper.find(".guidedtour-widget-item-heading").element.tagName,
+      ).toBe(tagName);
+    },
+  );
 
   it("shows the spinner only while waiting", async () => {
     const waiting: Ref<boolean> = ref(false);
@@ -72,10 +122,13 @@ describe("GuidedTourWidgetItem", () => {
     const spinner = () => wrapper.find(".fa-circle-notch");
 
     expect(spinner().classes()).toContain("transparent");
+    expect(spinner().attributes("aria-hidden")).toBe("true");
+    expect(wrapper.attributes("aria-busy")).toBe("false");
 
     waiting.value = true;
     await wrapper.vm.$nextTick();
     expect(spinner().classes()).not.toContain("transparent");
+    expect(wrapper.attributes("aria-busy")).toBe("true");
   });
 
   it("replaces the spinner with the loading-icon slot", () => {

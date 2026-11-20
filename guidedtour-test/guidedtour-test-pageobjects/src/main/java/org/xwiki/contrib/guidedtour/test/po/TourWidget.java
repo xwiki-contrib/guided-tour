@@ -38,6 +38,9 @@ public class TourWidget extends ViewPage
 
     private static final String COLLAPSED = "collapsed";
 
+    // The button running the main action of a widget row: starting a task, or collapsing / expanding a tour.
+    private static final String MAIN_BUTTON_XPATH = "//button[contains(@class,'guidedtour-widget-item-main')]";
+
     @FindBy(css = ".guidedtour-widget")
     private WebElement widget;
 
@@ -101,9 +104,25 @@ public class TourWidget extends ViewPage
         return widget.getAttribute("class").contains(COLLAPSED);
     }
 
+    /**
+     * Open or close the panel of the widget, and wait until it is fully shown or hidden.
+     */
     public void toggleWidgetCollapsed()
     {
-        widget.findElement(By.cssSelector("button#widget-close")).click();
+        boolean wasCollapsed = isWidgetCollapsed();
+        widget.findElement(By.cssSelector("button.guidedtour-widget-launcher")).click();
+        // The panel fades in or out, and an element is not considered displayed while its opacity is 0, so wait for
+        // the end of the transition.
+        getDriver().waitUntilCondition(driver -> isWidgetCollapsed() != wasCollapsed && isPanelTransitionDone());
+    }
+
+    private boolean isPanelTransitionDone()
+    {
+        WebElement panel = widget.findElement(By.id("guidedtour-widget-panel"));
+        // Vue sets the -enter-* and -leave-* classes during the transition, and removes them at the end.
+        String cssClass = panel.getAttribute("class");
+        return !cssClass.contains("-enter-") && !cssClass.contains("-leave-")
+            && panel.isDisplayed() != isWidgetCollapsed();
     }
 
     public boolean isTourCollapsed(String tourId)
@@ -118,12 +137,13 @@ public class TourWidget extends ViewPage
 
     public void toggleTourCollapsed(String tourId)
     {
-        getTourHeader(tourId).click();
+        getTourToggle(tourId).click();
     }
 
     public void clickTask(String taskId)
     {
-        By task = By.xpath("//div[contains(@class,'guidedtour-task') and @id=" + escapeXPathString(taskId) + "]");
+        By task = By.xpath("//div[contains(@class,'guidedtour-task') and @id=" + escapeXPathString(taskId) + "]"
+            + MAIN_BUTTON_XPATH);
         // The tasks are loaded asynchronously.
         getDriver().waitUntilElementIsVisible(task);
         getDriver().findElement(task).click();
@@ -166,11 +186,11 @@ public class TourWidget extends ViewPage
             By.xpath(".//section[contains(@class,'guidedtour-tour') and @id=" + escapeXPathString(tourId) + "]"));
     }
 
-    private WebElement getTourHeader(String tourId)
+    private WebElement getTourToggle(String tourId)
     {
         return widget.findElement(By.xpath(
             ".//section[contains(@class,'guidedtour-tour') and @id=" + escapeXPathString(tourId)
-                + "]//div[contains(@class,'guidedtour-tour-header')]"));
+                + "]//div[contains(@class,'guidedtour-tour-header')]" + MAIN_BUTTON_XPATH));
     }
 
     private void clickTaskButton(String taskId, String iconClass)
