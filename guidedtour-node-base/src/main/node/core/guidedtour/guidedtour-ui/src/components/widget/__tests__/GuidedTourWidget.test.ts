@@ -21,6 +21,7 @@
 import GuidedTourWidget from "../GuidedTourWidget.vue";
 import GuidedTourWidgetHeader from "../GuidedTourWidgetHeader.vue";
 import GuidedTourWidgetItem from "../GuidedTourWidgetItem.vue";
+import GuidedTourWidgetLauncher from "../GuidedTourWidgetLauncher.vue";
 import GuidedTourWidgetTour from "../GuidedTourWidgetTour.vue";
 import GuidedTourWidgetUsefulLink from "../GuidedTourWidgetUsefulLink.vue";
 import { flushPromises, shallowMount } from "@vue/test-utils";
@@ -68,58 +69,113 @@ function createTask(
 }
 
 /**
- * Click on the header of the widget, which collapses or expands it.
+ * Click on the launcher of the widget, which collapses or expands it.
  */
 async function toggleWidget(wrapper: ReturnType<typeof mountWidget>) {
-  wrapper
-    .findComponent(GuidedTourWidgetHeader)
-    .vm.$emit("closeGuidedTourWidget", false);
+  wrapper.findComponent(GuidedTourWidgetLauncher).vm.$emit("toggle");
   await flushPromises();
 }
 
 describe("GuidedTourWidget", () => {
-  it.each([
-    [WidgetState.COLLAPSED, true],
-    [WidgetState.OPEN, false],
-  ])("restores the saved widget state %s", async (widgetState, collapsed) => {
-    const wrapper = mountWidget(
-      createGuidedTourManager(Promise.resolve(widgetState)),
-    );
-    await flushPromises();
+  describe("widget state", () => {
+    it.each([
+      [WidgetState.COLLAPSED, true],
+      [WidgetState.OPEN, false],
+    ])("restores the saved widget state %s", async (widgetState, collapsed) => {
+      const wrapper = mountWidget(
+        createGuidedTourManager(Promise.resolve(widgetState)),
+      );
+      await flushPromises();
 
-    expect(wrapper.classes("collapsed")).toBe(collapsed);
-  });
+      expect(wrapper.classes("collapsed")).toBe(collapsed);
+    });
 
-  it("saves the widget state when it is toggled", async () => {
-    const guidedTourManager = createGuidedTourManager(
-      Promise.resolve(WidgetState.OPEN),
-    );
-    const wrapper = mountWidget(guidedTourManager);
-    await flushPromises();
+    it("saves the widget state when it is toggled", async () => {
+      const guidedTourManager = createGuidedTourManager(
+        Promise.resolve(WidgetState.OPEN),
+      );
+      const wrapper = mountWidget(guidedTourManager);
+      await flushPromises();
 
-    await toggleWidget(wrapper);
-    expect(wrapper.classes("collapsed")).toBe(true);
-    expect(guidedTourManager.setWidgetState).toHaveBeenLastCalledWith(
-      WidgetState.COLLAPSED,
-    );
+      await toggleWidget(wrapper);
+      expect(wrapper.classes("collapsed")).toBe(true);
+      expect(guidedTourManager.setWidgetState).toHaveBeenLastCalledWith(
+        WidgetState.COLLAPSED,
+      );
 
-    await toggleWidget(wrapper);
-    expect(wrapper.classes("collapsed")).toBe(false);
-    expect(guidedTourManager.setWidgetState).toHaveBeenLastCalledWith(
-      WidgetState.OPEN,
-    );
-  });
+      await toggleWidget(wrapper);
+      expect(wrapper.classes("collapsed")).toBe(false);
+      expect(guidedTourManager.setWidgetState).toHaveBeenLastCalledWith(
+        WidgetState.OPEN,
+      );
+    });
 
-  it("keeps the state chosen by the user before the saved one is loaded", async () => {
-    const widgetState = createDeferred<WidgetState>();
-    const wrapper = mountWidget(createGuidedTourManager(widgetState.promise));
+    it("animates the panel only when the user toggles it, not when the saved state is restored", async () => {
+      const wrapper = mountWidget(
+        createGuidedTourManager(Promise.resolve(WidgetState.OPEN)),
+      );
+      // The props of the transition are rendered as attributes of its stub.
+      const isAnimated = () =>
+        wrapper.find("transition-stub").attributes("css") === "true";
 
-    // The widget starts collapsed, the user expands it.
-    await toggleWidget(wrapper);
-    widgetState.resolve(WidgetState.COLLAPSED);
-    await flushPromises();
+      // The saved state is restored (and rendered) without animation.
+      expect(isAnimated()).toBe(false);
+      await flushPromises();
+      expect(wrapper.classes("collapsed")).toBe(false);
 
-    expect(wrapper.classes("collapsed")).toBe(false);
+      await toggleWidget(wrapper);
+      expect(isAnimated()).toBe(true);
+    });
+
+    it("collapses the widget when its panel is closed", async () => {
+      const guidedTourManager = createGuidedTourManager(
+        Promise.resolve(WidgetState.OPEN),
+      );
+      const wrapper = mountWidget(guidedTourManager);
+      await flushPromises();
+      expect(
+        wrapper.findComponent(GuidedTourWidgetLauncher).props("expanded"),
+      ).toBe(true);
+
+      wrapper
+        .findComponent(GuidedTourWidgetHeader)
+        .vm.$emit("closeGuidedTourWidget");
+      await flushPromises();
+
+      expect(wrapper.classes("collapsed")).toBe(true);
+      expect(
+        wrapper.findComponent(GuidedTourWidgetLauncher).props("expanded"),
+      ).toBe(false);
+      expect(guidedTourManager.setWidgetState).toHaveBeenLastCalledWith(
+        WidgetState.COLLAPSED,
+      );
+    });
+
+    it("collapses the widget when Escape is pressed in its panel", async () => {
+      const wrapper = mountWidget(
+        createGuidedTourManager(Promise.resolve(WidgetState.OPEN)),
+      );
+      await flushPromises();
+
+      await wrapper.find(".guidedtour-panel").trigger("keydown", {
+        key: "Escape",
+      });
+      await flushPromises();
+
+      expect(wrapper.classes("collapsed")).toBe(true);
+    });
+
+    it("keeps the state chosen by the user before the saved one is loaded", async () => {
+      const widgetState = createDeferred<WidgetState>();
+      const wrapper = mountWidget(createGuidedTourManager(widgetState.promise));
+
+      // The widget starts collapsed, the user expands it.
+      await toggleWidget(wrapper);
+      widgetState.resolve(WidgetState.COLLAPSED);
+      await flushPromises();
+
+      expect(wrapper.classes("collapsed")).toBe(false);
+    });
   });
 
   it("shows placeholders until both the tours and useful links are loaded", async () => {
@@ -140,6 +196,22 @@ describe("GuidedTourWidget", () => {
     await flushPromises();
     expect(wrapper.findAllComponents(GuidedTourWidgetItem)).toHaveLength(0);
     expect(wrapper.findComponent(GuidedTourWidgetTour).exists()).toBe(true);
+  });
+
+  it("tells the assistive technologies that the tours are loading", async () => {
+    const usefulLinks = createDeferred<string[]>();
+    const wrapper = mountWidget({
+      ...createGuidedTourManager(Promise.resolve(WidgetState.OPEN)),
+      getUsefulLinks: () => usefulLinks.promise,
+    } as GuidedTourManager);
+    await flushPromises();
+
+    const container = wrapper.find(".guidedtour-container");
+    expect(container.attributes("aria-busy")).toBe("true");
+
+    usefulLinks.resolve([]);
+    await flushPromises();
+    expect(container.attributes("aria-busy")).toBe("false");
   });
 
   it("resumes the task in progress once the tours are loaded", async () => {
@@ -256,5 +328,54 @@ describe("GuidedTourWidget", () => {
     expect(
       wrapper.findComponent(GuidedTourWidgetHeader).props("progress").value,
     ).toBe(0.5);
+  });
+
+  it("shows how many of the available tours are finished", async () => {
+    const tours: TourTour[] = [
+      {
+        id: "done",
+        title: "Done",
+        active: true,
+        status: TourTaskStatus.DONE,
+        tasksList: [createTask("task1", TourTaskStatus.DONE)],
+      },
+      {
+        id: "skipped",
+        title: "Skipped",
+        active: true,
+        status: TourTaskStatus.SKIPPED,
+        tasksList: [createTask("task2", TourTaskStatus.SKIPPED)],
+      },
+      {
+        id: "todo",
+        title: "To do",
+        active: true,
+        status: TourTaskStatus.TODO,
+        tasksList: [createTask("task3", TourTaskStatus.TODO)],
+      },
+      // Inactive tours and tours without active tasks are not shown, so they don't count.
+      {
+        id: "inactive",
+        title: "Inactive",
+        active: false,
+        status: TourTaskStatus.DONE,
+        tasksList: [createTask("task4", TourTaskStatus.DONE)],
+      },
+      {
+        id: "noActiveTask",
+        title: "No active task",
+        active: true,
+        status: TourTaskStatus.SKIPPED,
+        tasksList: [createTask("task5", TourTaskStatus.DONE, false)],
+      },
+    ];
+    const wrapper = mountWidget(
+      createGuidedTourManager(Promise.resolve(WidgetState.OPEN), tours),
+    );
+    await flushPromises();
+
+    const launcher = wrapper.findComponent(GuidedTourWidgetLauncher);
+    expect(launcher.props("finished")).toBe(2);
+    expect(launcher.props("total")).toBe(3);
   });
 });

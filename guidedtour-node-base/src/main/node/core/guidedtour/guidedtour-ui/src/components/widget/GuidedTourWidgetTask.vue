@@ -36,24 +36,31 @@
     @click="onStartTask"
   >
     <template v-slot:pre-btns>
-      <!-- This is just for show, it shouldn't do anything. -->
-      <button>
-        <i class="fa fa-arrow-right" />
-      </button>
+      <i class="fa fa-arrow-right" />
     </template>
     <template v-slot:item-title>
-      {{ task.title }}
+      <span class="task-title">{{ task.title }}</span>
+      <!-- The space is in the expression, since Vue drops the leading whitespace of the element. -->
+      <span v-if="statusText" class="sr-only">{{ ` ${statusText}` }}</span>
     </template>
     <template v-slot:post-btns>
       <button
         v-if="task.status == TourTaskStatus.TODO"
+        type="button"
         class="post-btn"
+        :aria-label="label('task.skip')"
         @click.stop="onSkipTask"
       >
-        <i class="fa-solid fa-x" />
+        <i class="fa-solid fa-x" aria-hidden="true" />
       </button>
-      <button v-else class="post-btn" @click.stop="onResetTask">
-        <i class="fa fa-rotate-right" />
+      <button
+        v-else
+        type="button"
+        class="post-btn"
+        :aria-label="label('task.reset')"
+        @click.stop="onResetTask"
+      >
+        <i class="fa fa-rotate-right" aria-hidden="true" />
       </button>
     </template>
   </GuidedTourWidgetItem>
@@ -61,8 +68,11 @@
 
 <script setup lang="ts">
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
+import { getStatusText } from "./statusText";
+import { RESOLVER } from "../../injectionKeys";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
-import { inject, reactive, ref, toRefs } from "vue";
+import { useI18nAdapter } from "@xwiki/platform-localization-adapter-vue";
+import { computed, inject, reactive, ref, toRefs } from "vue";
 import type {
   GuidedTourManager,
   TourTask,
@@ -79,6 +89,24 @@ const state = reactive({
 });
 const { isWaitingAsync } = toRefs(state);
 const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
+
+const { t, isLoading } = useI18nAdapter(inject(RESOLVER)!, {
+  prefix: "guidedtour.widget.",
+  keys: ["task.skip", "task.reset", "status.done", "status.skipped"],
+});
+/**
+ * @param key - The key of the label, without the common prefix.
+ * @returns The label of a button acting on the task, or nothing while the translations are loading.
+ */
+function label(key: string) {
+  return isLoading.value
+    ? undefined
+    : t(`guidedtour.widget.${key}`, [task.title]);
+}
+// The status of the task is only shown with styles, so it is also given as text to the assistive technologies.
+const statusText = computed(() =>
+  isLoading.value ? undefined : getStatusText(task.status, t),
+);
 async function onResetTask() {
   isWaitingAsync.value = true;
   await guidedTourManager.setTaskStatus(task, TourTaskStatus.TODO);
@@ -135,8 +163,11 @@ async function onStartTask() {
   background: var(--guidedtour-background-color-secondary) 100%;
 }
 
-.guidedtour-task.task-DONE {
+.guidedtour-task.task-DONE .task-title {
   text-decoration: line-through;
+}
+
+.guidedtour-task.task-DONE {
   color: var(
     --guidedtour-text-color
   ); /* This is not WCAG-compliant, but idk how to do faded out text with good contrast. */

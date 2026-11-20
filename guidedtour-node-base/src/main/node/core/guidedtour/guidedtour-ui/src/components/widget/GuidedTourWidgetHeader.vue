@@ -19,28 +19,32 @@
 -->
 
 <!--
-  The GuidedTourWidget
-
-  It contains a single default slot.
+  The header of the GuidedTourWidget panel, with the title, the close button and the progress bar.
 -->
 
 <template>
   <div class="header" v-if="!isLoading">
-    <div class="top-bar" @click="onCloseButtonClicked(false)">
-      <span class="icon fa fa-compass" />
-      <div class="title">{{ t("guidedtour.widget.header.title") }}</div>
-      <div class="right-group">
-        <button
-          id="widget-close"
-          class="btn btn-default"
-          :aria-label="t('guidedtour.widget.header.close')"
-          @click.stop="onCloseButtonClicked(true)"
-        >
-          <i class="fa-solid fa-x" />
-        </button>
+    <div class="top-bar">
+      <div class="title-group">
+        <span class="icon fa fa-compass" aria-hidden="true" />
+        <h2 id="guidedtour-widget-title" class="title">
+          {{ t("guidedtour.widget.header.title") }}
+        </h2>
       </div>
+      <button
+        id="widget-close"
+        type="button"
+        class="btn btn-default close-button"
+        :aria-label="t('guidedtour.widget.header.close')"
+        @click="emit('closeGuidedTourWidget')"
+      >
+        <i class="fa-solid fa-x" aria-hidden="true" />
+      </button>
     </div>
-    <GuidedTourWidgetProgressBar :progress="computed(() => progress)" />
+    <GuidedTourWidgetProgressBar
+      :progress="computed(() => progress)"
+      :label="t('guidedtour.widget.header.progress')"
+    />
   </div>
 </template>
 
@@ -53,10 +57,6 @@ import type { ComputedRef } from "vue";
 
 const emit = defineEmits(["closeGuidedTourWidget"]);
 
-function onCloseButtonClicked(buttonClicked: boolean) {
-  emit("closeGuidedTourWidget", buttonClicked);
-}
-
 const props = defineProps<{ progress: ComputedRef<number> }>();
 // Reactive read-only ref for progress.
 const progress = props.progress;
@@ -64,62 +64,46 @@ const progress = props.progress;
 const resolver = inject(RESOLVER)!;
 const { t, isLoading } = useI18nAdapter(resolver, {
   prefix: "guidedtour.widget.header.",
-  keys: ["title", "close"],
+  keys: ["title", "close", "progress"],
 });
 </script>
 
 <style scoped>
+/* The title (with its icon) on the left, the close button on the right, both centered vertically. */
 .top-bar {
   display: flex;
-  cursor: pointer;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
 }
 
-.right-group button {
-  font-size: inherit;
-  padding: 0.3em 0.5em 0.3em 0.5em;
-}
-
-.guidedtour-widget.collapsed .top-bar {
-  padding: 8px;
+/* The icon and the title on the same line, the title wrapping next to the icon when it is too long. */
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 0;
 }
 
 .icon {
-  align-self: flex-start;
-  margin-right: 0.5em;
-  overflow: hidden;
-  width: 30px;
+  flex-shrink: 0;
 }
 
-.guidedtour-widget.collapsed .icon {
-  width: 0;
+.close-button {
+  flex-shrink: 0;
+  font-size: inherit;
+  padding: 0.3em 0.5em;
 }
 
-.right-group {
-  align-self: flex-end;
-  white-space: nowrap;
-  margin-left: 0.5em;
-}
-
+/* Reset the heading styles of the skin, the heading only gives the structure of the widget. */
 .title {
-  align-self: flex-start;
-  width: 100%;
-  font-weight: bold;
-}
-
-.guidedtour-widget.collapsed:not(.dragging) .header {
-  cursor: pointer;
-}
-
-.guidedtour-widget.collapsed .right-group button#widget-close {
-  display: none;
-}
-
-.guidedtour-widget.collapsed .right-group button#widget-options {
-  display: none;
-}
-
-.guidedtour-widget.collapsed .header {
+  min-width: 0;
+  margin: 0;
   padding: 0;
+  border: 0;
+  font: inherit;
+  font-weight: bold;
+  color: inherit;
 }
 
 .guidedtour-widget .header {

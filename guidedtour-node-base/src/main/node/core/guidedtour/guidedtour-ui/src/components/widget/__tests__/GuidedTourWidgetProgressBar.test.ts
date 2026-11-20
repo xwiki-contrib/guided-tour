@@ -40,4 +40,25 @@ describe("GuidedTourWidgetProgressBar", () => {
     await wrapper.vm.$nextTick();
     expect(getProgressStyle(wrapper)).toContain("width: 100%");
   });
+
+  it("tells the assistive technologies how much progress was made", async () => {
+    const progress = ref(1 / 3);
+    const wrapper = mount(GuidedTourWidgetProgressBar, {
+      props: {
+        progress: computed(() => progress.value),
+        label: "Tasks finished",
+      },
+    });
+
+    const bar = wrapper.find("[role='progressbar']");
+    expect(bar.attributes("aria-label")).toBe("Tasks finished");
+    expect(bar.attributes("aria-valuemin")).toBe("0");
+    expect(bar.attributes("aria-valuemax")).toBe("100");
+    expect(bar.attributes("aria-valuenow")).toBe("33");
+
+    // There is no progress to tell when there is nothing to do.
+    progress.value = 0 / 0;
+    await wrapper.vm.$nextTick();
+    expect(bar.attributes("aria-valuenow")).toBe("0");
+  });
 });
