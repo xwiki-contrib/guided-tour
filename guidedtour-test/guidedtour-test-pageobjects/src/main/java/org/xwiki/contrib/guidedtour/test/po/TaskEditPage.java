@@ -139,7 +139,7 @@ public class TaskEditPage extends InlinePage
     public TaskEditPage setStepContent(int position, String content)
     {
         WebElement stepItem = getStepItems().get(position);
-        stepItem.click();
+        clickInView(stepItem);
         getDriver().waitUntilCondition(driver -> stepItem.getAttribute(ATTRIBUTE_CLASS).contains("active"));
         setDisplayedStepContent(content);
         return this;
@@ -154,7 +154,7 @@ public class TaskEditPage extends InlinePage
     public TaskEditPage deleteStep(int position)
     {
         int stepCount = getStepItems().size();
-        getStepItems().get(position).findElement(DELETE_STEP_BUTTON).click();
+        clickInView(getStepItems().get(position).findElement(DELETE_STEP_BUTTON));
         getDriver().waitUntilCondition(driver -> getStepItems().size() == stepCount - 1);
         return this;
     }
@@ -170,6 +170,17 @@ public class TaskEditPage extends InlinePage
         getDriver().waitUntilElementIsVisible(DISPLAYED_STEP_CONTENT);
         // Typing updates the title of the step in the sidebar.
         setFieldValue(getDriver().findElement(DISPLAYED_STEP_CONTENT), content);
+    }
+
+    /**
+     * Scroll the element to the top of the window before clicking it: otherwise, the browser only scrolls it into view
+     * at the bottom of the window, where the sticky edit buttons can cover it.
+     *
+     * @param element the element to click
+     */
+    private void clickInView(WebElement element)
+    {
+        getDriver().scrollTo(element).click();
     }
 
     private List<WebElement> getStepItems()
