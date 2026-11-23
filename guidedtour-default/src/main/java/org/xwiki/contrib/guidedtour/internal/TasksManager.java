@@ -20,7 +20,6 @@
 package org.xwiki.contrib.guidedtour.internal;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,7 +75,7 @@ public class TasksManager
     private static final String GET_ALL_TASKS_QUERY = """
         select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp where doc.translation = \
         0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space and obj.id = \
-        orderProp.id.id and orderProp.id.name = 'order' and lower(doc.title) like lower(:titleFilter) escape '!' \
+        orderProp.id.id and orderProp.id.name = 'order' and lower(doc.title) like lower(:titleFilter) \
         order by orderProp.value asc""";
 
     private static final String TASK_NOT_FOUND_ERROR = "Task with the given id [%s] does not exists.";
@@ -176,12 +175,13 @@ public class TasksManager
     {
         DocumentReference tourDocRef = getTourReference(tourId);
         String parentSpace = this.localSerializer.serialize(tourDocRef.getLastSpaceReference());
-        String titleFilter = String.format("%%%s%%", escapeQueryParameter(filteredTitle));
-        Map<String, Object> bindValues = new HashMap<>(
-            Map.of(SPACE_KEY, parentSpace, TITLE_FILTER, titleFilter, CLASS_FILTER,
-                this.localSerializer.serialize(TASK_CLASS)));
-
-        List<DocumentReference> docRefs = this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY, bindValues);
+        String taskClass = this.localSerializer.serialize(TASK_CLASS);
+        // XWiki escapes the LIKE wildcards of the literal part of the title filter, and adds the matching escape
+        // clause to the query.
+        List<DocumentReference> docRefs = this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY, query -> query
+            .bindValue(SPACE_KEY, parentSpace)
+            .bindValue(CLASS_FILTER, taskClass)
+            .bindValue(TITLE_FILTER).anyChars().literal(StringUtils.defaultIfBlank(filteredTitle, "")).anyChars());
         List<TaskDTO> tasks = new ArrayList<>(docRefs.size());
         XWikiContext wikiContext = this.wikiContextProvider.get();
         XWiki wiki = wikiContext.getWiki();
@@ -253,16 +253,6 @@ public class TasksManager
         XWiki wiki = wikiContext.getWiki();
         wiki.deleteAllDocuments(wiki.getDocument(taskDocRef, wikiContext), wikiContext);
         updateRemainingTasks(existingTasks, targetTask, tourDocRef);
-    }
-
-    private String escapeQueryParameter(String parameter)
-    {
-        // The escape character is '!' because a backslash in the "escape" clause is itself an escape character in
-        // MySQL string literals, which makes the generated SQL invalid there.
-        return StringUtils.defaultIfBlank(parameter, "")
-            .replace("!", "!!")
-            .replace("%", "!%")
-            .replace("_", "!_");
     }
 
     private TaskDTO getTaskDTO(XWikiDocument doc)

@@ -22,6 +22,7 @@ package org.xwiki.contrib.guidedtour.internal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import javax.inject.Named;
 
@@ -37,7 +38,10 @@ import org.xwiki.model.reference.DocumentReferenceResolver;
 import org.xwiki.model.reference.EntityReferenceSerializer;
 import org.xwiki.model.reference.SpaceReference;
 import org.xwiki.model.validation.EntityNameValidation;
+import org.xwiki.query.Query;
 import org.xwiki.query.QueryException;
+import org.xwiki.query.internal.DefaultQuery;
+import org.xwiki.query.internal.EscapeLikeParametersQuery;
 import org.xwiki.test.junit5.mockito.ComponentTest;
 import org.xwiki.test.junit5.mockito.InjectMockComponents;
 import org.xwiki.test.junit5.mockito.MockComponent;
@@ -52,6 +56,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -81,7 +87,7 @@ class TasksManagerTest
         "select doc.fullName from XWikiDocument doc, BaseObject obj, LongProperty orderProp "
             + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class "
             + "and doc.space = :space and obj.id = orderProp.id.id and orderProp.id.name = 'order' "
-            + "and lower(doc.title) like lower(:titleFilter) escape '!' order by orderProp.value asc";
+            + "and lower(doc.title) like lower(:titleFilter) order by orderProp.value asc";
 
     private static final String GET_TASK_QUERY = "select doc.fullName from XWikiDocument doc, BaseObject obj "
         + "where doc.translation = 0 and doc.fullName = obj.name and obj.className = :class and doc.space = :space "
@@ -173,9 +179,7 @@ class TasksManagerTest
         when(this.taskDocument1.getXObject(TASK_CLASS)).thenReturn(this.taskObject1);
         when(this.taskDocument2.getXObject(TASK_CLASS)).thenReturn(this.taskObject2);
 
-        when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
-            Map.of("space", "tourSpace", "titleFilter", "%%", "class", SERIALIZED_CLASS))).thenReturn(
-            List.of(this.taskReference1, this.taskReference2));
+        mockGetAllTasks("%%", List.of(this.taskReference1, this.taskReference2));
 
         when(this.taskObject1.getStringValue("title")).thenReturn(this.taskDTO1.getTitle());
         when(this.taskObject1.getStringValue("dependsOn")).thenReturn("");
@@ -186,6 +190,26 @@ class TasksManagerTest
         when(this.taskObject2.getStringValue("dependsOn")).thenReturn(VALIDATED_TASK_ID1);
         when(this.taskObject2.getIntValue("order")).thenReturn(2);
         when(this.taskObject2.getIntValue("isActive")).thenReturn(0);
+    }
+
+    /**
+     * Return the given tasks for the query of all the tasks of the tour, when its parameters are the given title filter
+     * and the tour, once XWiki escaped them as it does before running the query.
+     */
+    private void mockGetAllTasks(String titleFilter, List<DocumentReference> tasks) throws QueryException
+    {
+        Map<String, Object> parameters =
+            Map.of("space", "tourSpace", "titleFilter", titleFilter, "class", SERIALIZED_CLASS);
+        when(this.queryUtil.executeQuery(eq(GET_ALL_TASKS_QUERY), argThat((Consumer<Query> binder) -> {
+            if (binder == null) {
+                return false;
+            }
+            Query query = new EscapeLikeParametersQuery(new DefaultQuery(GET_ALL_TASKS_QUERY, Query.HQL, null));
+            binder.accept(query);
+            // Reading the statement adds the escape clause, and finds the parameters to escape.
+            return query.getStatement().contains("lower(:titleFilter) ESCAPE '!'")
+                && parameters.equals(query.getNamedParameters());
+        }))).thenReturn(tasks);
     }
 
     @Test
@@ -284,9 +308,7 @@ class TasksManagerTest
     @Test
     void getAllTasksFiltered() throws Exception
     {
-        when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
-            Map.of("space", "tourSpace", "titleFilter", "%test%", "class", SERIALIZED_CLASS))).thenReturn(
-            List.of(this.taskReference1));
+        mockGetAllTasks("%test%", List.of(this.taskReference1));
 
         List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID, "test");
 
@@ -301,9 +323,7 @@ class TasksManagerTest
     @Test
     void getAllTasksFilteredWithLikeWildcards() throws Exception
     {
-        when(this.queryUtil.executeQuery(GET_ALL_TASKS_QUERY,
-            Map.of("space", "tourSpace", "titleFilter", "%50!% off!_now!!%", "class", SERIALIZED_CLASS))).thenReturn(
-            List.of(this.taskReference1));
+        mockGetAllTasks("%50!% off!_now!!%", List.of(this.taskReference1));
 
         List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID, "50% off_now!");
 

@@ -21,6 +21,7 @@ package org.xwiki.contrib.guidedtour.internal.util;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -68,12 +69,27 @@ public class QueryUtil
     public List<DocumentReference> executeQuery(String queryString, Map<String, Object> bindValues)
         throws QueryException
     {
-        Query query = this.queryManager.createQuery(queryString, Query.HQL);
-        if (bindValues != null) {
-            for (Map.Entry<String, Object> entry : bindValues.entrySet()) {
-                query.bindValue(entry.getKey(), entry.getValue());
+        return executeQuery(queryString, query -> {
+            if (bindValues != null) {
+                bindValues.forEach(query::bindValue);
             }
-        }
+        });
+    }
+
+    /**
+     * Executes an HQL query and returns the results as a list of {@link DocumentReference}s, like
+     * {@link #executeQuery(String, Map)}, but lets the caller bind the parameters on the {@link Query}. This is needed
+     * to bind a LIKE parameter with {@link Query#bindValue(String)}, which escapes its literal parts.
+     *
+     * @param queryString the HQL statement to execute
+     * @param binder binds the parameters of the query
+     * @return the results of the query as a list of {@link DocumentReference}s
+     * @throws QueryException if there is an error executing the query
+     */
+    public List<DocumentReference> executeQuery(String queryString, Consumer<Query> binder) throws QueryException
+    {
+        Query query = this.queryManager.createQuery(queryString, Query.HQL);
+        binder.accept(query);
         query.addFilter(this.documentFilter);
         query.addFilter(this.viewableFilter);
         return query.execute();
