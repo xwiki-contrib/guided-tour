@@ -56,42 +56,44 @@
 #end
 #set ($steps = $collectiontool.sort($serializedSteps, 'order'))
 
+## Show a single property of a step.
+#macro (_displayProperty $step $propertyName $cssClass='')
+  #set ($property = $step.xWikiClass.get($propertyName))
+  #set ($propertyId = "${step.xWikiClass.name}_${step.number}_$propertyName")
+  &lt;dt class="$!escapetool.xml($cssClass)"&gt;
+    &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
+    &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
+  &lt;/dt&gt;
+  &lt;dd class="$!escapetool.xml($cssClass)"&gt;
+  #if ($propertyName == 'content' &amp;&amp; !$isEdit)
+    ## Add an unique id to each element content, so `getStepTitle()` from js can compute the title in view mode.
+    &lt;span id="$!escapetool.xml($propertyId)"&gt;
+  #end
+  {{/html}}$doc.display($propertyName, "#if ($isEdit)edit#{else}view#end", $step){{html clean='false'}}
+  #if ($propertyName == 'content' &amp;&amp; !$isEdit)
+    &lt;/span&gt;
+  #end
+  &lt;/dd&gt;
+#end
+
 ## Show all properties of a step.
 #macro (_displayStepForm $step)
   #set ($xclass = $step.xWikiClass)
-  #if ($isEdit)
-    #set ($viewMode = 'edit')
-  #else
-    #set ($viewMode = 'view')
-  #end
   &lt;dl id='${xclass.name}_${step.number}' class='itemDisplay hidden'
       role='tabpanel' aria-labelledby='step-tab-${step.number}'&gt;
-    #foreach ($property in $xclass.properties)
-      #set ($propertyId = "${xclass.name}_${step.number}_$property.name")
-      #if ($property.name == 'order')
-        ## The order is automatically computed, so don't display it in the UI.
-        {{/html}}
+    {{/html}}
 
-        $doc.display($property.name, 'hidden', $step)
+    $doc.display('order', 'hidden', $step)
 
-        {{html clean='false'}}
-      #else
-        &lt;dt&gt;
-          &lt;label for="$!escapetool.xml($propertyId)"&gt;$escapetool.xml($property.translatedPrettyName)&lt;/label&gt;
-          &lt;span class="xHint"&gt;$!escapetool.xml($property.hint)&lt;/span&gt;
-        &lt;/dt&gt;
-        &lt;dd&gt;
-        #if ($property.name == 'content' &amp;&amp; !$isEdit)
-          ## Add an unique id to each element content, so `getStepTitle()` from js can compute the title in view mode.
-          &lt;span id="$!escapetool.xml($propertyId)"&gt;
-        #end
-        {{/html}}$doc.display($property.name, $viewMode, $step){{html clean='false'}}
-        #if ($property.name == 'content' &amp;&amp; !$isEdit)
-          &lt;/span&gt;
-        #end
-        &lt;/dd&gt;
-      #end
-    #end
+    {{html clean='false'}}
+    #_displayProperty($step, 'content')
+    #_displayProperty($step, 'element')
+    #_displayProperty($step, 'reflex', 'element-dependent')
+    #_displayProperty($step, 'placement', 'element-dependent')
+    #_displayProperty($step, 'backdrop')
+    #_displayProperty($step, 'targetPage')
+    #_displayProperty($step, 'targetAction')
+    #_displayProperty($step, 'queryParameters')
   &lt;/dl&gt;
 #end
 {{/velocity}}
@@ -491,6 +493,25 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
     });
   }
 
+  /**
+   * Disable the inputs that only make sense when the step targets an element (e.g. reflex, placement), while the
+   * element field is empty or whitespace-only.
+   */
+  function bindElementDependentInputs(objectIndex, form) {
+    const elementField = form.querySelector(`[id="${getStepId(objectIndex)}_element"]`);
+    if (!elementField) {
+      return;
+    }
+    const update = () =&gt; {
+      const isBlank = !elementField.value.trim();
+      form.querySelectorAll('.element-dependent :is(input, select, textarea)').forEach((input) =&gt; {
+        input.disabled = isBlank;
+      });
+    };
+    $(elementField).on('input change', update);
+    update();
+  }
+
   function getStepTitle(objectIndex, form) {
     const descriptionField = form.querySelector(`[id="${getStepId(objectIndex)}_content"]`);
     if (descriptionField.value &amp;&amp; descriptionField.value.trim()) {
@@ -536,6 +557,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       });
       // Update title dynamically depending on step content.
       bindStepItemTitleUpdate(objectIndex, form, item);
+      bindElementDependentInputs(objectIndex, form);
     }
 
     return item;
@@ -842,6 +864,12 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
   background:var(--panel-header-bg);
   color:var(--panel-header-text);
   font-weight:var(--font-weight-semibold);
+}
+
+/* Step properties that only apply when an element is set. */
+.element-dependent {
+  margin-left: 1em;
+  opacity: 0.8;
 }
 
 /* Content (form area) */
