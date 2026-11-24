@@ -869,6 +869,11 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
 /* Step properties that only apply when an element is set. */
 .element-dependent {
   margin-left: 1em;
+}
+
+/* Dim them while the JS disables them (no element set). The dt is dimmed through its dd, which holds the input. */
+dd.element-dependent:has(:disabled),
+dt.element-dependent:has(+ dd.element-dependent :disabled) {
   opacity: 0.8;
 }
 
