@@ -21,11 +21,13 @@ package org.xwiki.contrib.guidedtour.test.po;
 
 import java.util.List;
 
+import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.xwiki.test.ui.po.BaseElement;
 
 /**
@@ -245,6 +247,16 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
+     * Click the page title, which is outside of the element highlighted by the step and does nothing on its own. The
+     * click goes to the backdrop of the step, if it has one, and otherwise to the title.
+     */
+    public void clickOutsideHighlightedElement()
+    {
+        waitForStepTransition();
+        getDriver().createActions().moveToElement(getDriver().findElement(By.id("document-title"))).click().perform();
+    }
+
+    /**
      * @return {@code true} if the popover has a button to move to the next step
      */
     public boolean hasNextButton()
@@ -308,23 +320,64 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
-     * Close the task with the close button of the popover, and wait until the popover is closed.
+     * Close the task with the close button of the popover before its last step, confirm that the task should be
+     * stopped, and wait until the popover is closed.
      */
     public void close()
     {
+        clickClose();
+        confirmStop();
+    }
+
+    /**
+     * Close the task with the Escape key before its last step, confirm that the task should be stopped, and wait until
+     * the popover is closed.
+     */
+    public void pressEscape()
+    {
+        pressEscapeKey();
+        confirmStop();
+    }
+
+    /**
+     * Click the close button of the popover. Before the last step of the task, this asks to confirm that the task
+     * should be stopped.
+     */
+    public void clickClose()
+    {
         waitForStepTransition();
         getDriver().findElement(CLOSE_BUTTON).click();
+    }
+
+    /**
+     * Press the Escape key. Before the last step of the task, this asks to confirm that the task should be stopped.
+     */
+    public void pressEscapeKey()
+    {
+        waitForStepTransition();
+        getDriver().createActions().sendKeys(Keys.ESCAPE).perform();
+    }
+
+    /**
+     * Confirm that the task should be stopped, when asked, and wait until the popover is closed.
+     */
+    public void confirmStop()
+    {
+        getDriver().waitUntilCondition(ExpectedConditions.alertIsPresent()).accept();
         waitUntilClosed();
     }
 
     /**
-     * Close the task with the Escape key, and wait until the popover is closed.
+     * Answer no when asked to confirm that the task should be stopped, which keeps the task on its current step.
+     *
+     * @return the question asked to the user
      */
-    public void pressEscape()
+    public String cancelStop()
     {
-        waitForStepTransition();
-        getDriver().createActions().sendKeys(Keys.ESCAPE).perform();
-        waitUntilClosed();
+        Alert confirmation = getDriver().waitUntilCondition(ExpectedConditions.alertIsPresent());
+        String question = confirmation.getText();
+        confirmation.dismiss();
+        return question;
     }
 
     /**

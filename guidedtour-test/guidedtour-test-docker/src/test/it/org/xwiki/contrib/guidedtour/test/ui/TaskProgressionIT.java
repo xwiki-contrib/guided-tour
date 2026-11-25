@@ -466,4 +466,47 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.waitForStep("Back on page A");
         assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
     }
+
+    /**
+     * Stopping a task before its last step, with the close button, the Escape key or a click outside of the
+     * highlighted element, asks the user to confirm, and answering no keeps the task on its current step. Closing the
+     * task on its last step doesn't ask, and completes the task.
+     */
+    @Test
+    @Order(9)
+    void stoppingATaskAsksForConfirmation(TestUtils setup, TestReference testReference) throws Exception
+    {
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference page =
+            this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Confirm stop");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Confirm stop tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "confirmStopTask", "Confirm stop task", 0, true);
+        // The click outside of the highlighted element goes to the backdrop, which stops the task.
+        this.guidedTour.addSteps(task,
+            Step.withContent("First step").element("#xwikicontent").backdrop(),
+            Step.withContent("Last step"));
+
+        this.guidedTour.createUserAndLogin("GuidedTourConfirmStopUser");
+        setup.gotoPage(page);
+
+        TourWidget widget = new TourWidget();
+        widget.clickTask("confirmStopTask");
+        TourStepPopover popover = new TourStepPopover().waitForStep("First step");
+        String question = "Do you want to stop this task? You will have to start it again from the beginning.";
+
+        popover.clickClose();
+        assertEquals(question, popover.cancelStop());
+        popover.pressEscapeKey();
+        assertEquals(question, popover.cancelStop());
+        popover.clickOutsideHighlightedElement();
+        assertEquals(question, popover.cancelStop());
+        assertTrue(popover.isDisplayed());
+        assertEquals(1, popover.getCurrentStepNumber());
+
+        popover.clickNext();
+        popover.waitForStep("Last step");
+        popover.clickClose();
+        popover.waitUntilClosed();
+        widget.waitUntilTaskStatus("confirmStopTask", DONE);
+    }
 }
