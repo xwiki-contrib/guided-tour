@@ -28,7 +28,7 @@ catalog:
   flush-promises: 1.0.2
   happy-dom: 21.0.3
   jiti: 2.7.0
-  jquery: 4.0.0
+  jquery: 4.1.0
   lodash-es: 4.18.1
   lz-string: 1.5.0
   publint: 0.3.25
