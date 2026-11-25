@@ -40,7 +40,8 @@
     "clean": "rimraf dist",
     "dev": "vite",
     "lint": "eslint \"./src/**/*.{ts,tsx,vue,js}\" --max-warnings=0",
-    "test": "vitest --run"
+    "test": "pnpm run typecheck:test && vitest --run",
+    "typecheck:test": "vue-tsc --project tsconfig.test.json"
   },
   "types": "./dist/index.d.ts",
   "dependencies": {
