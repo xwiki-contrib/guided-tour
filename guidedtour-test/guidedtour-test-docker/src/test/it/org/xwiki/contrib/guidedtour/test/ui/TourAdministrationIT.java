@@ -60,7 +60,7 @@ class TourAdministrationIT extends AbstractGuidedTourIT
     /**
      * A task of the default tour, used to know when the widget has loaded the tours.
      */
-    private static final String DEFAULT_TOUR_TASK_ID = "PageEdit";
+    private static final String DEFAULT_TOUR_TASK_ID = "CreatePage";
 
     /**
      * The list of tours can be filtered by title and status, and has actions to view, edit and delete each tour.

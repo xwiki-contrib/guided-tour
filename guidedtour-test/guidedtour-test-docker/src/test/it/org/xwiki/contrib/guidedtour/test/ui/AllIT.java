@@ -44,4 +44,9 @@ class AllIT
     class NestedTourAdministrationIT extends TourAdministrationIT
     {
     }
+
+    @Nested
+    class NestedGettingStartedTourIT extends GettingStartedTourIT
+    {
+    }
 }
