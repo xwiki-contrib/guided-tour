@@ -245,6 +245,16 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
+     * Click the page title, which is outside of the element highlighted by the step and does nothing on its own. The
+     * click goes to the backdrop of the step, if it has one, and otherwise to the title.
+     */
+    public void clickOutsideHighlightedElement()
+    {
+        waitForStepTransition();
+        getDriver().createActions().moveToElement(getDriver().findElement(By.id("document-title"))).click().perform();
+    }
+
+    /**
      * @return {@code true} if the popover has a button to move to the next step
      */
     public boolean hasNextButton()
