@@ -54,9 +54,9 @@
           <span class="pre-btns" aria-hidden="true">
             <slot name="pre-btns" />
           </span>
-          <span class="guidedtour-widget-item-title"
-            ><slot name="item-title"
-          /></span>
+          <span class="guidedtour-widget-item-title">
+            <slot name="item-title" />
+          </span>
           <slot name="loading-icon">
             <i
               style="--fa-animation-timing: ease-in-out"

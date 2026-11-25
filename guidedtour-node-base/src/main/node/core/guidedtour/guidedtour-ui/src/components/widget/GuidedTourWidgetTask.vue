@@ -36,7 +36,7 @@
     @click="onStartTask"
   >
     <template v-slot:pre-btns>
-      <i class="fa fa-arrow-right" />
+      <i class="fa fa-arrow-right" aria-hidden="true" />
     </template>
     <template v-slot:item-title>
       <span class="task-title">{{ task.title }}</span>

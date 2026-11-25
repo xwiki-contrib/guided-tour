@@ -48,7 +48,10 @@
         @click="$emit('toggleCollapseTour', props.tour)"
       >
         <template v-slot:pre-btns>
-          <i class="fa-solid fa-chevron-right chevron always-show" />
+          <i
+            class="fa-solid fa-chevron-right chevron always-show"
+            aria-hidden="true"
+          />
         </template>
         <template v-slot:item-title>
           <span class="tour-title">{{ props.tour.title }}</span>
