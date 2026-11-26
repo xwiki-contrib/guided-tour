@@ -119,14 +119,31 @@ public class ToursManager
     }
 
     /**
+     * Retrieves all tours, including their tasks. See {@link #getAllTours(boolean)}.
+     *
+     * @return the list of tours, each with its tasks
+     * @throws QueryException if there is an error while executing the HQL query
+     * @throws XWikiException if there is an error while interacting with the XWiki API
+     * @throws InvalidIdException if a tour returned by the query has no tour object
+     */
+    public List<TourDTO> getAllTours() throws QueryException, XWikiException, InvalidIdException
+    {
+        return getAllTours(true);
+    }
+
+    /**
      * Retrieves all tours. It executes a HQL query to get all documents with a TourClass object, excluding the
      * template, and maps the results to a list of TourDTOs.
      *
-     * @return a JSON string representing the list of tours
+     * @param withTasks {@code true} to also load the tasks of each tour, {@code false} to skip them when only the
+     *     tour information is needed, since loading the tasks costs one query and one document load per task
+     * @return the list of tours
      * @throws QueryException if there is an error while executing the HQL query
      * @throws XWikiException if there is an error while interacting with the XWiki API
+     * @throws InvalidIdException if a tour returned by the query has no tour object
+     * @since 0.2
      */
-    public List<TourDTO> getAllTours() throws QueryException, XWikiException, InvalidIdException
+    public List<TourDTO> getAllTours(boolean withTasks) throws QueryException, XWikiException, InvalidIdException
     {
         Map<String, Object> parameters =
             Map.of("excludeName", EXCLUDE_NAME, "class", this.localSerializer.serialize(TOUR_CLASS));
@@ -141,7 +158,9 @@ public class ToursManager
             boolean isActive = tourObj.getIntValue(TourProperty.IS_ACTIVE.getBaseKey()) == 1;
             String description = tourObj.getStringValue(TourProperty.DESCRIPTION.getBaseKey());
             TourDTO dto = new TourDTO(documentReference.toString(), title, isActive, description);
-            dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
+            if (withTasks) {
+                dto.setTasks(this.tasksManager.getAllTasks(documentReference.toString()));
+            }
             tours.add(dto);
         }
         return tours;
