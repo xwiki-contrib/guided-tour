@@ -66,7 +66,7 @@ class GettingStartedTourIT extends AbstractGuidedTourIT
         popover.waitForStep("Click Create to add a new page.").clickHighlightedElementAndWaitForPageReload();
 
         popover.waitForStep("This is the title of your new page. Type one that includes your name, for example"
-            + " \"Alice's tutorial page\", then click Next.");
+            + " \"Tutorial page of Alice\", then click Next.");
         CreatePagePage createPage = new CreatePagePage();
         String templateProvider = "GuidedTour.Tours.GettingStarted.Code.TutorialPageTemplateProvider";
         assertThat(createPage.getAvailableTemplates(), hasItem(templateProvider));

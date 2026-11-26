@@ -646,7 +646,7 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>This is the title of your new page. Type one that includes your name, for example "Alice's tutorial page", then click Next.</content>
+      <content>This is the title of your new page. Type one that includes your name, for example "Tutorial page of Alice", then click Next.</content>
     </property>
     <property type="String">
       <element>#targetTitle</element>
