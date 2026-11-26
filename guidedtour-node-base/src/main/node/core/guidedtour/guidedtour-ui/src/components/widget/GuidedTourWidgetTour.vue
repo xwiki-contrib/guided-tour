@@ -42,29 +42,49 @@
         :loading="false"
         :waiting="ref(false)"
         class="guidedtour-tour-header"
+        :heading-level="3"
+        :expanded="!props.tour.isCollapsed"
+        :controls="contentId"
         @click="$emit('toggleCollapseTour', props.tour)"
       >
         <template v-slot:pre-btns>
-          <!-- This is just for show, it shouldn't do anything. -->
-          <i class="fa-solid fa-chevron-right chevron always-show" />
+          <i
+            class="fa-solid fa-chevron-right chevron always-show"
+            aria-hidden="true"
+          />
         </template>
         <template v-slot:item-title>
           <span class="tour-title">{{ props.tour.title }}</span>
+          <!-- The space is in the expression, since Vue drops the leading whitespace of the element. -->
+          <span v-if="statusText" class="sr-only">{{ ` ${statusText}` }}</span>
         </template>
         <template v-slot:post-btns>
           <button
             v-if="status == TourTaskStatus.TODO"
+            type="button"
             class="post-btn"
+            :aria-label="label('tour.skip')"
             @click.stop="onSkipTour"
           >
-            <i class="fa-solid fa-x" />
+            <i class="fa-solid fa-x" aria-hidden="true" />
           </button>
-          <button v-else class="post-btn" @click.stop="onResetTour">
-            <i class="fa fa-rotate-right" />
+          <button
+            v-else
+            type="button"
+            class="post-btn"
+            :aria-label="label('tour.reset')"
+            @click.stop="onResetTour"
+          >
+            <i class="fa fa-rotate-right" aria-hidden="true" />
           </button>
         </template>
       </GuidedTourWidgetItem>
-      <div class="guidedtour-content">
+      <!-- Inert when collapsed, so that the hidden tasks can't be focused or reached by the assistive technologies. -->
+      <div
+        :id="contentId"
+        class="guidedtour-content"
+        :inert="props.tour.isCollapsed"
+      >
         <Suspense>
           <template #default>
             <template v-for="task in tasks" :key="task.id">
@@ -87,14 +107,17 @@
   </template>
   <template v-else>
     <!-- Show nice loading animation for placeholders -->
-    <section class="guidedtour-tour loading-content" />
+    <section class="guidedtour-tour loading-content" aria-hidden="true" />
   </template>
 </template>
 
 <script setup lang="ts">
 import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTask from "./GuidedTourWidgetTask.vue";
+import { getStatusText } from "./statusText";
+import { RESOLVER } from "../../injectionKeys";
 import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
+import { useI18nAdapter } from "@xwiki/platform-localization-adapter-vue";
 import { computed, inject, onMounted, ref } from "vue";
 import type {
   GuidedTourManager,
@@ -110,6 +133,28 @@ const status = computed(() => {
 defineEmits(["toggleCollapseTour"]);
 const guidedTourManager: GuidedTourManager = inject("GuidedTourManager")!;
 const tasks = ref<Reactive<TourTask>[]>([]);
+// The tour id is a page reference, which can contain spaces. Encode it, since aria-controls takes a list of ids
+// separated by spaces.
+const contentId = computed(
+  () => `guidedtour-tasks-${encodeURIComponent(props.tour.id)}`,
+);
+
+const { t, isLoading } = useI18nAdapter(inject(RESOLVER)!, {
+  prefix: "guidedtour.widget.",
+  keys: ["tour.skip", "tour.reset", "status.done", "status.skipped"],
+});
+/**
+ * @param key - The key of the label, without the common prefix.
+ * @returns The label of a button acting on the tour, or nothing while the translations are loading.
+ */
+function label(key: string) {
+  return isLoading.value
+    ? undefined
+    : t(`guidedtour.widget.${key}`, [props.tour.title]);
+}
+const statusText = computed(() =>
+  isLoading.value ? undefined : getStatusText(status.value, t),
+);
 
 /**
  * Skip all the TODO tasks of the tour.
@@ -157,7 +202,8 @@ onMounted(async () => {
 }
 
 /* FIXME: guidedtour-content should be renamed to -collapsible or something. */
-.collapsed .guidedtour-content {
+/* Only the collapsed tour: a scoped ".collapsed" would also match the collapsed widget around it. */
+.guidedtour-tour.collapsed .guidedtour-content {
   max-height: 0;
 }
 
@@ -184,15 +230,9 @@ onMounted(async () => {
   background: var(--guidedtour-background-color-secondary) 100%;
 }
 
+/* The layout and the padding of the row come from GuidedTourWidgetItem. */
 .guidedtour-tour-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
   font-weight: bold;
-  border-radius: 0.65em;
-  transition: background-color 0.1s ease;
-  padding: 0.5em;
   overflow: hidden;
   overflow-wrap: break-word;
 }
