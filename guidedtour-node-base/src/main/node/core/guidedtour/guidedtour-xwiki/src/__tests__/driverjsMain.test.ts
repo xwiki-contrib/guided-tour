@@ -337,29 +337,11 @@ describe("driverjsMain", () => {
 
     it("shows the progress of the task and remembers the step", () => {
       const task = createTask();
-      task.steps![1].backdrop = true;
-      const { config, popover } = renderPopover(
-        task,
-        createGuidedTourManager(task),
-        1,
-      );
+      const { popover } = renderPopover(task, createGuidedTourManager(task), 1);
 
       expect(popover.progress.innerText).toBe("⬤ ⬤ ◯ ◯ ");
       expect(popover.wrapper.firstElementChild).toBe(popover.progress);
-      expect(config.overlayOpacity).toBe(0.3);
       expect(getCurrentStep(task)).toBe("1");
-    });
-
-    it("hides the backdrop of a step without one", () => {
-      const task = createTask();
-      const { config, popover } = renderPopover(
-        task,
-        createGuidedTourManager(task),
-        0,
-      );
-
-      expect(popover.progress.innerText).toBe("⬤ ◯ ◯ ◯ ");
-      expect(config.overlayOpacity).toBe(0);
     });
 
     it("shows the navigation buttons of a regular step", () => {
@@ -595,6 +577,21 @@ describe("driverjsMain", () => {
   });
 
   describe("onHighlightStarted", () => {
+    it("lets the clicks through the overlay only during the steps without backdrop", async () => {
+      const task = createTask();
+      task.steps![1].backdrop = true;
+      const config = await getDriverConfigForSteps(
+        task,
+        {} as DefaultGuidedTourManager,
+        {},
+      );
+
+      highlightSteps(config, [0], document.body);
+      expect(document.body.classList).toContain("driver-xwiki-no-backdrop");
+      highlightSteps(config, [1], document.body);
+      expect(document.body.classList).not.toContain("driver-xwiki-no-backdrop");
+    });
+
     it("skips the task when the element of a step is not in the page", async () => {
       const consoleError = vi
         .spyOn(console, "error")
