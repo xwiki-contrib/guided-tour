@@ -99,6 +99,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         // Leaving the task before its last step keeps it to do. Wait for the leave to be handled (the next tasks aren't
         // started automatically anymore) before checking the status.
         popover.pressEscape();
+        popover.confirmBrowserAlert();
         this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId));
         assertEquals(TODO, new TourWidget().getTaskStatus("navigationTask"));
     }
@@ -189,6 +190,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         widget.clickTask("closeFirstTask");
         TourStepPopover popover = new TourStepPopover().waitForStep("First task, step one");
         popover.close();
+        popover.confirmBrowserAlert();
 
         // Once the close is handled (the next tasks aren't started automatically anymore), the task is still to do.
         // The other tour isn't affected.
@@ -494,18 +496,18 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         TourStepPopover popover = new TourStepPopover().waitForStep("First step");
         String question = "Do you want to stop this task? You will have to start it again from the beginning.";
 
-        popover.clickClose();
-        assertEquals(question, popover.cancelStop());
-        popover.pressEscapeKey();
-        assertEquals(question, popover.cancelStop());
+        popover.close();
+        assertEquals(question, popover.denyBrowserAlert());
+        popover.pressEscape();
+        assertEquals(question, popover.denyBrowserAlert());
         popover.clickOutsideHighlightedElement();
-        assertEquals(question, popover.cancelStop());
+        assertEquals(question, popover.denyBrowserAlert());
         assertTrue(popover.isDisplayed());
         assertEquals(1, popover.getCurrentStepNumber());
 
         popover.clickNext();
         popover.waitForStep("Last step");
-        popover.clickClose();
+        popover.close();
         popover.waitUntilClosed();
         widget.waitUntilTaskStatus("confirmStopTask", DONE);
     }
