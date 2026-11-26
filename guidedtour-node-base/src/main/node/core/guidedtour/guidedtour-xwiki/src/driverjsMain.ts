@@ -33,6 +33,12 @@ import type {
 
 type StepDirection = "next" | "previous";
 
+/**
+ * Set on the page body while the active step has no backdrop: the overlay is then hidden and lets the clicks through,
+ * so that the user can use the menus and dialogs that the step asks for, outside of the highlighted element.
+ */
+const NO_BACKDROP_CLASS = "driver-xwiki-no-backdrop";
+
 const util = {
   /**
    * Useful for locking task progression while redirecting to another page (like after clicking on an URL as part of a
@@ -86,15 +92,11 @@ const util = {
    * For use in `findVisibleElement` below.
    *
    * @param element - The element to check
-   * @returns true if the element is visible on the page, false otherwise.
+   * @returns false if the element or one of its ancestors is hidden (e.g. `display: none`), true otherwise. driver.js
+   *   places the popover of a hidden element in the top left corner of the page.
    */
   isElementVisible(element: Element): boolean {
-    const style = globalThis.getComputedStyle(element);
-    if (style.display == "none") {
-      return false;
-    } else {
-      return true;
-    }
+    return element.checkVisibility();
   },
   /**
    * @param selector - css selector for the element to find (should be compatible with document.querySelector)
@@ -272,6 +274,9 @@ function XWikiDriverConfig(
     onHighlightStarted: (element, step, options) => {
       util.hideLoadingNotification();
       const xwikiStep = guidedTourTask.steps![options.state.activeIndex!];
+      // driver.js sets the overlay opacity only when it creates the overlay, so the backdrop of each step is applied
+      // with a class instead (see driver.css in guidedtour-ui).
+      document.body.classList.toggle(NO_BACKDROP_CLASS, !xwikiStep.backdrop);
       if (element === undefined && step.element !== undefined) {
         // We didn't find the element we wanted. Don't proceed with the task.
         console.error("Failed to find the element of the step:", xwikiStep);
@@ -284,6 +289,16 @@ function XWikiDriverConfig(
       } else {
         bindReflexEvents(element, xwikiStep, guidedTourManager);
       }
+    },
+    /**
+     * Place the popover again once the step is shown. A scroll during the move from the previous step makes driver.js
+     * place the popover against the element of the previous step, which may no longer be in the page (e.g. the "Add
+     * comment" button, replaced when the comments are refreshed): the popover then ends up in the top left corner.
+     * `refresh()` places the popover on the next animation frame, once driver.js has recorded the element of this step.
+     * This works around driver.js 1.10.2 and can be removed from driver.js 1.12.0, which handles such a refresh itself.
+     */
+    onHighlighted: (_element, _step, options) => {
+      options.driver.refresh();
     },
     onPopoverRender: (popDOM, options) => {
       // TODO: Need to handle this better
@@ -300,10 +315,6 @@ function XWikiDriverConfig(
       popDOM.progress.innerText =
         "⬤ ".repeat(activeIndex + 1) +
         "◯ ".repeat(options.config.steps!.length - activeIndex - 1);
-      options.config.overlayOpacity = guidedTourTask.steps![activeIndex]
-        .backdrop
-        ? 0.3
-        : 0;
       popDOM.wrapper.insertBefore(popDOM.progress, popDOM.title);
 
       // The user will see this step, so update the storage key.
@@ -319,6 +330,7 @@ function XWikiDriverConfig(
     // eslint-disable-next-line max-statements
     onDestroyed: async function (_element, _step, _options) {
       console.debug("onDestroyed", _element, _step, _options, guidedTourTask);
+      document.body.classList.remove(NO_BACKDROP_CLASS);
       util.hideLoadingNotification();
       if (guidedTourManager.activeTask === undefined) {
         // The task status was already set by an external command, so don't recompute the status here.
@@ -337,8 +349,9 @@ function XWikiDriverConfig(
               TourTaskStatus.DONE,
             );
           } else {
-            // The user closed the task before the end (close button or click outside): keep its status, but don't
-            // start the next tasks of its tour automatically anymore.
+            // The user closed the task before the end (close button, Escape, or a click outside the highlighted
+            // element on a step with backdrop): keep its status, but don't start the next tasks of its tour
+            // automatically anymore.
             await guidedTourManager.disableCallToAction(guidedTourTask.tourId!);
             await guidedTourManager.setTaskStatus(
               guidedTourTask,

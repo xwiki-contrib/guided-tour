@@ -511,4 +511,35 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.waitUntilClosed();
         widget.waitUntilTaskStatus("confirmStopTask", DONE);
     }
+
+    /**
+     * A step with backdrop ends the task when the user clicks outside of the highlighted element, while a step without
+     * backdrop lets the click through to the page.
+     */
+    @Test
+    @Order(10)
+    void backdropOfEachStep(TestUtils setup, TestReference testReference) throws Exception
+    {
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference page =
+            this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Backdrop");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Backdrop tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "backdropTask", "Backdrop task", 0, true);
+        this.guidedTour.addSteps(task,
+            Step.withContent("Without backdrop").element("#xwikicontent"),
+            Step.withContent("With backdrop").element("#xwikicontent").backdrop());
+
+        this.guidedTour.createUserAndLogin("GuidedTourBackdropUser");
+        setup.gotoPage(page);
+
+        new TourWidget().clickTask("backdropTask");
+        TourStepPopover popover = new TourStepPopover().waitForStep("Without backdrop");
+        popover.clickOutsideHighlightedElement();
+        assertTrue(popover.isDisplayed());
+
+        popover.clickNext();
+        popover.waitForStep("With backdrop");
+        popover.clickOutsideHighlightedElement();
+        popover.waitUntilClosed();
+    }
 }
