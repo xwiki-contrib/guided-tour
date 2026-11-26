@@ -24,7 +24,7 @@
   <web>GuidedTour</web>
   <name>WebHome</name>
   <language/>
-  <defaultLanguage/>
+  <defaultLanguage>en</defaultLanguage>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
   <parent>Main.WebHome</parent>
@@ -35,7 +35,7 @@
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
-  <hidden>true</hidden>
+  <hidden>false</hidden>
   <content>{{velocity}}
 ## Renders a translation whose {0} and {1} parameters mark the start and the end of a link. The translation is escaped
 ## first, and only then are the markers replaced by the (trusted) link tags.
