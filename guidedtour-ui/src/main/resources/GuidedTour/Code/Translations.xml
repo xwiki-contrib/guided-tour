@@ -141,6 +141,7 @@ guidedtour.modal.task.add.inProgress=Creating new task...
 
 ## Home page
 
+guidedTour.extension.title=Guided Tour
 guidedtour.home.howItWorks.title=How guided tours work
 guidedtour.home.howItWorks.intro=Walk new users through key pages with on-screen tips. A tour holds tasks, and each task holds the steps shown on the page.
 guidedtour.home.create.button=Create Tour
