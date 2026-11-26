@@ -20,7 +20,7 @@
 
 // @ts-expect-error this is a JavaScript file, it is expected to not have types.
 import { XWiki } from "../services/xwiki.js";
-import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
+import { TourTaskStatus, isTaskAvailable } from "@xwiki/contrib-guidedtour-api";
 import type { GuidedTourRestClient } from "./GuidedTourRestClient";
 import type { TourStore } from "./TourStore";
 import type {
@@ -85,12 +85,10 @@ export class DefaultTourManagerApi implements TourManagerApi {
         // The tasks weren't fetched yet, so do nothing.
         continue;
       }
-      // Only consider active tasks that are shown in the UI.
-      const consideredTaskList = tour.tasksList.filter(
-        (task: TourTask) => task.active == true,
-      );
+      // Only consider the tasks that are shown in the UI.
+      const consideredTaskList = tour.tasksList.filter(isTaskAvailable);
       if (consideredTaskList.length == 0) {
-        // Skip all tours with no active tasks.
+        // Skip all tours with no available tasks.
         tour.status = TourTaskStatus.SKIPPED;
       } else if (
         consideredTaskList.find(

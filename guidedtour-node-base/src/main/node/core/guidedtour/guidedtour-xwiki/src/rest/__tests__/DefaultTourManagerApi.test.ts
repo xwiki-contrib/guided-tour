@@ -36,9 +36,13 @@ const { TODO, DONE, SKIPPED } = TourTaskStatus;
 
 let taskCount = 0;
 
-function createTask(status: TourTaskStatus, active = true): TourTask {
+function createTask(
+  status: TourTaskStatus,
+  active = true,
+  stepCount = 1,
+): TourTask {
   const id = `task${++taskCount}`;
-  return { id, title: id, order: taskCount, status, active };
+  return { id, title: id, order: taskCount, status, active, stepCount };
 }
 
 function createTour(tasksList: TourTask[] = []): TourTour {
@@ -103,14 +107,20 @@ describe("DefaultTourManagerApi", () => {
       },
     );
 
-    it("only considers the active tasks to compute the status of a tour", () => {
-      const tour = createTour([createTask(DONE), createTask(TODO, false)]);
+    it("only considers the available tasks to compute the status of a tour", () => {
+      const tour = createTour([
+        createTask(DONE),
+        createTask(TODO, false),
+        createTask(TODO, true, 0),
+      ]);
       const tourWithoutActiveTasks = createTour([createTask(TODO, false)]);
+      const tourWithoutSteps = createTour([createTask(TODO, true, 0)]);
 
-      api.computeToursStatus([tour, tourWithoutActiveTasks]);
+      api.computeToursStatus([tour, tourWithoutActiveTasks, tourWithoutSteps]);
 
       expect(tour.status).toBe(DONE);
       expect(tourWithoutActiveTasks.status).toBe(SKIPPED);
+      expect(tourWithoutSteps.status).toBe(SKIPPED);
     });
 
     it("doesn't compute the status of a tour whose tasks aren't fetched yet", () => {

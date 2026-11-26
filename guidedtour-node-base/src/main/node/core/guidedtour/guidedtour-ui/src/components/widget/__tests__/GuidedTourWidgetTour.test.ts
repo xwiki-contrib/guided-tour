@@ -41,8 +41,15 @@ function createGuidedTourManager(tasks: TourTask[] = []): GuidedTourManager {
   } as unknown as GuidedTourManager;
 }
 
-function createTask(id: string, active = true): TourTask {
-  return { id, title: id, order: 0, status: TourTaskStatus.TODO, active };
+function createTask(id: string, active = true, stepCount = 1): TourTask {
+  return {
+    id,
+    title: id,
+    order: 0,
+    status: TourTaskStatus.TODO,
+    active,
+    stepCount,
+  };
 }
 
 async function mountTour(
@@ -142,11 +149,12 @@ describe("GuidedTourWidgetTour", () => {
     },
   );
 
-  it("shows the active tasks of the tour", async () => {
+  it("shows the active tasks of the tour that have steps", async () => {
     const guidedTourManager = createGuidedTourManager([
       createTask("task1"),
       createTask("task2", false),
       createTask("task3"),
+      createTask("task4", true, 0),
     ]);
     const wrapper = await mountTour(TourTaskStatus.TODO, guidedTourManager);
 
@@ -161,6 +169,18 @@ describe("GuidedTourWidgetTour", () => {
     ["shows an active tour with tasks", true, [createTask("task1")], false],
     ["hides an inactive tour", false, [createTask("task1")], true],
     ["hides a tour without tasks", true, [], true],
+    [
+      "hides a tour without active tasks",
+      true,
+      [createTask("task1", false)],
+      true,
+    ],
+    [
+      "hides a tour whose tasks have no steps",
+      true,
+      [createTask("task1", true, 0)],
+      true,
+    ],
   ])("%s", async (_description, active, tasksList, hidden) => {
     // The cached tasks of the tour are the ones fetched by the component.
     const wrapper = await mountTour(

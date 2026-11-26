@@ -31,6 +31,9 @@ export interface GuidedTourManager {
 }
 
 // @beta
+export function isTaskAvailable(task: TourTask): boolean;
+
+// @beta
 export interface StepManagerApi {
     createStep(tourId: string, taskId: string, stepData: TourStep): Promise<void>;
     deleteStep(tourId: string, taskId: string, stepId: number): Promise<void>;
@@ -84,6 +87,7 @@ export interface TourTask {
     id: string;
     order: number;
     status: TourTaskStatus;
+    stepCount?: number;
     steps?: TourStep[];
     title: string;
     tourId?: string;

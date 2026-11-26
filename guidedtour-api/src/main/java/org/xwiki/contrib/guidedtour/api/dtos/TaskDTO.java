@@ -50,6 +50,8 @@ public class TaskDTO
 
     private boolean isActive;
 
+    private int stepCount;
+
     /**
      * Default constructor.
      */
@@ -194,5 +196,27 @@ public class TaskDTO
     public void setStatus(Status status)
     {
         this.status = status;
+    }
+
+    /**
+     * Gets the number of steps of the task. A task without steps is not shown to the users.
+     *
+     * @return the number of steps of the task
+     * @since 0.2
+     */
+    public int getStepCount()
+    {
+        return this.stepCount;
+    }
+
+    /**
+     * Sets the number of steps of the task.
+     *
+     * @param stepCount the number of steps of the task
+     * @since 0.2
+     */
+    public void setStepCount(int stepCount)
+    {
+        this.stepCount = stepCount;
     }
 }

@@ -18,6 +18,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import { isTaskAvailable } from "./task";
 import { TourTaskStatus } from "./tourTaskStatus";
 import { WidgetState } from "./userTourStatus";
 import type { GuidedTourManager } from "./rest/GuidedTourManager";
@@ -39,4 +40,4 @@ export type {
   UserTourStatus,
 };
 
-export { TourTaskStatus, WidgetState };
+export { TourTaskStatus, WidgetState, isTaskAvailable };

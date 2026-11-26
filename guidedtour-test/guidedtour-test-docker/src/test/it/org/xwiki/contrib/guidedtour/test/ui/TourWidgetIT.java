@@ -227,7 +227,8 @@ class TourWidgetIT extends AbstractGuidedTourIT
 
     /**
      * The widget displays the default tour and the active tours with tasks, but not inactive tours, tours without
-     * tasks, inactive tasks, or tours and tasks the user isn't allowed to view.
+     * tasks, inactive tasks, tasks without steps, tours whose tasks all have no steps, or tours and tasks the user isn't
+     * allowed to view.
      */
     @Test
     @Order(4)
@@ -263,11 +264,8 @@ class TourWidgetIT extends AbstractGuidedTourIT
         this.guidedTour.addSteps(taskOfRestrictedTour, Step.withContent("Task of restricted tour, only step"));
         this.guidedTour.denyView(restrictedTour, userName);
 
-        // A tour with only a task without steps, and a tour with a task with steps and a task without steps.
-        // FIXME: A task without steps can't be done, so it shouldn't be displayed, nor a tour whose tasks all have no
-        // steps (https://jira.xwiki.org/browse/GUIDEDTOUR-33). For now they are displayed. Once this is fixed, these
-        // checks will fail: update them to expect the tasks without steps, and the tour with only such a task, to be
-        // hidden.
+        // A tour with only a task without steps, and a tour with a task with steps and a task without steps. A task
+        // without steps can't be done, so it's not displayed, nor a tour whose tasks all have no steps.
         DocumentReference steplessTour = this.guidedTour.createTour(space, "SteplessTour", "Stepless tour", true);
         this.guidedTour.createTask(steplessTour, "visibilityOnlySteplessTask", "Only stepless task", 0, true);
         DocumentReference mixedTour = this.guidedTour.createTour(space, "MixedTour", "Mixed tour", true);
@@ -284,13 +282,11 @@ class TourWidgetIT extends AbstractGuidedTourIT
         setup.gotoPage(page);
 
         TourWidget widget = new TourWidget().waitUntilTaskIsDisplayed("visibilityActiveTask")
-            .waitUntilTaskIsDisplayed("visibilityOnlySteplessTask").waitUntilTaskIsDisplayed("visibilitySteplessTask");
-        assertThat(widget.getTourIds(),
-            containsInAnyOrder(GETTING_STARTED_TOUR_ID, visibleTourId, steplessTourId, mixedTourId));
+            .waitUntilTaskIsDisplayed("visibilityTaskWithSteps");
+        assertThat(widget.getTourIds(), containsInAnyOrder(GETTING_STARTED_TOUR_ID, visibleTourId, mixedTourId));
         assertEquals(List.of("visibilityActiveTask"), widget.getVisibleTaskIds(visibleTourId));
-        assertEquals(List.of("visibilityOnlySteplessTask"), widget.getVisibleTaskIds(steplessTourId));
-        assertEquals(List.of("visibilityTaskWithSteps", "visibilitySteplessTask"),
-            widget.getVisibleTaskIds(mixedTourId));
+        assertEquals(List.of(), widget.getVisibleTaskIds(steplessTourId));
+        assertEquals(List.of("visibilityTaskWithSteps"), widget.getVisibleTaskIds(mixedTourId));
 
         // A user allowed to view the restricted tour and task sees them, but still not the inactive or empty ones.
         setup.loginAsSuperAdmin();

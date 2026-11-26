@@ -113,6 +113,15 @@ public class TaskEditPage extends InlinePage
     }
 
     /**
+     * @return {@code true} if the form warns that the task has no steps, so it's hidden in the widget, {@code false}
+     *     otherwise
+     */
+    public boolean isNoStepsWarningDisplayed()
+    {
+        return TaskPage.isNoStepsWarningDisplayed(getDriver());
+    }
+
+    /**
      * Add a step at the end of the task, and fill its content.
      *
      * @param content the content of the new step

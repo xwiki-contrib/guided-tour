@@ -177,7 +177,7 @@ class TourAdministrationIT extends AbstractGuidedTourIT
 
     /**
      * A task can be added from the tour page, then its properties and steps edited from the task page. The widget and
-     * the task take the changes into account.
+     * the task take the changes into account, and the widget hides the task while it has no steps.
      */
     @Test
     @Order(3)
@@ -199,15 +199,29 @@ class TourAdministrationIT extends AbstractGuidedTourIT
         this.guidedTour.deleteAfterTest(addedTask);
         assertEquals(setup.getURL(addedTask), taskPage.getPageURL());
         assertFalse(this.guidedTour.getTask(addedTask).isActive());
+        // The new task has no steps yet, which hides it in the widget.
+        assertTrue(taskPage.isNoStepsWarningDisplayed());
 
+        // Activate the task before adding its steps: the widget still doesn't display it.
         TaskEditPage taskEditPage = TaskEditPage.gotoPage(addedTask);
-        taskEditPage.setTaskTitle("Added task").setOrder(1).setActive(true).addStep("Added task, step one");
+        taskEditPage.setTaskTitle("Added task").setOrder(1).setActive(true);
+        assertTrue(taskEditPage.isNoStepsWarningDisplayed());
+        taskPage = taskEditPage.clickSaveAndView();
+        assertTrue(taskPage.isNoStepsWarningDisplayed());
+        setup.gotoPage(page);
+        TourWidget widget = new TourWidget().expand().waitUntilTaskIsDisplayed("stepsExistingTask");
+        assertEquals(List.of("stepsExistingTask"), widget.getVisibleTaskIds(tourId));
+
+        // Adding a step removes the warning right away.
+        taskEditPage = TaskEditPage.gotoPage(addedTask).addStep("Added task, step one");
         assertEquals(List.of("Added task, step one"), taskEditPage.getStepTitles());
+        assertFalse(taskEditPage.isNoStepsWarningDisplayed());
         // Save after adding each step, because a single edit session can't add more than one step. The task
         // sheet sets the number of a new step object with $step.getXWikiObject().setNumber(), which requires the sheet
         // to have programming rights: without them, every new step form is rendered for the object 0.
         taskPage = taskEditPage.clickSaveAndView();
         assertEquals(List.of("Added task, step one"), taskPage.getStepTitles());
+        assertFalse(taskPage.isNoStepsWarningDisplayed());
         taskEditPage = TaskEditPage.gotoPage(addedTask).addStep("Added task, step two");
         assertEquals(List.of("Added task, step one", "Added task, step two"), taskEditPage.getStepTitles());
         taskPage = taskEditPage.clickSaveAndView();
@@ -219,7 +233,7 @@ class TourAdministrationIT extends AbstractGuidedTourIT
 
         // The widget displays the task with its title, before the existing task because of its order.
         setup.gotoPage(page);
-        TourWidget widget = new TourWidget().expand().waitUntilTaskIsDisplayed("stepsAddedTask");
+        widget = new TourWidget().expand().waitUntilTaskIsDisplayed("stepsAddedTask");
         assertEquals(List.of("stepsAddedTask", "stepsExistingTask"), widget.getVisibleTaskIds(tourId));
         assertEquals("Added task", widget.getTaskTitle("stepsAddedTask"));
 
