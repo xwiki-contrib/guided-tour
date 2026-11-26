@@ -18,6 +18,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
+import { RESOLVER_PROVIDE } from "./i18nMock";
 import GuidedTourWidgetTask from "../GuidedTourWidgetTask.vue";
 import GuidedTourWidgetTour from "../GuidedTourWidgetTour.vue";
 import { flushPromises, mount } from "@vue/test-utils";
@@ -28,6 +29,8 @@ import type {
   TourTask,
   TourTour,
 } from "@xwiki/contrib-guidedtour-api";
+
+vi.mock("@xwiki/platform-localization-adapter-vue", () => import("./i18nMock"));
 
 function createGuidedTourManager(tasks: TourTask[] = []): GuidedTourManager {
   return {
@@ -56,7 +59,7 @@ async function mountTour(
   const wrapper = mount(GuidedTourWidgetTour, {
     props: { tour },
     global: {
-      provide: { GuidedTourManager: guidedTourManager },
+      provide: { GuidedTourManager: guidedTourManager, ...RESOLVER_PROVIDE },
       stubs: {
         GuidedTourWidgetTask: true,
         // Render the default slot directly, which avoids the Vue warnings about
@@ -103,7 +106,9 @@ describe("GuidedTourWidgetTour", () => {
       createGuidedTourManager(),
     );
 
-    await wrapper.find(".guidedtour-tour-header").trigger("click");
+    await wrapper
+      .find(".guidedtour-tour-header .guidedtour-widget-item-main")
+      .trigger("click");
 
     expect(wrapper.emitted("toggleCollapseTour")).toEqual([
       [wrapper.props("tour")],
@@ -126,6 +131,14 @@ describe("GuidedTourWidgetTour", () => {
       expect(wrapper.find(".guidedtour-tour").classes("collapsed")).toBe(
         collapsed,
       );
+      // The header tells whether the tasks are shown, and the hidden tasks can't be focused.
+      const toggle = wrapper.find(
+        ".guidedtour-tour-header .guidedtour-widget-item-main",
+      );
+      expect(toggle.attributes("aria-expanded")).toBe(String(!collapsed));
+      const content = wrapper.find(".guidedtour-content");
+      expect(toggle.attributes("aria-controls")).toBe(content.attributes("id"));
+      expect(content.attributes("inert")).toBe(collapsed ? "" : undefined);
     },
   );
 
@@ -157,5 +170,53 @@ describe("GuidedTourWidgetTour", () => {
     );
 
     expect(wrapper.find(".guidedtour-tour").classes("hidden")).toBe(hidden);
+  });
+
+  it("is a section with the title of the tour as heading", async () => {
+    const wrapper = await mountTour(
+      TourTaskStatus.TODO,
+      createGuidedTourManager(),
+    );
+
+    const heading = wrapper.find(".guidedtour-tour-header h3");
+    expect(heading.find(".guidedtour-widget-item-main").text()).toBe("Tour 1");
+  });
+
+  it.each([
+    [TourTaskStatus.TODO, "guidedtour.widget.tour.skip [Tour 1]", "Tour 1"],
+    [
+      TourTaskStatus.DONE,
+      "guidedtour.widget.tour.reset [Tour 1]",
+      "Tour 1 guidedtour.widget.status.done",
+    ],
+    [
+      TourTaskStatus.SKIPPED,
+      "guidedtour.widget.tour.reset [Tour 1]",
+      "Tour 1 guidedtour.widget.status.skipped",
+    ],
+  ])(
+    "names the button acting on a tour that is %s, and tells its status",
+    async (status, label, text) => {
+      const wrapper = await mountTour(status, createGuidedTourManager());
+
+      const header = wrapper.find(".guidedtour-tour-header");
+      expect(header.find(".post-btn").attributes("aria-label")).toBe(label);
+      expect(header.find(".guidedtour-widget-item-main").text()).toBe(text);
+    },
+  );
+
+  it("links its header to its tasks even when its id contains spaces", async () => {
+    const wrapper = await mountTour(
+      TourTaskStatus.TODO,
+      createGuidedTourManager(),
+      { id: "xwiki:GuidedTour.Tours.Panel Tour" },
+    );
+
+    // aria-controls takes a list of ids separated by spaces, so the id of the tasks must not contain any.
+    const controls = wrapper
+      .find(".guidedtour-tour-header .guidedtour-widget-item-main")
+      .attributes("aria-controls");
+    expect(controls).not.toContain(" ");
+    expect(wrapper.find(".guidedtour-content").attributes("id")).toBe(controls);
   });
 });
