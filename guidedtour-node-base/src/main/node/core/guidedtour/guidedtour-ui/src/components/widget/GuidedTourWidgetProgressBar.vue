@@ -21,7 +21,14 @@
 <!--Would be nice to have a generic XWiki progressbar component maybe? idk-->
 <!--If we want a dependency for the progress bar, maybe use this: https://v3.primevue.org/progressbar/ ?-->
 <template>
-  <div class="completeness">
+  <div
+    class="completeness"
+    role="progressbar"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    :aria-valuenow="percent"
+    :aria-label="label"
+  >
     <div
       class="completeness-progress"
       :style="{ width: width ? width + 'px' : progress * 100 + '%' }"
@@ -30,14 +37,21 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { ComputedRef } from "vue";
 
 const props = defineProps<{
   progress: ComputedRef<number>;
   width?: number;
+  /** The accessible name of the progress bar. */
+  label?: string;
 }>();
 // Reactive read-only ref of the progress.
 const progress = props.progress;
+// The progress is not a number when there's nothing to do (0 / 0).
+const percent = computed(() =>
+  Number.isFinite(progress.value) ? Math.round(progress.value * 100) : 0,
+);
 </script>
 
 <style scoped>
@@ -53,19 +67,6 @@ const progress = props.progress;
   border-end-end-radius: 18px;
   overflow: hidden;
   flex-shrink: 0;
-}
-
-.guidedtour-widget.collapsed .completeness {
-  margin: 0;
-  height: 4px;
-  border-start-start-radius: 0;
-  border-start-end-radius: 0;
-  border-end-start-radius: 0;
-  border-end-end-radius: 0;
-}
-
-.guidedtour-widget.collapsed .completeness-progress {
-  height: 4px;
 }
 
 .guidedtour-widget .completeness-progress {

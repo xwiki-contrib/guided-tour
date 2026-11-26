@@ -45,7 +45,12 @@ public class TourWidget extends BaseElement
 
     private static final By HEADER = By.cssSelector(".guidedtour-widget .header");
 
-    private static final By TOP_BAR = By.cssSelector(".guidedtour-widget .top-bar");
+    private static final By LAUNCHER = By.cssSelector(".guidedtour-widget button.guidedtour-widget-launcher");
+
+    private static final By PANEL = By.id("guidedtour-widget-panel");
+
+    // The button running the main action of a widget row: starting a task, or collapsing / expanding a tour.
+    private static final By MAIN_BUTTON = By.cssSelector("button.guidedtour-widget-item-main");
 
     private static final By TOURS = By.cssSelector(".guidedtour-widget section.guidedtour-tour");
 
@@ -122,7 +127,7 @@ public class TourWidget extends BaseElement
      * Wait for the widget to be loaded, then tell whether it's collapsed. The widget starts collapsed until the state
      * saved by the user is loaded, so once loaded, this tells which state was restored.
      *
-     * @return {@code true} if the widget is collapsed, i.e. only its top bar is displayed
+     * @return {@code true} if the widget is collapsed, i.e. only its launcher is displayed
      */
     public boolean isWidgetCollapsed()
     {
@@ -144,7 +149,7 @@ public class TourWidget extends BaseElement
     {
         // The tasks are loaded asynchronously.
         waitUntilTaskIsDisplayed(taskId);
-        getDriver().findElement(getTaskLocator(taskId)).click();
+        getDriver().findElement(getTaskLocator(taskId)).findElement(MAIN_BUTTON).click();
     }
 
     /**
@@ -315,11 +320,22 @@ public class TourWidget extends BaseElement
     private TourWidget setCollapsed(boolean collapsed)
     {
         if (isWidgetCollapsed() != collapsed) {
-            // Clicking the top bar toggles the widget (the close button can only collapse it).
-            getDriver().findElement(TOP_BAR).click();
-            getDriver().waitUntilCondition(driver -> isCollapsedWithoutWaiting() == collapsed);
+            // Clicking the launcher toggles the widget (the close button of the panel can only collapse it).
+            getDriver().findElement(LAUNCHER).click();
+            // The panel fades in or out, and an element is not considered displayed while its opacity is 0, so wait
+            // for the end of the transition.
+            getDriver().waitUntilCondition(
+                driver -> isCollapsedWithoutWaiting() == collapsed && isPanelTransitionDone(collapsed));
         }
         return this;
+    }
+
+    private boolean isPanelTransitionDone(boolean collapsed)
+    {
+        WebElement panel = getDriver().findElementWithoutWaitingWithoutScrolling(PANEL);
+        // Vue sets the -enter-* and -leave-* classes during the transition, and removes them at the end.
+        String cssClass = panel.getAttribute(ATTRIBUTE_CLASS);
+        return !cssClass.contains("-enter-") && !cssClass.contains("-leave-") && panel.isDisplayed() != collapsed;
     }
 
     private void clickButton(By container, String iconClass)
