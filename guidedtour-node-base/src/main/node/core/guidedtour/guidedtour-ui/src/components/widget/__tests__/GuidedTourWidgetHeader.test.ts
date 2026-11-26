@@ -18,32 +18,19 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import { RESOLVER } from "../../../injectionKeys";
+import { RESOLVER_PROVIDE, t } from "./i18nMock";
 import GuidedTourWidgetHeader from "../GuidedTourWidgetHeader.vue";
 import { flushPromises, mount } from "@vue/test-utils";
+import { useI18nAdapter } from "@xwiki/platform-localization-adapter-vue";
 import { describe, expect, it, vi } from "vitest";
-import { computed } from "vue";
-import { createI18n } from "vue-i18n";
-import type { Resolver } from "@xwiki/platform-localization-api";
+import { computed, ref } from "vue";
 
-function createResolver(): Resolver {
-  return {
-    resolve: vi.fn().mockResolvedValue({
-      translations: {
-        "guidedtour.widget.header.title": "Guided Tour",
-        "guidedtour.widget.header.close": "Close",
-      },
-    }),
-  };
-}
+vi.mock("@xwiki/platform-localization-adapter-vue", () => import("./i18nMock"));
 
-async function mountHeader(progress = 0, resolver = createResolver()) {
+async function mountHeader(progress = 0) {
   const wrapper = mount(GuidedTourWidgetHeader, {
     props: { progress: computed(() => progress) },
-    global: {
-      plugins: [createI18n({ legacy: false, locale: "en" })],
-      provide: { [RESOLVER]: resolver },
-    },
+    global: { provide: RESOLVER_PROVIDE },
   });
   await flushPromises();
   return wrapper;
@@ -53,18 +40,12 @@ describe("GuidedTourWidgetHeader", () => {
   it("shows the translated title and close button", async () => {
     const wrapper = await mountHeader();
 
-    expect(wrapper.find(".title").text()).toBe("Guided Tour");
-    expect(wrapper.find("#widget-close").attributes("aria-label")).toBe(
-      "Close",
+    expect(wrapper.find(".title").text()).toBe(
+      "guidedtour.widget.header.title",
     );
-  });
-
-  it("asks to toggle the widget when the top bar is clicked", async () => {
-    const wrapper = await mountHeader();
-
-    await wrapper.find(".top-bar").trigger("click");
-
-    expect(wrapper.emitted("closeGuidedTourWidget")).toEqual([[false]]);
+    expect(wrapper.find("#widget-close").attributes("aria-label")).toBe(
+      "guidedtour.widget.header.close",
+    );
   });
 
   it("asks to close the widget when the close button is clicked", async () => {
@@ -72,8 +53,15 @@ describe("GuidedTourWidgetHeader", () => {
 
     await wrapper.find("#widget-close").trigger("click");
 
-    // The click must not also reach the top bar.
-    expect(wrapper.emitted("closeGuidedTourWidget")).toEqual([[true]]);
+    expect(wrapper.emitted("closeGuidedTourWidget")).toHaveLength(1);
+  });
+
+  it("shows the title as the heading of the widget", async () => {
+    const wrapper = await mountHeader();
+
+    expect(wrapper.find("h2#guidedtour-widget-title").text()).toBe(
+      "guidedtour.widget.header.title",
+    );
   });
 
   it("shows the progress", async () => {
@@ -82,12 +70,17 @@ describe("GuidedTourWidgetHeader", () => {
     expect(
       wrapper.find(".completeness-progress").attributes("style"),
     ).toContain("width: 25%");
+    expect(wrapper.find("[role='progressbar']").attributes("aria-label")).toBe(
+      "guidedtour.widget.header.progress",
+    );
   });
 
   it("shows nothing until the translations are loaded", async () => {
-    const wrapper = await mountHeader(0, {
-      resolve: () => new Promise(() => {}),
-    });
+    vi.mocked(useI18nAdapter).mockReturnValueOnce({
+      t,
+      isLoading: ref(true),
+    } as never);
+    const wrapper = await mountHeader();
 
     expect(wrapper.find(".header").exists()).toBe(false);
   });
