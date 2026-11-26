@@ -173,6 +173,39 @@ describe("driverjsMain", () => {
   });
 
   describe("getDriverConfigForSteps", () => {
+    it("places the popover again once a step is shown", async () => {
+      const config = await getDriverConfigForSteps(
+        createTask(),
+        {} as DefaultGuidedTourManager,
+        {},
+      );
+      const refresh = vi.fn();
+
+      config.onHighlighted!(undefined, config.steps![0], {
+        driver: { refresh },
+      } as unknown as HookOpts);
+
+      expect(refresh).toHaveBeenCalledOnce();
+    });
+
+    it("finds the element of a step only when it is visible", async () => {
+      document.body.innerHTML =
+        '<div style="display: none"><button id="hidden"></button></div><button id="visible"></button>';
+      const task = createTask();
+      task.steps![0].element = "#hidden";
+      task.steps![1].element = "#visible";
+      const config = await getDriverConfigForSteps(
+        task,
+        {} as DefaultGuidedTourManager,
+        {},
+      );
+
+      const findElement = (index: number) =>
+        (config.steps![index].element as () => Element | undefined)();
+      expect(findElement(0)).toBeUndefined();
+      expect(findElement(1)).toBe(document.getElementById("visible"));
+    });
+
     it("places the popover of each step as set in XWiki", async () => {
       const task = createTask();
       task.steps![0].placement = "BOTTOM_END";
