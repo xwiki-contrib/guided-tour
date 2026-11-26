@@ -145,13 +145,16 @@ guidedtour.home.howItWorks.title=How guided tours work
 guidedtour.home.howItWorks.intro=Walk new users through key pages with on-screen tips. A tour holds tasks, and each task holds the steps shown on the page.
 guidedtour.home.create.button=Create Tour
 guidedtour.home.create.buttonTitle=Create a new tour
-guidedtour.home.manage.button=Manage Tours
-guidedtour.home.manage.buttonTitle=List, edit, or delete tours.
+guidedtour.home.manage.button=View Tours
+guidedtour.home.manage.buttonTitle.rights.true=List, edit, or delete tours.
+guidedtour.home.manage.buttonTitle.rights.false=View available tours.
 guidedtour.home.manage.helper.activeCount={0,choice,0#No active tours yet.|1#1 active tour.|1&lt;{0} active tours.}
 guidedtour.home.manage.helper.noneWithDisabled=No active tours yet. Disabled tours are still listed under Manage Tours.
-guidedtour.home.howItWorks.manage=Open {0}Manage Tours{1} to view, edit, or delete a tour.
+guidedtour.home.howItWorks.manage.rights.true=Open {0}Manage Tours{1} to view, edit, or delete a tour.
+guidedtour.home.howItWorks.manage.rights.false=Open {0}Manage Tours{1} to view a tour.
 guidedtour.home.howItWorks.sample=New here? Run the {0}Getting Started tour{1}, then adapt it for your wiki.
-guidedtour.home.docs=The {0}Guided Tour documentation{1} explains how to point steps at pages and page elements, and bundle them into tasks.
+guidedtour.home.docs.rights.true=The {0}Guided Tour documentation{1} explains how to point steps at pages and page elements, and bundle them into tasks.
+guidedtour.home.docs.rights.false=Check the {0}Guided Tour documentation{1} for more information.
 guidedtour.home.docs.linkAria1Label=Guided Tour documentation (opens in a new tab)
 </content>
   <object>

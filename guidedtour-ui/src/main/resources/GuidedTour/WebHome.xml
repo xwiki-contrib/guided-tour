@@ -44,7 +44,7 @@ $escapetool.xml($services.localization.render($key, ['__LINKSTART__', '__LINKEND
   $linkStartTag).replace('__LINKEND__', '&lt;/a&gt;')##
 #end
 #set ($discard = $xwiki.ssx.use('GuidedTour.WebHome'))
-#set ($toursURL = $xwiki.getURL('GuidedTour.Tours.WebHome'))
+#set ($toursURL = $escapetool.xml($xwiki.getURL('GuidedTour.Tours.WebHome')))
 ## New tours are created as child pages of GuidedTour.Tours, which needs edit right there (there is no create right).
 #set ($toursSpaceReference = $services.model.resolveSpace('GuidedTour.Tours'))
 #set ($canCreateTour = $services.security.authorization.hasAccess('edit', $toursSpaceReference))
@@ -78,8 +78,9 @@ $escapetool.xml($services.localization.render($key, ['__LINKSTART__', '__LINKEND
         $escapetool.xml($services.localization.render('guidedtour.home.create.button'))
       &lt;/a&gt;
     #end
-    &lt;a href="$escapetool.xml($toursURL)" class="btn btn-default"
-        title="$escapetool.xml($services.localization.render('guidedtour.home.manage.buttonTitle'))"&gt;
+    &lt;a href="$toursURL" class="btn btn-default"
+        title='$escapetool.xml($services.localization.render(
+        "guidedtour.home.manage.buttonTitle.rights.${canCreateTour}"))'&gt;
       $services.icon.renderHTML('list-bullets')
       $escapetool.xml($services.localization.render('guidedtour.home.manage.button'))
     &lt;/a&gt;
@@ -92,16 +93,16 @@ $escapetool.xml($services.localization.render($key, ['__LINKSTART__', '__LINKEND
   #if (!$tours.isEmpty() || $sampleExists)
     &lt;ul&gt;
       #if (!$tours.isEmpty())
-        &lt;li&gt;#guidedTourTranslationWithLink('guidedtour.home.howItWorks.manage'
-          "&lt;a href=""$escapetool.xml($toursURL)""&gt;")&lt;/li&gt;
+        &lt;li&gt;#guidedTourTranslationWithLink("guidedtour.home.howItWorks.manage.rights.${canCreateTour}",
+          "&lt;a href='${toursURL}'&gt;")&lt;/li&gt;
       #end
       #if ($sampleExists)
         &lt;li&gt;#guidedTourTranslationWithLink('guidedtour.home.howItWorks.sample'
-          "&lt;a href=""$escapetool.xml($xwiki.getURL($sampleReference))""&gt;")&lt;/li&gt;
+          "&lt;a href='${escapetool.xml($xwiki.getURL($sampleReference))}'&gt;")&lt;/li&gt;
       #end
     &lt;/ul&gt;
   #end
-  &lt;p&gt;#guidedTourTranslationWithLink('guidedtour.home.docs' $docsLinkStartTag)&lt;/p&gt;
+  &lt;p&gt;#guidedTourTranslationWithLink("guidedtour.home.docs.rights.${canCreateTour}", $docsLinkStartTag)&lt;/p&gt;
 {{/html}}
 {{/velocity}}</content>
   <object>
