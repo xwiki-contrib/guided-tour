@@ -508,7 +508,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
         input.disabled = isBlank;
       });
     };
-    $(elementField).on('input change', update);
+    $(elementField).on('input', update);
     update();
   }
 
