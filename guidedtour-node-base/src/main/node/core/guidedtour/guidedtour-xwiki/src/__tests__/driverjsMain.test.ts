@@ -174,6 +174,39 @@ describe("driverjsMain", () => {
   });
 
   describe("getDriverConfigForSteps", () => {
+    it("places the popover again once a step is shown", async () => {
+      const config = await getDriverConfigForSteps(
+        createTask(),
+        {} as DefaultGuidedTourManager,
+        {},
+      );
+      const refresh = vi.fn();
+
+      config.onHighlighted!(undefined, config.steps![0], {
+        driver: { refresh },
+      } as unknown as HookOpts);
+
+      expect(refresh).toHaveBeenCalledOnce();
+    });
+
+    it("finds the element of a step only when it is visible", async () => {
+      document.body.innerHTML =
+        '<div style="display: none"><button id="hidden"></button></div><button id="visible"></button>';
+      const task = createTask();
+      task.steps![0].element = "#hidden";
+      task.steps![1].element = "#visible";
+      const config = await getDriverConfigForSteps(
+        task,
+        {} as DefaultGuidedTourManager,
+        {},
+      );
+
+      const findElement = (index: number) =>
+        (config.steps![index].element as () => Element | undefined)();
+      expect(findElement(0)).toBeUndefined();
+      expect(findElement(1)).toBe(document.getElementById("visible"));
+    });
+
     it("places the popover of each step as set in XWiki", async () => {
       const task = createTask();
       task.steps![0].placement = "BOTTOM_END";
@@ -305,29 +338,11 @@ describe("driverjsMain", () => {
 
     it("shows the progress of the task and remembers the step", () => {
       const task = createTask();
-      task.steps![1].backdrop = true;
-      const { config, popover } = renderPopover(
-        task,
-        createGuidedTourManager(task),
-        1,
-      );
+      const { popover } = renderPopover(task, createGuidedTourManager(task), 1);
 
       expect(popover.progress.innerText).toBe("⬤ ⬤ ◯ ◯ ");
       expect(popover.wrapper.firstElementChild).toBe(popover.progress);
-      expect(config.overlayOpacity).toBe(0.3);
       expect(getCurrentStep(task)).toBe("1");
-    });
-
-    it("hides the backdrop of a step without one", () => {
-      const task = createTask();
-      const { config, popover } = renderPopover(
-        task,
-        createGuidedTourManager(task),
-        0,
-      );
-
-      expect(popover.progress.innerText).toBe("⬤ ◯ ◯ ◯ ");
-      expect(config.overlayOpacity).toBe(0);
     });
 
     it("shows the navigation buttons of a regular step", () => {
@@ -563,6 +578,21 @@ describe("driverjsMain", () => {
   });
 
   describe("onHighlightStarted", () => {
+    it("lets the clicks through the overlay only during the steps without backdrop", async () => {
+      const task = createTask();
+      task.steps![1].backdrop = true;
+      const config = await getDriverConfigForSteps(
+        task,
+        {} as DefaultGuidedTourManager,
+        {},
+      );
+
+      highlightSteps(config, [0], document.body);
+      expect(document.body.classList).toContain("driver-xwiki-no-backdrop");
+      highlightSteps(config, [1], document.body);
+      expect(document.body.classList).not.toContain("driver-xwiki-no-backdrop");
+    });
+
     it("skips the task when the element of a step is not in the page", async () => {
       const consoleError = vi
         .spyOn(console, "error")
@@ -791,47 +821,122 @@ describe("driverjsMain", () => {
   });
 });
 
-/**
- * @returns a task started with driver.js, on its first step.
- */
-async function startTask(): Promise<Driver> {
-  vi.stubGlobal("XWiki", {
-    widgets: {
-      Notification: class {
-        hide() {}
-      },
-    },
-  });
-  const config = await getDriverConfigForSteps(
-    createTask(),
-    {} as DefaultGuidedTourManager,
-    {},
-  );
-  config.animate = false;
-  const task = driver(config);
-  task.drive();
-  await vi.waitFor(() =>
-    expect(document.querySelector(".driver-overlay")).not.toBeNull(),
-  );
-  return task;
-}
+describe("ending a task", () => {
+  /**
+   * The ways for the user to end a task, by the destroy reason that driver.js gives for each.
+   */
+  const endTaskBy: Record<string, () => void> = {
+    close: () =>
+      document.querySelector<HTMLElement>(".driver-popover-close-btn")!.click(),
+    escape: () => pressEscape(),
+    overlay: () =>
+      document
+        .querySelector(".driver-overlay path")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true })),
+  };
 
-it("ignores the keys typed in an editable element", async () => {
-  document.body.innerHTML = '<input type="text" id="title">';
-  const task = await startTask();
-
-  // driver.js would move to another step or end the task.
-  for (const key of ["ArrowLeft", "ArrowRight", "Escape"]) {
-    document
-      .getElementById("title")!
-      .dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true }));
+  function pressEscape() {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape" }));
   }
-  expect(task.isActive()).toBe(true);
-  expect(task.getActiveIndex()).toBe(0);
 
-  document.body.dispatchEvent(
-    new KeyboardEvent("keyup", { key: "Escape", bubbles: true }),
+  /**
+   * @returns a task started with driver.js, on its first step.
+   */
+  async function startTask(confirmed: boolean): Promise<Driver> {
+    vi.stubGlobal("XWiki", {
+      widgets: {
+        Notification: class {
+          hide() {}
+        },
+      },
+    });
+    vi.stubGlobal("confirm", vi.fn().mockReturnValue(confirmed));
+    const config = await getDriverConfigForSteps(
+      createTask(),
+      {} as DefaultGuidedTourManager,
+      { "guidedtour.driver.confirmExit": "Stop the task?" },
+    );
+    config.animate = false;
+    const task = driver(config);
+    task.drive();
+    await vi.waitFor(() =>
+      expect(document.querySelector(".driver-overlay")).not.toBeNull(),
+    );
+    return task;
+  }
+
+  let task: Driver | undefined;
+
+  afterEach(() => {
+    task?.destroy();
+    vi.unstubAllGlobals();
+  });
+
+  it.each(Object.keys(endTaskBy))(
+    "ends the task with %s only if the user confirms it",
+    async (reason) => {
+      task = await startTask(false);
+      endTaskBy[reason]();
+      expect(window.confirm).toHaveBeenCalledExactlyOnceWith("Stop the task?");
+      expect(task.isActive()).toBe(true);
+      expect(task.getActiveIndex()).toBe(0);
+
+      vi.mocked(window.confirm).mockReturnValue(true);
+      endTaskBy[reason]();
+      expect(task.isActive()).toBe(false);
+    },
   );
-  expect(task.isActive()).toBe(false);
-  vi.unstubAllGlobals();
+
+  it("ends the task without asking when the code ends it", async () => {
+    task = await startTask(false);
+    task.destroy();
+    expect(task.isActive()).toBe(false);
+
+    task = await startTask(false);
+    // Driving to a step that doesn't exist (anymore) ends the task.
+    task.drive(10);
+    expect(task.isActive()).toBe(false);
+    expect(window.confirm).not.toHaveBeenCalled();
+  });
+
+  it("ends the task without asking on its last step", async () => {
+    task = await startTask(false);
+    task.drive(task.getConfig().steps!.length - 1);
+    endTaskBy.close();
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(task.isActive()).toBe(false);
+  });
+
+  it("doesn't ask again on the Escape keyup that closes the confirmation", async () => {
+    task = await startTask(false);
+    pressEscape();
+    // The browser closes the confirmation on keydown, and sends the keyup to the page.
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape" }));
+    expect(window.confirm).toHaveBeenCalledOnce();
+
+    pressEscape();
+    expect(window.confirm).toHaveBeenCalledTimes(2);
+    expect(task.isActive()).toBe(true);
+  });
+
+  it("ignores the keys typed in an editable element", async () => {
+    document.body.innerHTML = '<input type="text" id="title">';
+    task = await startTask(true);
+
+    // driver.js would move to another step or end the task.
+    for (const key of ["ArrowLeft", "ArrowRight", "Escape"]) {
+      document
+        .getElementById("title")!
+        .dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true }));
+    }
+    expect(task.isActive()).toBe(true);
+    expect(task.getActiveIndex()).toBe(0);
+    expect(window.confirm).not.toHaveBeenCalled();
+
+    document.body.dispatchEvent(
+      new KeyboardEvent("keyup", { key: "Escape", bubbles: true }),
+    );
+    expect(task.isActive()).toBe(false);
+  });
 });

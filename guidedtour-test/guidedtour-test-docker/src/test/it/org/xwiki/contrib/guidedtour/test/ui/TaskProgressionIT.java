@@ -99,6 +99,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         // Leaving the task before its last step keeps it to do. Wait for the leave to be handled (the next tasks aren't
         // started automatically anymore) before checking the status.
         popover.pressEscape();
+        popover.confirmBrowserAlert();
         this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId));
         assertEquals(TODO, new TourWidget().getTaskStatus("navigationTask"));
     }
@@ -189,6 +190,7 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         widget.clickTask("closeFirstTask");
         TourStepPopover popover = new TourStepPopover().waitForStep("First task, step one");
         popover.close();
+        popover.confirmBrowserAlert();
 
         // Once the close is handled (the next tasks aren't started automatically anymore), the task is still to do.
         // The other tour isn't affected.
@@ -468,5 +470,79 @@ class TaskProgressionIT extends AbstractGuidedTourIT
 
         // Moving past the last step ends the task.
         popover.clickDone();
+    }
+
+    /**
+     * Stopping a task before its last step, with the close button, the Escape key or a click outside of the
+     * highlighted element, asks the user to confirm, and answering no keeps the task on its current step. Closing the
+     * task on its last step doesn't ask, and completes the task.
+     */
+    @Test
+    @Order(9)
+    void stoppingATaskAsksForConfirmation(TestUtils setup, TestReference testReference) throws Exception
+    {
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference page =
+            this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Confirm stop");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Confirm stop tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "confirmStopTask", "Confirm stop task", 0, true);
+        // The click outside of the highlighted element goes to the backdrop, which stops the task.
+        this.guidedTour.addSteps(task,
+            Step.withContent("First step").element("#xwikicontent").backdrop(),
+            Step.withContent("Last step"));
+
+        this.guidedTour.createUserAndLogin("GuidedTourConfirmStopUser");
+        setup.gotoPage(page);
+
+        TourWidget widget = new TourWidget();
+        widget.clickTask("confirmStopTask");
+        TourStepPopover popover = new TourStepPopover().waitForStep("First step");
+        String question = "Do you want to stop this task? You will have to start it again from the beginning.";
+
+        popover.close();
+        assertEquals(question, popover.denyBrowserAlert());
+        popover.pressEscape();
+        assertEquals(question, popover.denyBrowserAlert());
+        popover.clickOutsideHighlightedElement();
+        assertEquals(question, popover.denyBrowserAlert());
+        assertTrue(popover.isDisplayed());
+        assertEquals(1, popover.getCurrentStepNumber());
+
+        popover.clickNext();
+        popover.waitForStep("Last step");
+        popover.close();
+        popover.waitUntilClosed();
+        widget.waitUntilTaskStatus("confirmStopTask", DONE);
+    }
+
+    /**
+     * A step with backdrop ends the task when the user clicks outside of the highlighted element, while a step without
+     * backdrop lets the click through to the page.
+     */
+    @Test
+    @Order(10)
+    void backdropOfEachStep(TestUtils setup, TestReference testReference) throws Exception
+    {
+        SpaceReference space = testReference.getLastSpaceReference();
+        DocumentReference page =
+            this.guidedTour.createPage(new DocumentReference("Page", space), "Content", "Backdrop");
+        DocumentReference tour = this.guidedTour.createTour(space, "Tour", "Backdrop tour", true);
+        DocumentReference task = this.guidedTour.createTask(tour, "backdropTask", "Backdrop task", 0, true);
+        this.guidedTour.addSteps(task,
+            Step.withContent("Without backdrop").element("#xwikicontent"),
+            Step.withContent("With backdrop").element("#xwikicontent").backdrop());
+
+        this.guidedTour.createUserAndLogin("GuidedTourBackdropUser");
+        setup.gotoPage(page);
+
+        new TourWidget().clickTask("backdropTask");
+        TourStepPopover popover = new TourStepPopover().waitForStep("Without backdrop");
+        popover.clickOutsideHighlightedElement();
+        assertTrue(popover.isDisplayed());
+
+        popover.clickNext();
+        popover.waitForStep("With backdrop");
+        popover.clickOutsideHighlightedElement();
+        popover.waitUntilClosed();
     }
 }

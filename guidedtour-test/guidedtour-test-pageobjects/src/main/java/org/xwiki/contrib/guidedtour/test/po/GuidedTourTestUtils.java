@@ -416,6 +416,18 @@ public class GuidedTourTestUtils
         }
 
         /**
+         * Dim the page around the highlighted element during the step. A click outside of the highlighted element then
+         * ends the task, while without backdrop it goes to the page.
+         *
+         * @return this step
+         */
+        public Step backdrop()
+        {
+            this.properties.put("backdrop", 1);
+            return this;
+        }
+
+        /**
          * @param page the local reference of the page where the step is displayed; the user is redirected to it when
          *     moving to the step
          * @return this step

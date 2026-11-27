@@ -85,7 +85,7 @@
       <hint/>
       <name>element</name>
       <number>2</number>
-      <picker>1</picker>
+      <picker>0</picker>
       <prettyName>Element</prettyName>
       <size>30</size>
       <unmodifiable>0</unmodifiable>

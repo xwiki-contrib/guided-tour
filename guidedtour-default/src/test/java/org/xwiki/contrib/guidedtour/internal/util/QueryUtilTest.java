@@ -93,9 +93,20 @@ class QueryUtilTest
     }
 
     @Test
+    void executeQueryWithBinder() throws QueryException
+    {
+        List<DocumentReference> docs =
+            this.queryUtil.executeQuery(QUERY_STRING, query -> query.bindValue("param", "value"));
+        assertEquals(this.result, docs);
+        verify(this.query).bindValue("param", "value");
+        verify(this.query).addFilter(this.documentFilter);
+        verify(this.query).addFilter(this.viewableFilter);
+    }
+
+    @Test
     void executeQueryWithoutBindings() throws QueryException
     {
-        List<DocumentReference> docs = this.queryUtil.executeQuery(QUERY_STRING, null);
+        List<DocumentReference> docs = this.queryUtil.executeQuery(QUERY_STRING, (Map<String, Object>) null);
         assertEquals(this.result, docs);
         verify(this.query).addFilter(this.documentFilter);
         verify(this.query).addFilter(this.viewableFilter);

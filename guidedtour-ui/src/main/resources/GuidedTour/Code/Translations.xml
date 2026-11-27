@@ -45,12 +45,12 @@ GuidedTour.Code.ConfigurationClass_defaultSpace=Default space
 GuidedTour.Code.ConfigurationClass_defaultSpace.hint=Configure the target space where actions are performed
 XWiki.GuidedTour.StepClass_order=Order
 XWiki.GuidedTour.StepClass_order_hint=Order of this step in the task.
-XWiki.GuidedTour.StepClass_element=Element
-XWiki.GuidedTour.StepClass_element_hint=The CSS selector of the element to be highlighted for this step. If no element is selected, the step will be displayed centered on the screen.
+XWiki.GuidedTour.StepClass_element=Highlighted Element
+XWiki.GuidedTour.StepClass_element_hint=CSS selector of the element to highlight. Leave empty to center the step on the screen.
 XWiki.GuidedTour.StepClass_content=Content
 XWiki.GuidedTour.StepClass_content_hint=The content to display for this step.
 XWiki.GuidedTour.StepClass_placement=Placement
-XWiki.GuidedTour.StepClass_placement_hint=The placement of the step popup relative to the highlighted element. May be ignored if there is not enough space on the screen to display the popup.
+XWiki.GuidedTour.StepClass_placement_hint=Where the popup is shown relative to the highlighted element, if there is room. Requires a highlighted element.
 XWiki.GuidedTour.StepClass_placement_BOTTOM_START=Bottom start
 XWiki.GuidedTour.StepClass_placement_BOTTOM_CENTER=Bottom center
 XWiki.GuidedTour.StepClass_placement_BOTTOM_END=Bottom end
@@ -64,9 +64,9 @@ XWiki.GuidedTour.StepClass_placement_RIGHT_START=Right start
 XWiki.GuidedTour.StepClass_placement_RIGHT_CENTER=Right center
 XWiki.GuidedTour.StepClass_placement_RIGHT_END=Right end
 XWiki.GuidedTour.StepClass_backdrop=Backdrop
-XWiki.GuidedTour.StepClass_backdrop_hint=Marks if a backdrop should be shown for this step.
+XWiki.GuidedTour.StepClass_backdrop_hint=Dims the page around the highlighted element, and ends the task when the user clicks outside of it. Without backdrop, the rest of the page stays usable during the step, for the menus and dialogs that the step asks to use.
 XWiki.GuidedTour.StepClass_reflex=Reflex
-XWiki.GuidedTour.StepClass_reflex_hint=Marks if clicking the highlighted element allows proceeding to the next step. If reflex is enabled, the task won't be automatically redirected to the page expected by the next step.
+XWiki.GuidedTour.StepClass_reflex_hint=Clicking the element moves to the next step, without automatically redirecting to the next step's page. Requires a highlighted element.
 XWiki.GuidedTour.StepClass_targetPage=Target page
 XWiki.GuidedTour.StepClass_targetPage_hint=The page on which the step should be displayed. If left empty, the current page will be used.
 XWiki.GuidedTour.StepClass_targetAction=Target action
@@ -137,7 +137,27 @@ guidedtour.modal.task.add.title.placeholder=Enter task title
 guidedtour.modal.task.add.title=Add task
 guidedtour.modal.task.add.done=Task successfully created!
 guidedtour.modal.task.add.error=Failed to create task: [{0}]
-guidedtour.modal.task.add.inProgress=Creating new task...</content>
+guidedtour.modal.task.add.inProgress=Creating new task...
+
+## Home page
+
+guidedTour.extension.title=Guided Tour
+guidedtour.home.howItWorks.title=How guided tours work
+guidedtour.home.howItWorks.intro=Walk new users through key pages with on-screen tips. A tour holds tasks, and each task holds the steps shown on the page.
+guidedtour.home.create.button=Create Tour
+guidedtour.home.create.buttonTitle=Create a new tour
+guidedtour.home.manage.button=View Tours
+guidedtour.home.manage.buttonTitle.rights.true=List, edit, or delete tours.
+guidedtour.home.manage.buttonTitle.rights.false=View available tours.
+guidedtour.home.manage.helper.activeCount={0,choice,0#No active tours yet.|1#1 active tour.|1&lt;{0} active tours.}
+guidedtour.home.manage.helper.noneWithDisabled=No active tours yet. Disabled tours are still listed under Manage Tours.
+guidedtour.home.howItWorks.manage.rights.true=Open {0}Manage Tours{1} to view, edit, or delete a tour.
+guidedtour.home.howItWorks.manage.rights.false=Open {0}Manage Tours{1} to view a tour.
+guidedtour.home.howItWorks.sample=New here? Run the {0}Getting Started tour{1}, then adapt it for your wiki.
+guidedtour.home.docs.rights.true=The {0}Guided Tour documentation{1} explains how to point steps at pages and page elements, and bundle them into tasks.
+guidedtour.home.docs.rights.false=Check the {0}Guided Tour documentation{1} for more information.
+guidedtour.home.docs.linkAria1Label=Guided Tour documentation (opens in a new tab)
+</content>
   <object>
     <name>GuidedTour.Code.Translations</name>
     <number>0</number>
