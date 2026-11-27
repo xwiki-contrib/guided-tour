@@ -53,6 +53,8 @@ public class GuidedTourTestUtils
     /**
      * The password of the users created by the tests.
      */
+    // This is a test only password.
+    @SuppressWarnings("java:S2068")
     public static final String PASSWORD = "pa$$word";
 
     private static final String TOUR_CLASS = "XWiki.GuidedTour.TourClass";
