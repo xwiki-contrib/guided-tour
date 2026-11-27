@@ -27,7 +27,7 @@
   <defaultLanguage/>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
-  <parent>xwiki:GuidedTour.Tours.GettingStarted.WebHome</parent>
+  <parent>GuidedTour.Tours.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <version>1.1</version>
@@ -35,13 +35,13 @@
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
-  <hidden>true</hidden>
+  <hidden>false</hidden>
   <content/>
   <object>
     <name>GuidedTour.Tours.GettingStarted.WebHome</name>
     <number>0</number>
     <className>XWiki.GuidedTour.TourClass</className>
-    <guid>a9c8570b-7eb5-47d9-9d09-a1dd52ca12ac</guid>
+    <guid>b62782e5-0d0d-508a-b689-c775349997a1</guid>
     <class>
       <name>XWiki.GuidedTour.TourClass</name>
       <customClass/>
@@ -51,15 +51,33 @@
       <defaultWeb/>
       <nameField/>
       <validationScript/>
+      <description>
+        <contenttype>PureText</contenttype>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <hint/>
+        <name>description</name>
+        <number>3</number>
+        <picker>1</picker>
+        <prettyName>Description</prettyName>
+        <restricted>1</restricted>
+        <rows>5</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </description>
       <isActive>
         <customDisplay/>
-        <defaultValue/>
+        <defaultValue>0</defaultValue>
         <disabled>0</disabled>
         <displayFormType>select</displayFormType>
         <displayType/>
         <hint/>
         <name>isActive</name>
-        <number>3</number>
+        <number>2</number>
         <prettyName>Is active</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
@@ -81,6 +99,9 @@
         <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
       </title>
     </class>
+    <property type="LargeString">
+      <description>Learn the basics of XWiki.</description>
+    </property>
     <property type="Boolean">
       <isActive>true</isActive>
     </property>

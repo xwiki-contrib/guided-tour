@@ -467,6 +467,9 @@ class TaskProgressionIT extends AbstractGuidedTourIT
         popover.pressNextKeyAndWaitForPageReload();
         popover.waitForStep("Back on page A");
         assertEquals(setup.getURL(pageA), new ViewPage().getPageURL());
+
+        // Moving past the last step ends the task.
+        popover.clickDone();
     }
 
     /**

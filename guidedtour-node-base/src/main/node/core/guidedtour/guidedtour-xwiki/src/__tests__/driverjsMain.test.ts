@@ -919,4 +919,24 @@ describe("ending a task", () => {
     expect(window.confirm).toHaveBeenCalledTimes(2);
     expect(task.isActive()).toBe(true);
   });
+
+  it("ignores the keys typed in an editable element", async () => {
+    document.body.innerHTML = '<input type="text" id="title">';
+    task = await startTask(true);
+
+    // driver.js would move to another step or end the task.
+    for (const key of ["ArrowLeft", "ArrowRight", "Escape"]) {
+      document
+        .getElementById("title")!
+        .dispatchEvent(new KeyboardEvent("keyup", { key, bubbles: true }));
+    }
+    expect(task.isActive()).toBe(true);
+    expect(task.getActiveIndex()).toBe(0);
+    expect(window.confirm).not.toHaveBeenCalled();
+
+    document.body.dispatchEvent(
+      new KeyboardEvent("keyup", { key: "Escape", bubbles: true }),
+    );
+    expect(task.isActive()).toBe(false);
+  });
 });

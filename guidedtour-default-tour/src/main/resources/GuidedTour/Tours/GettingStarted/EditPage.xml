@@ -20,28 +20,28 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
 -->
 
-<xwikidoc version="1.7" reference="GuidedTour.Tours.GettingStarted.PageEdit" locale="">
+<xwikidoc version="1.7" reference="GuidedTour.Tours.GettingStarted.EditPage" locale="">
   <web>GuidedTour.Tours.GettingStarted</web>
-  <name>PageEdit</name>
+  <name>EditPage</name>
   <language/>
   <defaultLanguage/>
   <translation>0</translation>
   <creator>xwiki:XWiki.Admin</creator>
-  <parent>WebHome</parent>
+  <parent>GuidedTour.Tours.GettingStarted.WebHome</parent>
   <author>xwiki:XWiki.Admin</author>
   <contentAuthor>xwiki:XWiki.Admin</contentAuthor>
   <version>1.1</version>
-  <title>Edit a Page</title>
+  <title>Edit a page</title>
   <comment/>
   <minorEdit>false</minorEdit>
   <syntaxId>xwiki/2.1</syntaxId>
-  <hidden>true</hidden>
+  <hidden>false</hidden>
   <content/>
   <object>
-    <name>GuidedTour.Tours.GettingStarted.PageEdit</name>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
     <number>0</number>
     <className>XWiki.GuidedTour.StepClass</className>
-    <guid>500353e3-9592-4e6b-934b-11e448f47c57</guid>
+    <guid>25ce4cd5-ddea-565e-90d6-da10a9328b6a</guid>
     <class>
       <name>XWiki.GuidedTour.StepClass</name>
       <customClass/>
@@ -59,7 +59,7 @@
         <displayType/>
         <hint/>
         <name>backdrop</name>
-        <number>6</number>
+        <number>3</number>
         <prettyName>Backdrop</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
@@ -67,13 +67,13 @@
         <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
       </backdrop>
       <content>
-        <contenttype>FullyRenderedText</contenttype>
+        <contenttype>PureText</contenttype>
         <customDisplay/>
         <disabled>0</disabled>
-        <editor>---</editor>
+        <editor>PureText</editor>
         <hint/>
         <name>content</name>
-        <number>9</number>
+        <number>1</number>
         <picker>1</picker>
         <prettyName>Content</prettyName>
         <restricted>1</restricted>
@@ -103,7 +103,7 @@
         <disabled>0</disabled>
         <hint/>
         <name>order</name>
-        <number>3</number>
+        <number>0</number>
         <numberType>long</numberType>
         <prettyName>Order</prettyName>
         <size>30</size>
@@ -115,7 +115,7 @@
       <placement>
         <cache>0</cache>
         <customDisplay/>
-        <defaultValue>Top center</defaultValue>
+        <defaultValue/>
         <disabled>0</disabled>
         <displayType>select</displayType>
         <freeText/>
@@ -123,7 +123,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>placement</name>
-        <number>5</number>
+        <number>4</number>
         <picker>1</picker>
         <prettyName>Placement</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -134,7 +134,7 @@
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <values>LEFT_START=Left start|LEFT_CENTER=Left center|LEFT_END=Left end|TOP_START=Top start|TOP_CENTER=Top center|TOP_END=Top end|RIGHT_START=Right start|RIGHT_CENTER=Right center|RIGHT_END=Right end|BOTTOM_START=Bottom start|BOTTOM_CENTER=Bottom center|BOTTOM_END=Bottom end</values>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
         <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
       </placement>
       <queryParameters>
@@ -142,7 +142,7 @@
         <disabled>0</disabled>
         <hint/>
         <name>queryParameters</name>
-        <number>10</number>
+        <number>7</number>
         <picker>1</picker>
         <prettyName>Query parameters</prettyName>
         <size>30</size>
@@ -159,7 +159,7 @@
         <displayType/>
         <hint/>
         <name>reflex</name>
-        <number>7</number>
+        <number>8</number>
         <prettyName>Reflex</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
@@ -169,7 +169,7 @@
       <targetAction>
         <cache>0</cache>
         <customDisplay/>
-        <defaultValue>View</defaultValue>
+        <defaultValue>NOT_SET</defaultValue>
         <disabled>0</disabled>
         <displayType>select</displayType>
         <freeText/>
@@ -177,7 +177,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>targetAction</name>
-        <number>9</number>
+        <number>6</number>
         <picker>1</picker>
         <prettyName>Target action</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -188,7 +188,7 @@
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <values>EDIT=Edit|VIEW=View|COMMENT=Comment|CREATE=Create</values>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
         <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
       </targetAction>
       <targetPage>
@@ -204,7 +204,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>targetPage</name>
-        <number>8</number>
+        <number>5</number>
         <picker>1</picker>
         <prettyName>Target page</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -224,221 +224,10 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>This tour will get you acquainted with the editing in XWiki.</content>
+      <content>Click Edit to change the content of your tutorial page.</content>
     </property>
     <property type="String">
-      <element/>
-    </property>
-    <property type="Long">
-      <order>0</order>
-    </property>
-    <property type="String">
-      <placement/>
-    </property>
-    <property type="String">
-      <queryParameters/>
-    </property>
-    <property type="Integer">
-      <reflex>0</reflex>
-    </property>
-    <property type="String">
-      <targetAction>VIEW</targetAction>
-    </property>
-    <property type="String">
-      <targetPage>Sandbox.WebHome</targetPage>
-    </property>
-  </object>
-  <object>
-    <name>GuidedTour.Tours.GettingStarted.PageEdit</name>
-    <number>1</number>
-    <className>XWiki.GuidedTour.StepClass</className>
-    <guid>05336d8c-10e4-4035-a0fa-31ee77e37bf2</guid>
-    <class>
-      <name>XWiki.GuidedTour.StepClass</name>
-      <customClass/>
-      <customMapping/>
-      <defaultViewSheet/>
-      <defaultEditSheet/>
-      <defaultWeb/>
-      <nameField/>
-      <validationScript/>
-      <backdrop>
-        <customDisplay/>
-        <defaultValue/>
-        <disabled>0</disabled>
-        <displayFormType>select</displayFormType>
-        <displayType/>
-        <hint/>
-        <name>backdrop</name>
-        <number>6</number>
-        <prettyName>Backdrop</prettyName>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-      </backdrop>
-      <content>
-        <contenttype>FullyRenderedText</contenttype>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <editor>---</editor>
-        <hint/>
-        <name>content</name>
-        <number>9</number>
-        <picker>1</picker>
-        <prettyName>Content</prettyName>
-        <restricted>1</restricted>
-        <rows>5</rows>
-        <size>40</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
-      </content>
-      <element>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>element</name>
-        <number>2</number>
-        <picker>1</picker>
-        <prettyName>Element</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </element>
-      <order>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>order</name>
-        <number>3</number>
-        <numberType>long</numberType>
-        <prettyName>Order</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.NumberClass</classType>
-      </order>
-      <placement>
-        <cache>0</cache>
-        <customDisplay/>
-        <defaultValue>Top center</defaultValue>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <freeText/>
-        <hint/>
-        <largeStorage>0</largeStorage>
-        <multiSelect>0</multiSelect>
-        <name>placement</name>
-        <number>5</number>
-        <picker>1</picker>
-        <prettyName>Placement</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <sort/>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <values>LEFT_START=Left start|LEFT_CENTER=Left center|LEFT_END=Left end|TOP_START=Top start|TOP_CENTER=Top center|TOP_END=Top end|RIGHT_START=Right start|RIGHT_CENTER=Right center|RIGHT_END=Right end|BOTTOM_START=Bottom start|BOTTOM_CENTER=Bottom center|BOTTOM_END=Bottom end</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </placement>
-      <queryParameters>
-        <customDisplay/>
-        <disabled>0</disabled>
-        <hint/>
-        <name>queryParameters</name>
-        <number>10</number>
-        <picker>1</picker>
-        <prettyName>Query parameters</prettyName>
-        <size>30</size>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
-      </queryParameters>
-      <reflex>
-        <customDisplay/>
-        <defaultValue>0</defaultValue>
-        <disabled>0</disabled>
-        <displayFormType>select</displayFormType>
-        <displayType/>
-        <hint/>
-        <name>reflex</name>
-        <number>7</number>
-        <prettyName>Reflex</prettyName>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
-      </reflex>
-      <targetAction>
-        <cache>0</cache>
-        <customDisplay/>
-        <defaultValue>View</defaultValue>
-        <disabled>0</disabled>
-        <displayType>select</displayType>
-        <freeText/>
-        <hint/>
-        <largeStorage>0</largeStorage>
-        <multiSelect>0</multiSelect>
-        <name>targetAction</name>
-        <number>9</number>
-        <picker>1</picker>
-        <prettyName>Target action</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators>|, </separators>
-        <size>1</size>
-        <sort/>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <values>EDIT=Edit|VIEW=View|COMMENT=Comment|CREATE=Create</values>
-        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
-      </targetAction>
-      <targetPage>
-        <cache>0</cache>
-        <classname/>
-        <customDisplay/>
-        <defaultValue/>
-        <disabled>0</disabled>
-        <displayType>input</displayType>
-        <freeText>allowed</freeText>
-        <hint/>
-        <idField>doc.fullName</idField>
-        <largeStorage>0</largeStorage>
-        <multiSelect>0</multiSelect>
-        <name>targetPage</name>
-        <number>8</number>
-        <picker>1</picker>
-        <prettyName>Target page</prettyName>
-        <relationalStorage>0</relationalStorage>
-        <separator> </separator>
-        <separators/>
-        <size>1</size>
-        <sort/>
-        <sql/>
-        <unmodifiable>0</unmodifiable>
-        <validationMessage/>
-        <validationRegExp/>
-        <valueField/>
-        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
-      </targetPage>
-    </class>
-    <property type="Integer">
-      <backdrop/>
-    </property>
-    <property type="LargeString">
-      <content>Press edit now.</content>
-    </property>
-    <property type="String">
-      <element>#contentmenu #tmEdit a.btn</element>
+      <element>body:has(#guidedtour-tutorial-page) #tmEdit &gt; a.btn</element>
     </property>
     <property type="Long">
       <order>1</order>
@@ -460,10 +249,10 @@
     </property>
   </object>
   <object>
-    <name>GuidedTour.Tours.GettingStarted.PageEdit</name>
-    <number>2</number>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
+    <number>1</number>
     <className>XWiki.GuidedTour.StepClass</className>
-    <guid>1489ad9c-57e1-4cc0-bccd-dc1462bd9f49</guid>
+    <guid>3f39ccca-e512-5cc0-bb96-14a0e747ac28</guid>
     <class>
       <name>XWiki.GuidedTour.StepClass</name>
       <customClass/>
@@ -481,7 +270,7 @@
         <displayType/>
         <hint/>
         <name>backdrop</name>
-        <number>6</number>
+        <number>3</number>
         <prettyName>Backdrop</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
@@ -489,13 +278,13 @@
         <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
       </backdrop>
       <content>
-        <contenttype>FullyRenderedText</contenttype>
+        <contenttype>PureText</contenttype>
         <customDisplay/>
         <disabled>0</disabled>
-        <editor>---</editor>
+        <editor>PureText</editor>
         <hint/>
         <name>content</name>
-        <number>9</number>
+        <number>1</number>
         <picker>1</picker>
         <prettyName>Content</prettyName>
         <restricted>1</restricted>
@@ -525,7 +314,7 @@
         <disabled>0</disabled>
         <hint/>
         <name>order</name>
-        <number>3</number>
+        <number>0</number>
         <numberType>long</numberType>
         <prettyName>Order</prettyName>
         <size>30</size>
@@ -537,7 +326,7 @@
       <placement>
         <cache>0</cache>
         <customDisplay/>
-        <defaultValue>Top center</defaultValue>
+        <defaultValue/>
         <disabled>0</disabled>
         <displayType>select</displayType>
         <freeText/>
@@ -545,7 +334,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>placement</name>
-        <number>5</number>
+        <number>4</number>
         <picker>1</picker>
         <prettyName>Placement</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -556,7 +345,7 @@
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <values>LEFT_START=Left start|LEFT_CENTER=Left center|LEFT_END=Left end|TOP_START=Top start|TOP_CENTER=Top center|TOP_END=Top end|RIGHT_START=Right start|RIGHT_CENTER=Right center|RIGHT_END=Right end|BOTTOM_START=Bottom start|BOTTOM_CENTER=Bottom center|BOTTOM_END=Bottom end</values>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
         <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
       </placement>
       <queryParameters>
@@ -564,7 +353,7 @@
         <disabled>0</disabled>
         <hint/>
         <name>queryParameters</name>
-        <number>10</number>
+        <number>7</number>
         <picker>1</picker>
         <prettyName>Query parameters</prettyName>
         <size>30</size>
@@ -581,7 +370,7 @@
         <displayType/>
         <hint/>
         <name>reflex</name>
-        <number>7</number>
+        <number>8</number>
         <prettyName>Reflex</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
@@ -591,7 +380,7 @@
       <targetAction>
         <cache>0</cache>
         <customDisplay/>
-        <defaultValue>View</defaultValue>
+        <defaultValue>NOT_SET</defaultValue>
         <disabled>0</disabled>
         <displayType>select</displayType>
         <freeText/>
@@ -599,7 +388,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>targetAction</name>
-        <number>9</number>
+        <number>6</number>
         <picker>1</picker>
         <prettyName>Target action</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -610,7 +399,7 @@
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <values>EDIT=Edit|VIEW=View|COMMENT=Comment|CREATE=Create</values>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
         <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
       </targetAction>
       <targetPage>
@@ -626,7 +415,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>targetPage</name>
-        <number>8</number>
+        <number>5</number>
         <picker>1</picker>
         <prettyName>Target page</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -646,10 +435,10 @@
       <backdrop/>
     </property>
     <property type="LargeString">
-      <content>You can write stuff now!</content>
+      <content>Insert a macro: type /info and select the Info Box macro. You can then change the text of the info box. Click Next when you are done.</content>
     </property>
     <property type="String">
-      <element>#xwikieditcontent:not(.inplace-editing-buttons),#xwikicontent.cke_editable</element>
+      <element>#xwikieditcontent:not(.inplace-editing-buttons), #xwikicontent.cke_editable</element>
     </property>
     <property type="Long">
       <order>2</order>
@@ -671,10 +460,10 @@
     </property>
   </object>
   <object>
-    <name>GuidedTour.Tours.GettingStarted.PageEdit</name>
-    <number>3</number>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
+    <number>2</number>
     <className>XWiki.GuidedTour.StepClass</className>
-    <guid>7fb34ac1-7d55-4228-91e1-28ebff5258b9</guid>
+    <guid>96eedce2-3c88-53ee-9667-1a9269dbc3aa</guid>
     <class>
       <name>XWiki.GuidedTour.StepClass</name>
       <customClass/>
@@ -692,7 +481,7 @@
         <displayType/>
         <hint/>
         <name>backdrop</name>
-        <number>6</number>
+        <number>3</number>
         <prettyName>Backdrop</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
@@ -700,13 +489,13 @@
         <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
       </backdrop>
       <content>
-        <contenttype>FullyRenderedText</contenttype>
+        <contenttype>PureText</contenttype>
         <customDisplay/>
         <disabled>0</disabled>
-        <editor>---</editor>
+        <editor>PureText</editor>
         <hint/>
         <name>content</name>
-        <number>9</number>
+        <number>1</number>
         <picker>1</picker>
         <prettyName>Content</prettyName>
         <restricted>1</restricted>
@@ -736,7 +525,7 @@
         <disabled>0</disabled>
         <hint/>
         <name>order</name>
-        <number>3</number>
+        <number>0</number>
         <numberType>long</numberType>
         <prettyName>Order</prettyName>
         <size>30</size>
@@ -748,7 +537,7 @@
       <placement>
         <cache>0</cache>
         <customDisplay/>
-        <defaultValue>Top center</defaultValue>
+        <defaultValue/>
         <disabled>0</disabled>
         <displayType>select</displayType>
         <freeText/>
@@ -756,7 +545,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>placement</name>
-        <number>5</number>
+        <number>4</number>
         <picker>1</picker>
         <prettyName>Placement</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -767,7 +556,7 @@
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <values>LEFT_START=Left start|LEFT_CENTER=Left center|LEFT_END=Left end|TOP_START=Top start|TOP_CENTER=Top center|TOP_END=Top end|RIGHT_START=Right start|RIGHT_CENTER=Right center|RIGHT_END=Right end|BOTTOM_START=Bottom start|BOTTOM_CENTER=Bottom center|BOTTOM_END=Bottom end</values>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
         <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
       </placement>
       <queryParameters>
@@ -775,7 +564,7 @@
         <disabled>0</disabled>
         <hint/>
         <name>queryParameters</name>
-        <number>10</number>
+        <number>7</number>
         <picker>1</picker>
         <prettyName>Query parameters</prettyName>
         <size>30</size>
@@ -792,7 +581,7 @@
         <displayType/>
         <hint/>
         <name>reflex</name>
-        <number>7</number>
+        <number>8</number>
         <prettyName>Reflex</prettyName>
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
@@ -802,7 +591,7 @@
       <targetAction>
         <cache>0</cache>
         <customDisplay/>
-        <defaultValue>View</defaultValue>
+        <defaultValue>NOT_SET</defaultValue>
         <disabled>0</disabled>
         <displayType>select</displayType>
         <freeText/>
@@ -810,7 +599,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>targetAction</name>
-        <number>9</number>
+        <number>6</number>
         <picker>1</picker>
         <prettyName>Target action</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -821,7 +610,7 @@
         <unmodifiable>0</unmodifiable>
         <validationMessage/>
         <validationRegExp/>
-        <values>EDIT=Edit|VIEW=View|COMMENT=Comment|CREATE=Create</values>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
         <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
       </targetAction>
       <targetPage>
@@ -837,7 +626,7 @@
         <largeStorage>0</largeStorage>
         <multiSelect>0</multiSelect>
         <name>targetPage</name>
-        <number>8</number>
+        <number>5</number>
         <picker>1</picker>
         <prettyName>Target page</prettyName>
         <relationalStorage>0</relationalStorage>
@@ -857,13 +646,435 @@
       <backdrop/>
     </property>
     <property type="LargeString">
-      <content>Now, press this button to finish editing and go back to viewing the page.</content>
+      <content>Mention a user: type @ and select a user to mention. They get a notification once you save the page. Click Next when you are done.</content>
     </property>
     <property type="String">
-      <element>.realtime-action-done,.bottombuttons .btn[name="action_save"]</element>
+      <element>#xwikieditcontent:not(.inplace-editing-buttons), #xwikicontent.cke_editable</element>
     </property>
     <property type="Long">
       <order>3</order>
+    </property>
+    <property type="String">
+      <placement/>
+    </property>
+    <property type="String">
+      <queryParameters/>
+    </property>
+    <property type="Integer">
+      <reflex>0</reflex>
+    </property>
+    <property type="String">
+      <targetAction>EDIT</targetAction>
+    </property>
+    <property type="String">
+      <targetPage/>
+    </property>
+  </object>
+  <object>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
+    <number>3</number>
+    <className>XWiki.GuidedTour.StepClass</className>
+    <guid>701c8083-e403-5e35-b58b-e549da2c4cfd</guid>
+    <class>
+      <name>XWiki.GuidedTour.StepClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <backdrop>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>backdrop</name>
+        <number>3</number>
+        <prettyName>Backdrop</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </backdrop>
+      <content>
+        <contenttype>PureText</contenttype>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <hint/>
+        <name>content</name>
+        <number>1</number>
+        <picker>1</picker>
+        <prettyName>Content</prettyName>
+        <restricted>1</restricted>
+        <rows>5</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </content>
+      <element>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>element</name>
+        <number>2</number>
+        <picker>1</picker>
+        <prettyName>Element</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </element>
+      <order>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>order</name>
+        <number>0</number>
+        <numberType>long</numberType>
+        <prettyName>Order</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.NumberClass</classType>
+      </order>
+      <placement>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>placement</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Placement</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </placement>
+      <queryParameters>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>queryParameters</name>
+        <number>7</number>
+        <picker>1</picker>
+        <prettyName>Query parameters</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </queryParameters>
+      <reflex>
+        <customDisplay/>
+        <defaultValue>0</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>reflex</name>
+        <number>8</number>
+        <prettyName>Reflex</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </reflex>
+      <targetAction>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue>NOT_SET</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetAction</name>
+        <number>6</number>
+        <picker>1</picker>
+        <prettyName>Target action</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </targetAction>
+      <targetPage>
+        <cache>0</cache>
+        <classname/>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>input</displayType>
+        <freeText>allowed</freeText>
+        <hint/>
+        <idField>doc.fullName</idField>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetPage</name>
+        <number>5</number>
+        <picker>1</picker>
+        <prettyName>Target page</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators/>
+        <size>1</size>
+        <sort/>
+        <sql/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <valueField/>
+        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
+      </targetPage>
+    </class>
+    <property type="Integer">
+      <backdrop/>
+    </property>
+    <property type="LargeString">
+      <content>Insert an image: type /image and select Image in the Content section. Select the image of your page, or upload one, and insert it. Click Next when you are done.</content>
+    </property>
+    <property type="String">
+      <element>#xwikieditcontent:not(.inplace-editing-buttons), #xwikicontent.cke_editable</element>
+    </property>
+    <property type="Long">
+      <order>4</order>
+    </property>
+    <property type="String">
+      <placement/>
+    </property>
+    <property type="String">
+      <queryParameters/>
+    </property>
+    <property type="Integer">
+      <reflex>0</reflex>
+    </property>
+    <property type="String">
+      <targetAction>EDIT</targetAction>
+    </property>
+    <property type="String">
+      <targetPage/>
+    </property>
+  </object>
+  <object>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
+    <number>4</number>
+    <className>XWiki.GuidedTour.StepClass</className>
+    <guid>134d1714-6697-53f3-a47e-97e5b37c6b18</guid>
+    <class>
+      <name>XWiki.GuidedTour.StepClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <backdrop>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>backdrop</name>
+        <number>3</number>
+        <prettyName>Backdrop</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </backdrop>
+      <content>
+        <contenttype>PureText</contenttype>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <hint/>
+        <name>content</name>
+        <number>1</number>
+        <picker>1</picker>
+        <prettyName>Content</prettyName>
+        <restricted>1</restricted>
+        <rows>5</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </content>
+      <element>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>element</name>
+        <number>2</number>
+        <picker>1</picker>
+        <prettyName>Element</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </element>
+      <order>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>order</name>
+        <number>0</number>
+        <numberType>long</numberType>
+        <prettyName>Order</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.NumberClass</classType>
+      </order>
+      <placement>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>placement</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Placement</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </placement>
+      <queryParameters>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>queryParameters</name>
+        <number>7</number>
+        <picker>1</picker>
+        <prettyName>Query parameters</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </queryParameters>
+      <reflex>
+        <customDisplay/>
+        <defaultValue>0</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>reflex</name>
+        <number>8</number>
+        <prettyName>Reflex</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </reflex>
+      <targetAction>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue>NOT_SET</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetAction</name>
+        <number>6</number>
+        <picker>1</picker>
+        <prettyName>Target action</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </targetAction>
+      <targetPage>
+        <cache>0</cache>
+        <classname/>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>input</displayType>
+        <freeText>allowed</freeText>
+        <hint/>
+        <idField>doc.fullName</idField>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetPage</name>
+        <number>5</number>
+        <picker>1</picker>
+        <prettyName>Target page</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators/>
+        <size>1</size>
+        <sort/>
+        <sql/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <valueField/>
+        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
+      </targetPage>
+    </class>
+    <property type="Integer">
+      <backdrop>1</backdrop>
+    </property>
+    <property type="LargeString">
+      <content>Click Done to save your changes.</content>
+    </property>
+    <property type="String">
+      <element>.realtime-action-done, body:not(:has(template#realtime-edit-toolbar)) .bottombuttons .btn[name="action_save"], body:not(:has(template#realtime-edit-toolbar)) .inplace-editing-buttons .btn[name="action_save"]</element>
+    </property>
+    <property type="Long">
+      <order>5</order>
     </property>
     <property type="String">
       <placement/>
@@ -882,10 +1093,432 @@
     </property>
   </object>
   <object>
-    <name>GuidedTour.Tours.GettingStarted.PageEdit</name>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
+    <number>5</number>
+    <className>XWiki.GuidedTour.StepClass</className>
+    <guid>d29ee168-9479-59f1-adac-18b30c31199e</guid>
+    <class>
+      <name>XWiki.GuidedTour.StepClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <backdrop>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>backdrop</name>
+        <number>3</number>
+        <prettyName>Backdrop</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </backdrop>
+      <content>
+        <contenttype>PureText</contenttype>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <hint/>
+        <name>content</name>
+        <number>1</number>
+        <picker>1</picker>
+        <prettyName>Content</prettyName>
+        <restricted>1</restricted>
+        <rows>5</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </content>
+      <element>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>element</name>
+        <number>2</number>
+        <picker>1</picker>
+        <prettyName>Element</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </element>
+      <order>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>order</name>
+        <number>0</number>
+        <numberType>long</numberType>
+        <prettyName>Order</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.NumberClass</classType>
+      </order>
+      <placement>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>placement</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Placement</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </placement>
+      <queryParameters>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>queryParameters</name>
+        <number>7</number>
+        <picker>1</picker>
+        <prettyName>Query parameters</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </queryParameters>
+      <reflex>
+        <customDisplay/>
+        <defaultValue>0</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>reflex</name>
+        <number>8</number>
+        <prettyName>Reflex</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </reflex>
+      <targetAction>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue>NOT_SET</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetAction</name>
+        <number>6</number>
+        <picker>1</picker>
+        <prettyName>Target action</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </targetAction>
+      <targetPage>
+        <cache>0</cache>
+        <classname/>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>input</displayType>
+        <freeText>allowed</freeText>
+        <hint/>
+        <idField>doc.fullName</idField>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetPage</name>
+        <number>5</number>
+        <picker>1</picker>
+        <prettyName>Target page</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators/>
+        <size>1</size>
+        <sort/>
+        <sql/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <valueField/>
+        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
+      </targetPage>
+    </class>
+    <property type="Integer">
+      <backdrop>1</backdrop>
+    </property>
+    <property type="LargeString">
+      <content>Well done, you inserted a macro, a mention and an image!</content>
+    </property>
+    <property type="String">
+      <element/>
+    </property>
+    <property type="Long">
+      <order>6</order>
+    </property>
+    <property type="String">
+      <placement/>
+    </property>
+    <property type="String">
+      <queryParameters/>
+    </property>
+    <property type="Integer">
+      <reflex>0</reflex>
+    </property>
+    <property type="String">
+      <targetAction>VIEW</targetAction>
+    </property>
+    <property type="String">
+      <targetPage/>
+    </property>
+  </object>
+  <object>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
+    <number>6</number>
+    <className>XWiki.GuidedTour.StepClass</className>
+    <guid>1abc923a-c42b-48bd-b508-7c955846d9bb</guid>
+    <class>
+      <name>XWiki.GuidedTour.StepClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <backdrop>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>backdrop</name>
+        <number>3</number>
+        <prettyName>Backdrop</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </backdrop>
+      <content>
+        <contenttype>PureText</contenttype>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <hint/>
+        <name>content</name>
+        <number>1</number>
+        <picker>1</picker>
+        <prettyName>Content</prettyName>
+        <restricted>1</restricted>
+        <rows>5</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </content>
+      <element>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>element</name>
+        <number>2</number>
+        <picker>1</picker>
+        <prettyName>Element</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </element>
+      <order>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>order</name>
+        <number>0</number>
+        <numberType>long</numberType>
+        <prettyName>Order</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.NumberClass</classType>
+      </order>
+      <placement>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>placement</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Placement</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </placement>
+      <queryParameters>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>queryParameters</name>
+        <number>7</number>
+        <picker>1</picker>
+        <prettyName>Query parameters</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </queryParameters>
+      <reflex>
+        <customDisplay/>
+        <defaultValue>0</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>reflex</name>
+        <number>8</number>
+        <prettyName>Reflex</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </reflex>
+      <targetAction>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue>NOT_SET</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetAction</name>
+        <number>6</number>
+        <picker>1</picker>
+        <prettyName>Target action</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </targetAction>
+      <targetPage>
+        <cache>0</cache>
+        <classname/>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>input</displayType>
+        <freeText>allowed</freeText>
+        <hint/>
+        <idField>doc.fullName</idField>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetPage</name>
+        <number>5</number>
+        <picker>1</picker>
+        <prettyName>Target page</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators/>
+        <size>1</size>
+        <sort/>
+        <sql/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <valueField/>
+        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
+      </targetPage>
+    </class>
+    <property type="Integer">
+      <backdrop/>
+    </property>
+    <property type="LargeString">
+      <content>In this task, you insert a macro, mention a user and insert an image on the tutorial page you created in the "Create a page" task. If another page is open, go to your tutorial page first, then click Next.</content>
+    </property>
+    <property type="String">
+      <element/>
+    </property>
+    <property type="Long">
+      <order>0</order>
+    </property>
+    <property type="String">
+      <placement/>
+    </property>
+    <property type="String">
+      <queryParameters/>
+    </property>
+    <property type="Integer">
+      <reflex>0</reflex>
+    </property>
+    <property type="String">
+      <targetAction>VIEW</targetAction>
+    </property>
+    <property type="String">
+      <targetPage/>
+    </property>
+  </object>
+  <object>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
     <number>0</number>
     <className>XWiki.GuidedTour.TaskClass</className>
-    <guid>2f135bb7-6925-4388-8007-425d5953d2b0</guid>
+    <guid>5c14ee0e-26c2-5cc1-b614-56d15b77a3d9</guid>
     <class>
       <name>XWiki.GuidedTour.TaskClass</name>
       <customClass/>
@@ -965,16 +1598,16 @@
       </title>
     </class>
     <property type="String">
-      <dependsOn/>
+      <dependsOn>CreatePage</dependsOn>
     </property>
     <property type="Boolean">
       <isActive>true</isActive>
     </property>
     <property type="Long">
-      <order>0</order>
+      <order>5</order>
     </property>
     <property type="String">
-      <title>Edit a Page</title>
+      <title>Edit a page</title>
     </property>
   </object>
 </xwikidoc>
