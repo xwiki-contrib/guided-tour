@@ -110,6 +110,7 @@ class TourWidgetIT extends AbstractGuidedTourIT
         // The second task starts automatically: leave it before its end, so that it stays to do.
         popover.waitForStep("Second task, step one");
         popover.pressEscape();
+        popover.confirmBrowserAlert();
         // Wait for the leave to be handled (the next tasks aren't started automatically anymore) before checking the
         // status.
         this.guidedTour.waitForUserTourStatus(userName, status -> !status.isCallToActionEnabled(tourId));

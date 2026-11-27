@@ -21,11 +21,13 @@ package org.xwiki.contrib.guidedtour.test.po;
 
 import java.util.List;
 
+import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.xwiki.test.ui.po.BaseElement;
 
 /**
@@ -318,23 +320,48 @@ public class TourStepPopover extends BaseElement
     }
 
     /**
-     * Close the task with the close button of the popover, and wait until the popover is closed.
+     * Click the close button of the popover. Before the last step of the task, this asks to confirm that the task
+     * should be stopped, see {@link #confirmBrowserAlert()} and {@link #denyBrowserAlert()}. On the last step, it ends
+     * the task, see {@link #waitUntilClosed()}.
      */
     public void close()
     {
         waitForStepTransition();
         getDriver().findElement(CLOSE_BUTTON).click();
-        waitUntilClosed();
     }
 
     /**
-     * Close the task with the Escape key, and wait until the popover is closed.
+     * Press the Escape key. Before the last step of the task, this asks to confirm that the task should be stopped, see
+     * {@link #confirmBrowserAlert()} and {@link #denyBrowserAlert()}. On the last step, it ends the task, see
+     * {@link #waitUntilClosed()}.
      */
     public void pressEscape()
     {
         waitForStepTransition();
         getDriver().createActions().sendKeys(Keys.ESCAPE).perform();
+    }
+
+    /**
+     * Accept the browser alert asking to confirm that the task should be stopped, and wait until the popover is closed.
+     */
+    public void confirmBrowserAlert()
+    {
+        getDriver().waitUntilCondition(ExpectedConditions.alertIsPresent()).accept();
         waitUntilClosed();
+    }
+
+    /**
+     * Deny the browser alert asking to confirm that the task should be stopped, which keeps the task on its current
+     * step.
+     *
+     * @return the question asked to the user
+     */
+    public String denyBrowserAlert()
+    {
+        Alert confirmation = getDriver().waitUntilCondition(ExpectedConditions.alertIsPresent());
+        String question = confirmation.getText();
+        confirmation.dismiss();
+        return question;
     }
 
     /**

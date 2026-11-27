@@ -21,6 +21,7 @@
 import { StorageManager } from "../StorageManager";
 import {
   XWikiDriverConfig,
+  driver,
   getDriverConfigForSteps,
   wrapTask,
 } from "../driverjsMain";
@@ -817,5 +818,105 @@ describe("driverjsMain", () => {
         expect(drive).toHaveBeenCalledExactlyOnceWith(1);
       });
     });
+  });
+});
+
+describe("ending a task", () => {
+  /**
+   * The ways for the user to end a task, by the destroy reason that driver.js gives for each.
+   */
+  const endTaskBy: Record<string, () => void> = {
+    close: () =>
+      document.querySelector<HTMLElement>(".driver-popover-close-btn")!.click(),
+    escape: () => pressEscape(),
+    overlay: () =>
+      document
+        .querySelector(".driver-overlay path")!
+        .dispatchEvent(new MouseEvent("click", { bubbles: true })),
+  };
+
+  function pressEscape() {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape" }));
+  }
+
+  /**
+   * @returns a task started with driver.js, on its first step.
+   */
+  async function startTask(confirmed: boolean): Promise<Driver> {
+    vi.stubGlobal("XWiki", {
+      widgets: {
+        Notification: class {
+          hide() {}
+        },
+      },
+    });
+    vi.stubGlobal("confirm", vi.fn().mockReturnValue(confirmed));
+    const config = await getDriverConfigForSteps(
+      createTask(),
+      {} as DefaultGuidedTourManager,
+      { "guidedtour.driver.confirmExit": "Stop the task?" },
+    );
+    config.animate = false;
+    const task = driver(config);
+    task.drive();
+    await vi.waitFor(() =>
+      expect(document.querySelector(".driver-overlay")).not.toBeNull(),
+    );
+    return task;
+  }
+
+  let task: Driver | undefined;
+
+  afterEach(() => {
+    task?.destroy();
+    vi.unstubAllGlobals();
+  });
+
+  it.each(Object.keys(endTaskBy))(
+    "ends the task with %s only if the user confirms it",
+    async (reason) => {
+      task = await startTask(false);
+      endTaskBy[reason]();
+      expect(window.confirm).toHaveBeenCalledExactlyOnceWith("Stop the task?");
+      expect(task.isActive()).toBe(true);
+      expect(task.getActiveIndex()).toBe(0);
+
+      vi.mocked(window.confirm).mockReturnValue(true);
+      endTaskBy[reason]();
+      expect(task.isActive()).toBe(false);
+    },
+  );
+
+  it("ends the task without asking when the code ends it", async () => {
+    task = await startTask(false);
+    task.destroy();
+    expect(task.isActive()).toBe(false);
+
+    task = await startTask(false);
+    // Driving to a step that doesn't exist (anymore) ends the task.
+    task.drive(10);
+    expect(task.isActive()).toBe(false);
+    expect(window.confirm).not.toHaveBeenCalled();
+  });
+
+  it("ends the task without asking on its last step", async () => {
+    task = await startTask(false);
+    task.drive(task.getConfig().steps!.length - 1);
+    endTaskBy.close();
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(task.isActive()).toBe(false);
+  });
+
+  it("doesn't ask again on the Escape keyup that closes the confirmation", async () => {
+    task = await startTask(false);
+    pressEscape();
+    // The browser closes the confirmation on keydown, and sends the keyup to the page.
+    window.dispatchEvent(new KeyboardEvent("keyup", { key: "Escape" }));
+    expect(window.confirm).toHaveBeenCalledOnce();
+
+    pressEscape();
+    expect(window.confirm).toHaveBeenCalledTimes(2);
+    expect(task.isActive()).toBe(true);
   });
 });
