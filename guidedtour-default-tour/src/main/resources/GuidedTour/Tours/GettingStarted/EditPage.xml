@@ -230,7 +230,7 @@
       <element>body:has(#guidedtour-tutorial-page) #tmEdit &gt; a.btn</element>
     </property>
     <property type="Long">
-      <order>0</order>
+      <order>1</order>
     </property>
     <property type="String">
       <placement/>
@@ -441,7 +441,7 @@
       <element>#xwikieditcontent:not(.inplace-editing-buttons), #xwikicontent.cke_editable</element>
     </property>
     <property type="Long">
-      <order>1</order>
+      <order>2</order>
     </property>
     <property type="String">
       <placement/>
@@ -652,7 +652,7 @@
       <element>#xwikieditcontent:not(.inplace-editing-buttons), #xwikicontent.cke_editable</element>
     </property>
     <property type="Long">
-      <order>2</order>
+      <order>3</order>
     </property>
     <property type="String">
       <placement/>
@@ -863,7 +863,7 @@
       <element>#xwikieditcontent:not(.inplace-editing-buttons), #xwikicontent.cke_editable</element>
     </property>
     <property type="Long">
-      <order>3</order>
+      <order>4</order>
     </property>
     <property type="String">
       <placement/>
@@ -1074,7 +1074,7 @@
       <element>.realtime-action-done, body:not(:has(template#realtime-edit-toolbar)) .bottombuttons .btn[name="action_save"], body:not(:has(template#realtime-edit-toolbar)) .inplace-editing-buttons .btn[name="action_save"]</element>
     </property>
     <property type="Long">
-      <order>4</order>
+      <order>5</order>
     </property>
     <property type="String">
       <placement/>
@@ -1285,7 +1285,218 @@
       <element/>
     </property>
     <property type="Long">
-      <order>5</order>
+      <order>6</order>
+    </property>
+    <property type="String">
+      <placement/>
+    </property>
+    <property type="String">
+      <queryParameters/>
+    </property>
+    <property type="Integer">
+      <reflex>0</reflex>
+    </property>
+    <property type="String">
+      <targetAction>VIEW</targetAction>
+    </property>
+    <property type="String">
+      <targetPage/>
+    </property>
+  </object>
+  <object>
+    <name>GuidedTour.Tours.GettingStarted.EditPage</name>
+    <number>6</number>
+    <className>XWiki.GuidedTour.StepClass</className>
+    <guid>1abc923a-c42b-48bd-b508-7c955846d9bb</guid>
+    <class>
+      <name>XWiki.GuidedTour.StepClass</name>
+      <customClass/>
+      <customMapping/>
+      <defaultViewSheet/>
+      <defaultEditSheet/>
+      <defaultWeb/>
+      <nameField/>
+      <validationScript/>
+      <backdrop>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>backdrop</name>
+        <number>3</number>
+        <prettyName>Backdrop</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </backdrop>
+      <content>
+        <contenttype>PureText</contenttype>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <editor>PureText</editor>
+        <hint/>
+        <name>content</name>
+        <number>1</number>
+        <picker>1</picker>
+        <prettyName>Content</prettyName>
+        <restricted>1</restricted>
+        <rows>5</rows>
+        <size>40</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.TextAreaClass</classType>
+      </content>
+      <element>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>element</name>
+        <number>2</number>
+        <picker>1</picker>
+        <prettyName>Element</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </element>
+      <order>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>order</name>
+        <number>0</number>
+        <numberType>long</numberType>
+        <prettyName>Order</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.NumberClass</classType>
+      </order>
+      <placement>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>placement</name>
+        <number>4</number>
+        <picker>1</picker>
+        <prettyName>Placement</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>BOTTOM_START|BOTTOM_CENTER|BOTTOM_END|LEFT_START|LEFT_CENTER|LEFT_END|TOP_START|TOP_CENTER|TOP_END|RIGHT_START|RIGHT_CENTER|RIGHT_END</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </placement>
+      <queryParameters>
+        <customDisplay/>
+        <disabled>0</disabled>
+        <hint/>
+        <name>queryParameters</name>
+        <number>7</number>
+        <picker>1</picker>
+        <prettyName>Query parameters</prettyName>
+        <size>30</size>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.StringClass</classType>
+      </queryParameters>
+      <reflex>
+        <customDisplay/>
+        <defaultValue>0</defaultValue>
+        <disabled>0</disabled>
+        <displayFormType>select</displayFormType>
+        <displayType/>
+        <hint/>
+        <name>reflex</name>
+        <number>8</number>
+        <prettyName>Reflex</prettyName>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <classType>com.xpn.xwiki.objects.classes.BooleanClass</classType>
+      </reflex>
+      <targetAction>
+        <cache>0</cache>
+        <customDisplay/>
+        <defaultValue>NOT_SET</defaultValue>
+        <disabled>0</disabled>
+        <displayType>select</displayType>
+        <freeText/>
+        <hint/>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetAction</name>
+        <number>6</number>
+        <picker>1</picker>
+        <prettyName>Target action</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators>|, </separators>
+        <size>1</size>
+        <sort/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <values>NOT_SET|EDIT|VIEW|DELETE|CREATE|ADMIN</values>
+        <classType>com.xpn.xwiki.objects.classes.StaticListClass</classType>
+      </targetAction>
+      <targetPage>
+        <cache>0</cache>
+        <classname/>
+        <customDisplay/>
+        <defaultValue/>
+        <disabled>0</disabled>
+        <displayType>input</displayType>
+        <freeText>allowed</freeText>
+        <hint/>
+        <idField>doc.fullName</idField>
+        <largeStorage>0</largeStorage>
+        <multiSelect>0</multiSelect>
+        <name>targetPage</name>
+        <number>5</number>
+        <picker>1</picker>
+        <prettyName>Target page</prettyName>
+        <relationalStorage>0</relationalStorage>
+        <separator> </separator>
+        <separators/>
+        <size>1</size>
+        <sort/>
+        <sql/>
+        <unmodifiable>0</unmodifiable>
+        <validationMessage/>
+        <validationRegExp/>
+        <valueField/>
+        <classType>com.xpn.xwiki.objects.classes.PageClass</classType>
+      </targetPage>
+    </class>
+    <property type="Integer">
+      <backdrop/>
+    </property>
+    <property type="LargeString">
+      <content>In this task, you insert a macro, mention a user and insert an image on the tutorial page you created in the "Create a page" task. If another page is open, go to your tutorial page first, then click Next.</content>
+    </property>
+    <property type="String">
+      <element/>
+    </property>
+    <property type="Long">
+      <order>0</order>
     </property>
     <property type="String">
       <placement/>

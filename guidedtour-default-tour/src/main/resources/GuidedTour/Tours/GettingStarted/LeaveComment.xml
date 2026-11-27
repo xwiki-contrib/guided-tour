@@ -221,13 +221,13 @@
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop>1</backdrop>
+      <backdrop/>
     </property>
     <property type="LargeString">
-      <content>This is the Comments section of your tutorial page, where you can discuss the page with other users.</content>
+      <content>In this task, you leave a comment on the tutorial page you created in the "Create a page" task. If another page is open, go to your tutorial page first, then click Next.</content>
     </property>
     <property type="String">
-      <element>body:has(#guidedtour-tutorial-page) #Commentstab</element>
+      <element/>
     </property>
     <property type="Long">
       <order>0</order>
@@ -435,10 +435,10 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>Click Comment to write a new comment.</content>
+      <content>The Comments section is where you discuss the page with other users. Click Comment to write a new comment.</content>
     </property>
     <property type="String">
-      <element>#openCommentForm</element>
+      <element>body:has(#guidedtour-tutorial-page) #openCommentForm</element>
     </property>
     <property type="Long">
       <order>1</order>

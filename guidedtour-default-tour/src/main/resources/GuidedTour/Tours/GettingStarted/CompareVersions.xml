@@ -221,13 +221,13 @@
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop>1</backdrop>
+      <backdrop/>
     </property>
     <property type="LargeString">
-      <content>This is the History section of your tutorial page, which lists the versions of the page.</content>
+      <content>In this task, you compare 2 versions of the tutorial page you created in the "Create a page" task. If another page is open, go to your tutorial page first, then click Next.</content>
     </property>
     <property type="String">
-      <element>body:has(#guidedtour-tutorial-page) #Historytab</element>
+      <element/>
     </property>
     <property type="Long">
       <order>0</order>
@@ -435,10 +435,10 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>Click History to open it.</content>
+      <content>The History section lists the versions of the page. Click History to open it.</content>
     </property>
     <property type="String">
-      <element>#Historylink</element>
+      <element>body:has(#guidedtour-tutorial-page) #Historylink</element>
     </property>
     <property type="Long">
       <order>1</order>

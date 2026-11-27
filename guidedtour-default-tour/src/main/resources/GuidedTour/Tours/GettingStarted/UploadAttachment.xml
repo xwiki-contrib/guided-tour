@@ -221,13 +221,13 @@
       </targetPage>
     </class>
     <property type="Integer">
-      <backdrop>1</backdrop>
+      <backdrop/>
     </property>
     <property type="LargeString">
-      <content>This is the Attachments section of your tutorial page, which lists the files attached to the page.</content>
+      <content>In this task, you attach a file to the tutorial page you created in the "Create a page" task. If another page is open, go to your tutorial page first, then click Next.</content>
     </property>
     <property type="String">
-      <element>body:has(#guidedtour-tutorial-page) #Attachmentstab</element>
+      <element/>
     </property>
     <property type="Long">
       <order>0</order>
@@ -435,10 +435,10 @@
       <backdrop>1</backdrop>
     </property>
     <property type="LargeString">
-      <content>Click Attachments to open them.</content>
+      <content>The Attachments section lists the files attached to the page. Click Attachments to open it.</content>
     </property>
     <property type="String">
-      <element>#Attachmentslink</element>
+      <element>body:has(#guidedtour-tutorial-page) #Attachmentslink</element>
     </property>
     <property type="Long">
       <order>1</order>

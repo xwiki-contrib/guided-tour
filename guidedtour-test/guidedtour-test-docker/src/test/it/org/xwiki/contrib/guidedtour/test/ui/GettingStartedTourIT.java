@@ -75,8 +75,10 @@ class GettingStartedTourIT extends AbstractGuidedTourIT
         popover.waitForStep("Select the Guided Tour template.");
         createPage.setTemplate(templateProvider);
         popover.waitForStep("Click Create.").clickHighlightedElementAndWaitForPageReload();
-        popover.waitForStep("This is the editor. You can change the content now or later. Click Done to save your"
-            + " page.").clickHighlightedElementAndWaitForPageReload();
+        popover.waitForStep("This is the editor, where you write the content of your page. You can change it now or"
+            + " later, then click Next.");
+        popover.clickNext();
+        popover.waitForStep("Click Done to save your page.").clickHighlightedElementAndWaitForPageReload();
         popover.waitForStep("Congratulations, you created your tutorial page! The next tasks happen on this page.");
 
         assertTrue(setup.rest().exists(new AttachmentReference("xwiki-logo.png", tutorialPage)));
