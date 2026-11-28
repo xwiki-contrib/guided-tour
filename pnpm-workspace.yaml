@@ -12,7 +12,7 @@ catalog:
   "@types/jquery": 4.0.1
   "@types/node": 24.19.2
   "@types/sinon": 22.0.0
-  "@vitejs/plugin-vue": 6.0.10
+  "@vitejs/plugin-vue": 6.0.11
   "@vue/test-utils": 2.5.1
   "@xwiki/platform-localization-adapter-vue": 18.3.0
   "@xwiki/platform-localization-api": 18.3.0
