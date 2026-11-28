@@ -139,6 +139,13 @@
 
 == {{translation key='guidedtour.tasks.sheet.title.steps'/}} ==
 
+## Always rendered, so that it can be shown or hidden while steps are added or removed in edit mode.
+(% id="guidedtour-no-steps-warning" class="#if (!$steps.isEmpty())hidden#end" %)(((
+{{warning}}
+{{translation key='guidedtour.tasks.sheet.steps.noStepsWarning'/}}
+{{/warning}}
+)))
+
 {{html clean='false'}}
 
 #if ($isEdit)
@@ -305,6 +312,12 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
         this.sidebarContainer.appendChild(sidebarItem);
         updateItems();
       }
+      this.updateNoStepsWarning();
+    }
+    // Tasks without steps are hidden in the Guided Tour widget, so warn about it.
+    updateNoStepsWarning() {
+      document.getElementById('guidedtour-no-steps-warning')?.classList.toggle('hidden',
+        Object.keys(this.stepElements).length &gt; 0);
     }
     constructor(formContainer, sidebarContainer) {
       this.formContainer = formContainer;
@@ -360,6 +373,7 @@ require(['jquery', 'xwiki-meta', 'xwiki-l10n!guidedtour-task-sheet', 'jquery-ui'
       currentStep.sidebarItem.remove();
       delete this.stepElements[objectIndex];
       updateItems();
+      this.updateNoStepsWarning();
     }
 
     /**

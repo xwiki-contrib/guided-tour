@@ -68,7 +68,7 @@ function createTask(
   status: TourTaskStatus = TODO,
   active = true,
 ): TourTask {
-  return { id, title: id, order, status, active };
+  return { id, title: id, order, status, active, stepCount: 1 };
 }
 
 /**
@@ -295,6 +295,21 @@ describe("DefaultGuidedTourManager", () => {
         await getTask("tour1", "task3"),
         false,
       );
+    });
+
+    it("doesn't start a task without steps", async () => {
+      await loadManager(
+        createUserStatus({
+          tour1: { callToAction: true, tasksStatus: { task2: DONE } },
+        }),
+      );
+      const startTask = vi.spyOn(manager, "startTask").mockResolvedValue();
+      await activateTask("tour1", "task1");
+      (await getTask("tour1", "task3")).stepCount = 0;
+
+      await manager.setTaskStatus(manager.activeTask!, DONE);
+
+      expect(startTask).not.toHaveBeenCalled();
     });
 
     it("doesn't start any task when the tour has no task left to do", async () => {

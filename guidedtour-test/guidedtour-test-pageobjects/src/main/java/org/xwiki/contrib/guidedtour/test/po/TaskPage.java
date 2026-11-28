@@ -45,6 +45,11 @@ public class TaskPage extends ViewPage
     private static final By STEP_FORMS = By.cssSelector(".stepsListContainer .itemDisplay");
 
     /**
+     * The warning telling that a task without steps is hidden in the widget.
+     */
+    private static final By NO_STEPS_WARNING = By.id("guidedtour-no-steps-warning");
+
+    /**
      * Wait until the script of the task sheet has listed the steps in the sidebar.
      *
      * @return the titles of the steps of the task (their content), in their order
@@ -66,5 +71,26 @@ public class TaskPage extends ViewPage
         driver.waitUntilCondition(d -> driver.findElementsWithoutWaiting(STEP_TITLES).size()
             == driver.findElementsWithoutWaiting(STEP_FORMS).size());
         return driver.findElementsWithoutWaiting(STEP_TITLES).stream().map(WebElement::getText).toList();
+    }
+
+    /**
+     * @return {@code true} if the page warns that the task has no steps, so it's hidden in the widget, {@code false}
+     *     otherwise
+     */
+    public boolean isNoStepsWarningDisplayed()
+    {
+        return isNoStepsWarningDisplayed(getDriver());
+    }
+
+    /**
+     * Check the warning about the task having no steps, in view or edit mode. In edit mode, the script of the task
+     * sheet shows or hides it as soon as a step is added or removed.
+     *
+     * @param driver the driver
+     * @return {@code true} if the page warns that the task has no steps, {@code false} otherwise
+     */
+    static boolean isNoStepsWarningDisplayed(XWikiWebDriver driver)
+    {
+        return driver.findElementWithoutWaiting(NO_STEPS_WARNING).isDisplayed();
     }
 }

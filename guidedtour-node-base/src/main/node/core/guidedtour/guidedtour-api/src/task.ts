@@ -57,7 +57,29 @@ export interface TourTask {
    */
   order: number;
   /**
+   * The number of steps of this task, known without fetching the steps. A task without steps is not shown to the
+   * users.
+   *
+   * @since 0.2
+   */
+  stepCount?: number;
+  /**
    * The steps which are part of this task.
    */
   steps?: TourStep[];
 }
+
+/**
+ * Whether a task is shown to the users: it has to be active and to have at least one step. The tasks which are not
+ * shown are ignored everywhere, including when computing the progress and the status of the tours.
+ *
+ * @param task - The task to check.
+ * @returns `true` if the task is shown to the users, `false` otherwise.
+ * @since 0.2
+ * @beta
+ */
+function isTaskAvailable(task: TourTask): boolean {
+  return (task.active ?? false) && (task.stepCount ?? 0) > 0;
+}
+
+export { isTaskAvailable };

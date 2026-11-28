@@ -22,6 +22,7 @@ package org.xwiki.contrib.guidedtour.internal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -48,6 +49,7 @@ import com.xpn.xwiki.XWikiException;
 import com.xpn.xwiki.doc.XWikiDocument;
 import com.xpn.xwiki.objects.BaseObject;
 
+import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.STEP_CLASS;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TASK_CLASS;
 
 /**
@@ -263,8 +265,11 @@ public class TasksManager
         int order = taskObj.getIntValue(TourProperty.ORDER.getBaseKey());
         boolean isActive = taskObj.getIntValue(TourProperty.IS_ACTIVE.getBaseKey()) == 1;
 
-        return new TaskDTO(doc.getDocumentReference().getName(), title, order, isActive,
+        TaskDTO taskDTO = new TaskDTO(doc.getDocumentReference().getName(), title, order, isActive,
             Splitter.on(',').omitEmptyStrings().splitToList(dependsOn));
+        // Removed objects leave null entries in the list, so don't count them.
+        taskDTO.setStepCount((int) doc.getXObjects(STEP_CLASS).stream().filter(Objects::nonNull).count());
+        return taskDTO;
     }
 
     private String validateTaskId(TaskDTO taskDTO)

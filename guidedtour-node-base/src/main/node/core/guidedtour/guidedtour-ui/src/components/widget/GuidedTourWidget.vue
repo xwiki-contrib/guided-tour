@@ -118,7 +118,11 @@ import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetLauncher from "./GuidedTourWidgetLauncher.vue";
 import GuidedTourWidgetTour from "./GuidedTourWidgetTour.vue";
 import GuidedTourWidgetUsefulLink from "./GuidedTourWidgetUsefulLink.vue";
-import { TourTaskStatus, WidgetState } from "@xwiki/contrib-guidedtour-api";
+import {
+  TourTaskStatus,
+  WidgetState,
+  isTaskAvailable,
+} from "@xwiki/contrib-guidedtour-api";
 import { computed, nextTick, onMounted, provide, reactive, ref } from "vue";
 import type {
   GuidedTourManager,
@@ -226,10 +230,10 @@ onMounted(() => {
     });
   loadWidgetState();
 });
-// The tours shown to the user: the active ones with at least one active task.
+// The tours shown to the user: the active ones with at least one available task.
 const availableTours = computed(() =>
   state.tours.filter(
-    (tour) => tour.active && tour.tasksList?.some((task) => task.active),
+    (tour) => tour.active && tour.tasksList?.some(isTaskAvailable),
   ),
 );
 // The available tours with no task left to do, i.e. whose tasks are all done or skipped.
@@ -243,14 +247,15 @@ const finishedToursCount = computed(
 // FIXME: The .val property is a workaround, so vue doesn't auto-unwrap the progress, thus making it non-reactive.
 const progress = {
   val: computed(() => {
-    const allTasks: TourTask[] = state.tours.flatMap((t) => t.tasksList!);
+    // Only the tasks shown to the user count.
+    const allTasks: TourTask[] = state.tours
+      .flatMap((t) => t.tasksList!)
+      .filter(isTaskAvailable);
     return (
       allTasks.filter(
         (task: TourTask) =>
-          task.active &&
-          task.status != undefined &&
-          task.status != TourTaskStatus.TODO,
-      ).length / allTasks.filter((task) => task.active).length
+          task.status != undefined && task.status != TourTaskStatus.TODO,
+      ).length / allTasks.length
     );
   }),
 };

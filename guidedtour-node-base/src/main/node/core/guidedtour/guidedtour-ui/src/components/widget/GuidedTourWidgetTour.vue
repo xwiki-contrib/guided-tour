@@ -33,7 +33,7 @@
         ['tour-' + status]: true,
         collapsed: props.tour.isCollapsed,
         hidden:
-          (props.tour.tasksList?.length ?? 0) == 0 ||
+          !props.tour.tasksList?.some(isTaskAvailable) ||
           !(props.tour.active ?? false),
       }"
     >
@@ -89,7 +89,7 @@
           <template #default>
             <template v-for="task in tasks" :key="task.id">
               <GuidedTourWidgetTask
-                v-if="task.active"
+                v-if="isTaskAvailable(task)"
                 :task="task"
                 :tour-id="props.tour.id"
               />
@@ -116,7 +116,7 @@ import GuidedTourWidgetItem from "./GuidedTourWidgetItem.vue";
 import GuidedTourWidgetTask from "./GuidedTourWidgetTask.vue";
 import { getStatusText } from "./statusText";
 import { RESOLVER } from "../../injectionKeys";
-import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
+import { TourTaskStatus, isTaskAvailable } from "@xwiki/contrib-guidedtour-api";
 import { useI18nAdapter } from "@xwiki/platform-localization-adapter-vue";
 import { computed, inject, onMounted, ref } from "vue";
 import type {

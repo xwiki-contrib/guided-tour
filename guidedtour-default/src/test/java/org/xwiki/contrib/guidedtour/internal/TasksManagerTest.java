@@ -20,6 +20,7 @@
 package org.xwiki.contrib.guidedtour.internal;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -58,9 +59,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.STEP_CLASS;
 import static org.xwiki.contrib.guidedtour.internal.util.GuidedTourConstants.TASK_CLASS;
 
 /**
@@ -289,6 +292,10 @@ class TasksManagerTest
     @Test
     void getAllTasks() throws Exception
     {
+        // A removed step object leaves a null entry in the list.
+        when(this.taskDocument1.getXObjects(STEP_CLASS)).thenReturn(
+            Arrays.asList(mock(BaseObject.class), null, mock(BaseObject.class)));
+
         List<TaskDTO> tasks = this.tasksManager.getAllTasks(TOUR_ID);
 
         assertEquals(2, tasks.size());
@@ -297,12 +304,14 @@ class TasksManagerTest
         assertEquals(1, tasks.getFirst().getOrder());
         assertTrue(tasks.getFirst().isActive());
         assertTrue(tasks.getFirst().getDependsOn().isEmpty());
+        assertEquals(2, tasks.getFirst().getStepCount());
 
         assertEquals(VALIDATED_TASK_ID2, tasks.get(1).getId());
         assertEquals(this.taskDTO2.getTitle(), tasks.get(1).getTitle());
         assertEquals(2, tasks.get(1).getOrder());
         assertFalse(tasks.get(1).isActive());
         assertEquals(VALIDATED_TASK_ID1, tasks.get(1).getDependsOn().getFirst());
+        assertEquals(0, tasks.get(1).getStepCount());
     }
 
     @Test

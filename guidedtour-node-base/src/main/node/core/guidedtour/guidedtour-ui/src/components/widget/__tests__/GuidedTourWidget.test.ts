@@ -64,8 +64,9 @@ function createTask(
   id: string,
   status: TourTaskStatus,
   active = true,
+  stepCount = 1,
 ): TourTask {
-  return { id, title: id, order: 0, status, active };
+  return { id, title: id, order: 0, status, active, stepCount };
 }
 
 /**
@@ -299,7 +300,7 @@ describe("GuidedTourWidget", () => {
     expect(tourComponent.props("tour").isCollapsed).toBe(false);
   });
 
-  it("computes the progress from the active tasks that are not left to do", async () => {
+  it("computes the progress from the available tasks that are not left to do", async () => {
     const tours: TourTour[] = [
       {
         id: "tour1",
@@ -315,8 +316,9 @@ describe("GuidedTourWidget", () => {
         tasksList: [
           createTask("task3", TourTaskStatus.SKIPPED),
           createTask("task4", TourTaskStatus.TODO),
-          // Inactive tasks are not shown, so they don't count.
+          // Inactive tasks and tasks without steps are not shown, so they don't count.
           createTask("task5", TourTaskStatus.DONE, false),
+          createTask("task6", TourTaskStatus.DONE, true, 0),
         ],
       },
     ];
@@ -353,7 +355,7 @@ describe("GuidedTourWidget", () => {
         status: TourTaskStatus.TODO,
         tasksList: [createTask("task3", TourTaskStatus.TODO)],
       },
-      // Inactive tours and tours without active tasks are not shown, so they don't count.
+      // Inactive tours and tours without available tasks are not shown, so they don't count.
       {
         id: "inactive",
         title: "Inactive",
@@ -367,6 +369,13 @@ describe("GuidedTourWidget", () => {
         active: true,
         status: TourTaskStatus.SKIPPED,
         tasksList: [createTask("task5", TourTaskStatus.DONE, false)],
+      },
+      {
+        id: "noTaskWithSteps",
+        title: "No task with steps",
+        active: true,
+        status: TourTaskStatus.SKIPPED,
+        tasksList: [createTask("task6", TourTaskStatus.DONE, true, 0)],
       },
     ];
     const wrapper = mountWidget(

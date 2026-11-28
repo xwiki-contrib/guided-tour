@@ -25,7 +25,7 @@ import { DefaultUserStatusApi } from "./DefaultUserStatusApi";
 import { GuidedTourRestClient } from "./GuidedTourRestClient";
 import { StorageManager } from "../StorageManager";
 import { driver, getDriverConfigForSteps, wrapTask } from "../driverjsMain";
-import { TourTaskStatus } from "@xwiki/contrib-guidedtour-api";
+import { TourTaskStatus, isTaskAvailable } from "@xwiki/contrib-guidedtour-api";
 import { DocumentReference } from "@xwiki/platform-model-api";
 import type { TourStore } from "./TourStore";
 import type {
@@ -606,7 +606,7 @@ export class DefaultGuidedTourManager implements GuidedTourManager {
    */
   private async startNextTask(task: TourTask): Promise<void> {
     const nextTask = (await this.getTasks(task.tourId!))
-      .filter((t) => t.active && t.status === TourTaskStatus.TODO)
+      .filter((t) => isTaskAvailable(t) && t.status === TourTaskStatus.TODO)
       .sort((a, b) => a.order - b.order)[0];
     if (nextTask !== undefined) {
       await this.startTask(nextTask, false);
